@@ -25,12 +25,7 @@ Cypress.Commands.add('auth', userId => {
 });
 
 Cypress.Commands.add('resetdb', () => {
-  cy.exec(
-    `node -e "const teardown = require('./shared/testing/teardown.js')().then(() => process.exit())"`
-  );
-  cy.exec(
-    `node -e "const setup = require('./shared/testing/setup.js')().then(() => process.exit())"`
-  );
+  return cy.task('resetdb', null, { timeout: 30000 });
 });
 
 Cypress.Commands.overwrite('type', (originalFn, $elem, text, options) => {
