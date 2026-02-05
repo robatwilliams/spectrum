@@ -269,7 +269,7 @@
     "test:ci": "npm run jest -- --forceExit --outputFile test-results.json --json --maxWorkers=2",
     "test:e2e": "CYPRESS_RETRIES=2 cypress run",
     "prestart:api:test": "node -e \"require('./shared/testing/setup.js')().then(() => process.exit())\"",
-    "start:api:test": "TEST_DB=true FORCE_DEV=true DEBUG=api*,shared* forever build-api/main.js",
+    "start:api:test": "TEST_DB=true FORCE_DEV=true DEBUG=api*,shared* node build-api/main.js",
     "cypress:open": "cypress open",
     "cypress:install": "cypress install",
     "lint": "eslint .",
