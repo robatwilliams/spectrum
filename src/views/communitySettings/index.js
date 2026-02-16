@@ -2,7 +2,7 @@
 import React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { Route, Switch } from 'react-router-dom';
+import { Route, Switch, withRouter } from 'react-router-dom';
 import { getCommunitySettingsByMatch } from 'shared/graphql/queries/community/getCommunitySettings';
 import type { GetCommunityType } from 'shared/graphql/queries/community/getCommunity';
 import viewNetworkHandler from 'src/components/viewNetworkHandler';
@@ -117,18 +117,16 @@ class CommunitySettings extends React.Component<Props> {
 
               <Switch>
                 <Route path={`${match.url}/analytics`}>
-                  {() => <Analytics community={community} id={community.id} />}
+                  <Analytics community={community} id={community.id} />
                 </Route>
                 <Route path={`${match.url}/members`}>
-                  {() => <Members community={community} history={history} />}
+                  <Members community={community} history={history} />
                 </Route>
                 <Route path={`${match.url}`}>
-                  {() => (
-                    <Overview
-                      community={community}
-                      communitySlug={communitySlug}
-                    />
-                  )}
+                  <Overview
+                    community={community}
+                    communitySlug={communitySlug}
+                  />
                 </Route>
               </Switch>
             </View>
@@ -146,6 +144,7 @@ class CommunitySettings extends React.Component<Props> {
 }
 
 export default compose(
+  withRouter,
   connect(),
   getCommunitySettingsByMatch,
   viewNetworkHandler

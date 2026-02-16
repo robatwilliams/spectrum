@@ -77,7 +77,7 @@ class UserSettings extends React.Component<Props> {
               />
 
               <Route path={`${match.url}`}>
-                {() => <Overview user={user} />}
+                <Overview user={user} />
               </Route>
             </View>
           </ViewGrid>

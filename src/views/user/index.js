@@ -375,9 +375,9 @@ class UserView extends React.Component<Props, State> {
 }
 
 export default compose(
+  withRouter,
   getUserByMatch,
   withCurrentUser,
   viewNetworkHandler,
-  withRouter,
   connect()
 )(UserView);

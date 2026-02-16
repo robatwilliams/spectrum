@@ -283,9 +283,9 @@ class ChannelView extends React.Component<Props> {
 }
 
 export default compose(
+  withRouter,
   withCurrentUser,
   getChannelByMatch,
   viewNetworkHandler,
-  withRouter,
   connect()
 )(ChannelView);

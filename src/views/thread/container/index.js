@@ -287,9 +287,9 @@ const mapStateToProps = (state): * => ({
 });
 
 export default compose(
+  withRouter,
   getThreadByMatch,
   viewNetworkHandler,
-  withRouter,
   withApollo,
   withCurrentUser,
   connect(mapStateToProps)

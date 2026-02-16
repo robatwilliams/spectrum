@@ -1,9 +1,7 @@
 // @flow
 // $FlowIssue
 import React, { useEffect } from 'react';
-import compose from 'recompose/compose';
-import type { Location } from 'react-router';
-import { withRouter } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import querystring from 'query-string';
 import { Dropdowns, DropdownsLabel } from '../style';
 import CommunitySelector from './CommunitySelector';
@@ -14,7 +12,6 @@ type Props = {
   onChannelSelectionChanged: Function,
   selectedCommunityId: ?string,
   selectedChannelId: ?string,
-  location: Location,
 };
 
 const ComposerLocationSelectors = (props: Props) => {
@@ -23,11 +20,11 @@ const ComposerLocationSelectors = (props: Props) => {
     selectedChannelId,
     onCommunitySelectionChanged,
     onChannelSelectionChanged,
-    location,
   } = props;
 
+  const location = useLocation();
+
   const setStateFromQueryParams = () => {
-    const { location } = props;
     const { search } = location;
     const { composerCommunityId, composerChannelId } = querystring.parse(
       search
@@ -42,12 +39,9 @@ const ComposerLocationSelectors = (props: Props) => {
     Whenever the browser location.search changes, check for query parameters 
     related to the composer and update the state of the composer.
   */
-  useEffect(
-    () => {
-      setStateFromQueryParams();
-    },
-    [location.search]
-  );
+  useEffect(() => {
+    setStateFromQueryParams();
+  }, [location.search]);
 
   return (
     <Dropdowns>
@@ -70,4 +64,4 @@ const ComposerLocationSelectors = (props: Props) => {
   );
 };
 
-export default compose(withRouter)(ComposerLocationSelectors);
+export default ComposerLocationSelectors;
