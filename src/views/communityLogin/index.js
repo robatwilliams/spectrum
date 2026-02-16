@@ -1,6 +1,7 @@
 // @flow
 import * as React from 'react';
 import compose from 'recompose/compose';
+import { withRouter } from 'react-router-dom';
 import FullscreenView from 'src/components/fullscreenView';
 import LoginButtonSet from 'src/components/loginButtonSet';
 import { CommunityAvatar } from 'src/components/avatar';
@@ -133,6 +134,7 @@ export class Login extends React.Component<Props, State> {
 }
 
 export default compose(
+  withRouter,
   getCommunityByMatch,
   viewNetworkHandler
 )(Login);
