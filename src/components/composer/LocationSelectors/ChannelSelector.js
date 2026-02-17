@@ -1,8 +1,7 @@
 // @flow
 import React from 'react';
 import compose from 'recompose/compose';
-import { withRouter } from 'react-router-dom';
-import type { Location } from 'react-router';
+import { useLocation } from 'react-router-dom';
 import querystring from 'query-string';
 import getCommunityChannelConnection, {
   type GetCommunityChannelConnectionType,
@@ -17,7 +16,6 @@ type Props = {
   selectedChannelId: ?string,
   selectedCommunityId: ?string,
   onChannelChange: Function,
-  location: Location,
   className?: string,
   data: {
     loading: boolean,
@@ -32,10 +30,10 @@ const ChannelSelector = (props: Props) => {
     onChannelChange,
     selectedChannelId,
     selectedCommunityId,
-    location,
     className,
     ...rest
   } = props;
+  const location = useLocation();
   const { loading, error, community } = data;
   if (loading) return <LoadingSelect />;
   if (error)
@@ -160,7 +158,4 @@ const ChannelSelector = (props: Props) => {
   );
 };
 
-export default compose(
-  withRouter,
-  getCommunityChannelConnection
-)(ChannelSelector);
+export default compose(getCommunityChannelConnection)(ChannelSelector);

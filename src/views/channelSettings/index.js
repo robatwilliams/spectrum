@@ -1,7 +1,7 @@
 // @flow
 import * as React from 'react';
 import compose from 'recompose/compose';
-import { withRouter } from 'react-router';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { getChannelByMatch } from 'shared/graphql/queries/channel/getChannel';
 import type { GetChannelType } from 'shared/graphql/queries/channel/getChannel';
@@ -195,12 +195,32 @@ class ChannelSettings extends React.Component<Props> {
   }
 }
 
-export default compose(
+const ChannelSettingsComposed = compose(
   // $FlowIssue
   connect(),
-  withRouter,
   getChannelByMatch,
   togglePendingUserInChannelMutation,
   unblockUserInChannelMutation,
   viewNetworkHandler
 )(ChannelSettings);
+
+const ChannelSettingsWithHooks = props => {
+  const params = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const match = { params };
+  const history = {
+    push: navigate,
+    replace: loc => navigate(loc, { replace: true }),
+  };
+  return (
+    <ChannelSettingsComposed
+      {...props}
+      match={match}
+      history={history}
+      location={location}
+    />
+  );
+};
+
+export default ChannelSettingsWithHooks;

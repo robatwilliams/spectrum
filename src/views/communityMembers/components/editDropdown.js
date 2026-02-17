@@ -2,7 +2,6 @@
 import * as React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 import type { GetUserType } from 'shared/graphql/queries/user/getUser';
 import {
   EditDropdownContainer,
@@ -38,7 +37,6 @@ type Props = {
   dispatch: Function,
   dispatch: Dispatch<Object>,
   community: GetCommunitySettingsType,
-  history: Object,
   user: {
     ...$Exact<GetUserType>,
   },
@@ -280,7 +278,6 @@ class EditDropdown extends React.Component<Props, State> {
 
 export default compose(
   connect(),
-  withRouter,
   addCommunityModerator,
   removeCommunityModerator,
   blockCommunityMember,

@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { withApollo } from 'react-apollo';
 import {
   getThreadByMatch,
@@ -286,11 +286,18 @@ const mapStateToProps = (state): * => ({
   notifications: state.notifications.notificationsData,
 });
 
-export default compose(
-  withRouter,
+const ThreadContainerComposed = compose(
   getThreadByMatch,
   viewNetworkHandler,
   withApollo,
   withCurrentUser,
   connect(mapStateToProps)
 )(ThreadContainer);
+
+const ThreadContainerWithHooks = props => {
+  const params = useParams();
+  const match = { params };
+  return <ThreadContainerComposed {...props} match={match} />;
+};
+
+export default ThreadContainerWithHooks;

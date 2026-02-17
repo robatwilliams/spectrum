@@ -1,7 +1,7 @@
 // @flow
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import compose from 'recompose/compose';
-import { Link, withRouter } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Dropzone from 'react-dropzone';
 import { connect } from 'react-redux';
 import { UserAvatar } from 'src/components/avatar';
@@ -22,7 +22,6 @@ import {
   storeDraftThread,
 } from 'src/helpers/thread-draft-handling';
 import type { CommunityInfoType } from 'shared/graphql/fragments/community/communityInfo';
-import type { History } from 'react-router-dom';
 import { DISCARD_DRAFT_MESSAGE } from 'src/components/composer';
 import { openModal } from 'src/actions/modals';
 import { Container, BodyContainer } from './style';
@@ -35,7 +34,6 @@ type Props = {
   dispatch: Function,
   uploadImage: Function,
   publishThread: Function,
-  history: History,
   currentUser: Object,
 };
 
@@ -45,12 +43,12 @@ const MiniComposer = ({
   dispatch,
   uploadImage,
   publishThread,
-  history,
   selectedChannelId: defaultSelectedChannel,
   fixedChannelId,
 }: Props) => {
   const titleEditor = useRef();
   const bodyEditor = useRef();
+  const navigate = useNavigate();
   const [selectedChannelId, setSelectedChannelId] = useState(
     defaultSelectedChannel
   );
@@ -192,8 +190,7 @@ const MiniComposer = ({
         await setBody('');
         await setTitle('');
         await setExpanded(false);
-        return history.push({
-          pathname: getThreadLink(data.publishThread),
+        return navigate(getThreadLink(data.publishThread), {
           state: { modal: true },
         });
       })
@@ -420,6 +417,5 @@ const MiniComposer = ({
 export default compose(
   connect(),
   uploadImageMutation,
-  publishThreadMutation,
-  withRouter
+  publishThreadMutation
 )(MiniComposer);

@@ -2,7 +2,6 @@
 import React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 import { ErrorBoundary } from 'src/components/error';
 import type { GetCommunityType } from 'shared/graphql/queries/community/getCommunity';
 import type { UserInfoType } from 'shared/graphql/fragments/user/userInfo';
@@ -113,7 +112,6 @@ class Component extends React.Component<Props> {
 }
 
 export const TeamMembersList = compose(
-  withRouter,
   withCurrentUser,
   getCommunityMembersQuery,
   viewNetworkHandler,

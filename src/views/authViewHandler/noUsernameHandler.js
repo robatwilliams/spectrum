@@ -1,6 +1,6 @@
 // @flow
 import compose from 'recompose/compose';
-import { withRouter, type Location, type History } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   getCurrentUser,
   type GetUserType,
@@ -10,25 +10,22 @@ type Props = {
   data: {
     user: ?GetUserType,
   },
-  location: Location,
-  history: History,
 };
 
 const NoUsernameHandler = (props: Props) => {
-  const { data, location, history } = props;
+  const { data } = props;
   const { user } = data;
+  const location = useLocation();
+  const navigate = useNavigate();
   if (!user) return null;
   if (user && user.username) return null;
   const { pathname, search } = location;
   if (pathname === '/new/user') return null;
-  history.replace({
-    pathname: '/new/user',
+  navigate('/new/user', {
+    replace: true,
     state: { redirect: `${pathname}${search}` },
   });
   return null;
 };
 
-export default compose(
-  getCurrentUser,
-  withRouter
-)(NoUsernameHandler);
+export default compose(getCurrentUser)(NoUsernameHandler);

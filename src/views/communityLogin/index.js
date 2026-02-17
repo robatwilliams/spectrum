@@ -1,7 +1,7 @@
 // @flow
 import * as React from 'react';
 import compose from 'recompose/compose';
-import { withRouter } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import FullscreenView from 'src/components/fullscreenView';
 import LoginButtonSet from 'src/components/loginButtonSet';
 import { CommunityAvatar } from 'src/components/avatar';
@@ -133,8 +133,25 @@ export class Login extends React.Component<Props, State> {
   }
 }
 
-export default compose(
-  withRouter,
+const LoginComposed = compose(
   getCommunityByMatch,
   viewNetworkHandler
 )(Login);
+
+const LoginWithHooks = props => {
+  const params = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const match = { params };
+  const history = { push: navigate };
+  return (
+    <LoginComposed
+      {...props}
+      match={match}
+      history={history}
+      location={location}
+    />
+  );
+};
+
+export default LoginWithHooks;

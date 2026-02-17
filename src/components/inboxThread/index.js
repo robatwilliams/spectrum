@@ -2,7 +2,6 @@
 import * as React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 import Header from './header';
 import getThreadLink from 'src/helpers/get-thread-link';
 import type { ThreadInfoType } from 'shared/graphql/fragments/thread/threadInfo';
@@ -133,7 +132,6 @@ class InboxThread extends React.Component<Props> {
 }
 
 export default compose(
-  withRouter,
   withCurrentUser,
   connect()
 )(InboxThread);

@@ -1,7 +1,7 @@
 // @flow
 import * as React from 'react';
 import compose from 'recompose/compose';
-import { withRouter, type History, type Location } from 'react-router';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { connect } from 'react-redux';
 import debounce from 'debounce';
 import Icon from 'src/components/icon';
@@ -571,10 +571,25 @@ const mapStateToProps = state => ({
   networkOnline: state.connectionStatus.networkOnline,
 });
 
+const ComposerWithHooks = props => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return (
+    <ComposerWithData
+      {...props}
+      history={{
+        push: navigate,
+        replace: path => navigate(path, { replace: true }),
+        goBack: () => navigate(-1),
+      }}
+      location={location}
+    />
+  );
+};
+
 export default compose(
   uploadImage,
   getComposerCommunitiesAndChannels,
   publishThread,
-  withRouter,
   connect(mapStateToProps)
-)(ComposerWithData);
+)(ComposerWithHooks);

@@ -1,7 +1,7 @@
 // @flow
 import React from 'react';
 import compose from 'recompose/compose';
-import { withRouter, type History } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { withCurrentUser } from 'src/components/withCurrentUser';
 import { MobileTitlebar } from 'src/components/titlebar';
@@ -17,7 +17,6 @@ export type TitlebarPayloadProps = {
 
 type TitlebarProps = {
   ...$Exact<TitlebarPayloadProps>,
-  history: History,
   currentUser: ?Object,
 };
 
@@ -27,11 +26,11 @@ const GlobalTitlebar = (props: TitlebarProps): React$Node => {
     titleIcon = null,
     rightAction = null,
     leftAction = 'menu',
-    history,
     currentUser,
   } = props;
+  const navigate = useNavigate();
 
-  if (isViewingMarketingPage(history, currentUser)) {
+  if (isViewingMarketingPage({ location: window.location }, currentUser)) {
     return null;
   }
 
@@ -50,7 +49,6 @@ const GlobalTitlebar = (props: TitlebarProps): React$Node => {
 const map = (state): * => state.titlebar;
 
 export default compose(
-  withRouter,
   withCurrentUser,
   connect(map)
 )(GlobalTitlebar);

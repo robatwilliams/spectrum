@@ -1,7 +1,7 @@
 // @flow
 import React from 'react';
 import compose from 'recompose/compose';
-import { withRouter, type History } from 'react-router';
+import { useLocation } from 'react-router-dom';
 import type { UserInfoType } from 'shared/graphql/fragments/user/userInfo';
 import { withCurrentUser } from 'src/components/withCurrentUser';
 import { isViewingMarketingPage } from 'src/helpers/is-viewing-marketing-page';
@@ -10,7 +10,6 @@ import { StyledAppViewWrapper } from './style';
 type Props = {
   isModal: boolean,
   currentUser: ?UserInfoType,
-  history: History,
   location: Object,
 };
 
@@ -61,7 +60,10 @@ class AppViewWrapper extends React.Component<Props> {
   render() {
     const { currentUser, history, location } = this.props;
 
-    const isMarketingPage = isViewingMarketingPage(history, currentUser);
+    const isMarketingPage = isViewingMarketingPage(
+      { location: window.location },
+      currentUser
+    );
     const isViewingExplore = location && location.pathname === '/explore';
     const isTwoColumn = isViewingExplore || !isMarketingPage;
 
@@ -75,7 +77,9 @@ class AppViewWrapper extends React.Component<Props> {
   }
 }
 
-export default compose(
-  withRouter,
-  withCurrentUser
-)(AppViewWrapper);
+const AppViewWrapperWithHooks = props => {
+  const location = useLocation();
+  return <AppViewWrapper {...props} location={location} />;
+};
+
+export default compose(withCurrentUser)(AppViewWrapperWithHooks);

@@ -1,6 +1,5 @@
 // @flow
 import * as React from 'react';
-import { withRouter } from 'react-router';
 import { withApollo } from 'react-apollo';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
@@ -481,7 +480,6 @@ class UserWithData extends React.Component<Props, State> {
 
 const UserSettings = compose(
   editUserMutation,
-  withRouter,
   withApollo,
   connect()
 )(UserWithData);

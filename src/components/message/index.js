@@ -4,7 +4,7 @@ import { btoa } from 'b2a';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import type { Dispatch } from 'redux';
-import { withRouter, type Location, type History } from 'react-router';
+import { useNavigate, useLocation } from 'react-router-dom';
 import queryString from 'query-string';
 import Clipboard from 'react-clipboard.js';
 import { openGallery } from 'src/actions/gallery';
@@ -55,8 +55,8 @@ type Props = {|
   thread: GetThreadType,
   threadType: 'directMessageThread' | 'story',
   toggleReaction: Function,
-  location: Location,
-  history: History,
+  location: Object,
+  navigate: Function,
   dispatch: Dispatch<Object>,
   currentUser: UserInfoType,
   deleteMessage: Function,
@@ -152,9 +152,9 @@ class Message extends React.Component<Props, State> {
   initEditMessage = () => this.setState({ isEditing: true });
   cancelEdit = () => this.setState({ isEditing: false });
   clearSelectedMessage = () => {
-    const { history, location } = this.props;
+    const { navigate, location } = this.props;
     const { pathname } = location;
-    history.push({ pathname });
+    navigate({ pathname });
   };
 
   render() {
@@ -396,10 +396,15 @@ class Message extends React.Component<Props, State> {
   }
 }
 
+const MessageWithHooks = props => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return <Message {...props} navigate={navigate} location={location} />;
+};
+
 export default compose(
   deleteMessage,
   withCurrentUser,
-  withRouter,
   toggleReactionMutation,
   connect()
-)(Message);
+)(MessageWithHooks);

@@ -2,7 +2,7 @@
 import * as React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import { useLocation } from 'react-router-dom';
 import { withApollo } from 'react-apollo';
 import { Loading } from 'src/components/loading';
 import GetMembers from './getMembers';
@@ -36,8 +36,7 @@ type Props = {
   client: Object,
   currentUser: Object,
   dispatch: Dispatch<Object>,
-  history: Object,
-  location: Object,
+  location?: Object,
   community: Object,
 };
 
@@ -379,9 +378,13 @@ class CommunityMembers extends React.Component<Props, State> {
   }
 }
 
+const CommunityMembersWrapper = (props: Props) => {
+  const location = useLocation();
+  return <CommunityMembers {...props} location={location} />;
+};
+
 export default compose(
   withApollo,
   withCurrentUser,
-  withRouter,
   connect()
-)(CommunityMembers);
+)(CommunityMembersWrapper);

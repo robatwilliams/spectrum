@@ -3,7 +3,6 @@ import * as React from 'react';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import compose from 'recompose/compose';
-import { withRouter } from 'react-router';
 import slugg from 'slugg';
 import { withApollo } from 'react-apollo';
 import { Notice } from 'src/components/listItems/style';
@@ -688,7 +687,6 @@ class CreateCommunityForm extends React.Component<Props, State> {
 
 export default compose(
   createCommunityMutation,
-  withRouter,
   connect(),
   withApollo
 )(CreateCommunityForm);

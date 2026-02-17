@@ -2,7 +2,6 @@
 import * as React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 import editCommunityMutation from 'shared/graphql/mutations/community/editCommunity';
 import type { EditCommunityType } from 'shared/graphql/mutations/community/editCommunity';
 import type { GetCommunityType } from 'shared/graphql/queries/community/getCommunity';
@@ -395,6 +394,5 @@ class EditForm extends React.Component<Props, State> {
 
 export default compose(
   connect(),
-  editCommunityMutation,
-  withRouter
+  editCommunityMutation
 )(EditForm);

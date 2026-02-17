@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 import { Bar } from './style';
-import { withRouter } from 'react-router';
+import { useLocation } from 'react-router-dom';
 import compose from 'recompose/compose';
 import { isViewingMarketingPage } from 'src/helpers/is-viewing-marketing-page';
 import type { Dispatch } from 'redux';
@@ -11,8 +11,8 @@ import { withCurrentUser } from 'src/components/withCurrentUser';
 type Props = {
   websocketConnection: string,
   dispatch: Dispatch<Object>,
-  history: Object,
   currentUser: Object,
+  location?: Object,
 };
 
 type State = {|
@@ -119,10 +119,11 @@ class Status extends React.Component<Props, State> {
   }
 
   render() {
-    const { history, currentUser } = this.props;
+    const { location, currentUser } = this.props;
     const { color, online, wsConnected, label, hidden } = this.state;
 
-    if (isViewingMarketingPage(history, currentUser)) {
+    const history = { location: location || {} };
+    if (isViewingMarketingPage({ location: window.location }, currentUser)) {
       return null;
     }
 
@@ -137,9 +138,13 @@ const map = state => ({
   websocketConnection: state.connectionStatus.websocketConnection,
 });
 
+const StatusWrapper = (props: Props) => {
+  const location = useLocation();
+  return <Status {...props} location={location} />;
+};
+
 export default compose(
   // $FlowIssue
   connect(map),
-  withCurrentUser,
-  withRouter
-)(Status);
+  withCurrentUser
+)(StatusWrapper);

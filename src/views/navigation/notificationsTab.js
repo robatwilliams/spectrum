@@ -1,7 +1,7 @@
 // @flow
 import * as React from 'react';
 import { withApollo } from 'react-apollo';
-import { withRouter } from 'react-router-dom';
+import { useLocation, useMatch } from 'react-router-dom';
 import { connect } from 'react-redux';
 import Tooltip from 'src/components/tooltip';
 import compose from 'recompose/compose';
@@ -26,19 +26,19 @@ import { AvatarGrid, AvatarLink, Label, IconWrapper, RedDot } from './style';
 type Props = {
   isActive: boolean,
   count: number,
-  location: Object,
   data: {
     notifications?: GetNotificationsType,
     subscribeToNewNotifications: Function,
   },
   markSingleNotificationSeen: Function,
   dispatch: Function,
-  match: Object,
   currentUser?: Object,
 };
 
 const NotificationsTab = (props: Props) => {
-  const { count, data, isActive, match, currentUser } = props;
+  const { count, data, isActive, currentUser } = props;
+  const location = useLocation();
+  const match = useMatch('/notifications');
 
   const isWideViewport =
     window && window.innerWidth > MIN_WIDTH_TO_EXPAND_NAVIGATION;
@@ -146,6 +146,5 @@ export default compose(
   getNotifications,
   markSingleNotificationSeenMutation,
   viewNetworkHandler,
-  withRouter,
   withCurrentUser
 )(NotificationsTab);

@@ -2,7 +2,6 @@
 import * as React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { Route } from 'react-router-dom';
 import getCurrentUserSettings, {
   type GetCurrentUserSettingsType,
 } from 'shared/graphql/queries/user/getCurrentUserSettings';
@@ -12,7 +11,6 @@ import Head from 'src/components/head';
 import { View } from './style';
 import Overview from './components/overview';
 import Header from 'src/components/settingsViews/header';
-import type { ContextRouter } from 'react-router';
 import { ErrorView, LoadingView } from 'src/views/viewHelpers';
 import { ViewGrid } from 'src/components/layout';
 import { setTitlebarProps } from 'src/actions/titlebar';
@@ -23,7 +21,6 @@ type Props = {
   },
   isLoading: boolean,
   hasError: boolean,
-  ...$Exact<ContextRouter>,
 };
 
 class UserSettings extends React.Component<Props> {
@@ -39,7 +36,6 @@ class UserSettings extends React.Component<Props> {
   render() {
     const {
       data: { user },
-      match,
       isLoading,
       currentUser,
     } = this.props;
@@ -76,9 +72,7 @@ class UserSettings extends React.Component<Props> {
                 heading={'My Settings'}
               />
 
-              <Route path={`${match.url}`}>
-                <Overview user={user} />
-              </Route>
+              <Overview user={user} />
             </View>
           </ViewGrid>
         </React.Fragment>

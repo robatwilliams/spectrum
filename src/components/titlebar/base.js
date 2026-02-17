@@ -2,7 +2,7 @@
 import React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter, type History } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ErrorBoundary } from 'src/components/error';
 import { NavigationContext } from 'src/helpers/navigation-context';
 import Icon from 'src/components/icon';
@@ -17,7 +17,6 @@ import {
 
 type Props = {
   title?: string,
-  history: History,
   titleIcon?: any,
   rightAction?: any,
   hasUnseenNotifications?: boolean,
@@ -30,23 +29,23 @@ const MobileTitlebar = (props: Props) => {
     titleIcon,
     rightAction,
     leftAction,
-    history,
     hasUnseenNotifications,
     ...rest
   } = props;
+  const navigate = useNavigate();
 
   const handleMenuClick = setNavOpen => () => {
     if (leftAction === 'menu') {
       return setNavOpen(true);
     }
 
-    if (history.length >= 3) {
-      return history.goBack();
+    if (window.history.length >= 3) {
+      return navigate(-1);
     }
 
     // if there is not history, redirect back to the home view of the app
     // and let the redirect handler push the user to their last-viewed community
-    return history.push('/');
+    return navigate('/');
   };
 
   const leftActionComponent = setNavigationIsOpen => {
@@ -115,7 +114,4 @@ const mapStateToProps = (state): * => ({
     0,
 });
 
-export default compose(
-  withRouter,
-  connect(mapStateToProps)
-)(MobileTitlebar);
+export default compose(connect(mapStateToProps))(MobileTitlebar);

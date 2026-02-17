@@ -2,7 +2,6 @@
 import React, { Component } from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 import AvatarImage from 'src/components/avatar/image';
 import { Link } from 'react-router-dom';
 import Badge from 'src/components/badges';
@@ -105,6 +104,5 @@ class HoverProfile extends Component<ProfileProps> {
 
 export default compose(
   withCurrentUser,
-  withRouter,
   connect()
 )(HoverProfile);

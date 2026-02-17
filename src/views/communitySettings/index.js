@@ -2,7 +2,13 @@
 import React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { Route, Switch, withRouter } from 'react-router-dom';
+import {
+  Route,
+  Routes,
+  useParams,
+  useNavigate,
+  useLocation,
+} from 'react-router-dom';
 import { getCommunitySettingsByMatch } from 'shared/graphql/queries/community/getCommunitySettings';
 import type { GetCommunityType } from 'shared/graphql/queries/community/getCommunity';
 import viewNetworkHandler from 'src/components/viewNetworkHandler';
@@ -115,20 +121,27 @@ class CommunitySettings extends React.Component<Props> {
                 ))}
               </SegmentedControl>
 
-              <Switch>
-                <Route path={`${match.url}/analytics`}>
-                  <Analytics community={community} id={community.id} />
-                </Route>
-                <Route path={`${match.url}/members`}>
-                  <Members community={community} history={history} />
-                </Route>
-                <Route path={`${match.url}`}>
-                  <Overview
-                    community={community}
-                    communitySlug={communitySlug}
-                  />
-                </Route>
-              </Switch>
+              <Routes>
+                <Route
+                  path="analytics"
+                  element={
+                    <Analytics community={community} id={community.id} />
+                  }
+                />
+                <Route
+                  path="members"
+                  element={<Members community={community} history={history} />}
+                />
+                <Route
+                  path="/"
+                  element={
+                    <Overview
+                      community={community}
+                      communitySlug={communitySlug}
+                    />
+                  }
+                />
+              </Routes>
             </View>
           </ViewGrid>
         </React.Fragment>
@@ -143,9 +156,29 @@ class CommunitySettings extends React.Component<Props> {
   }
 }
 
-export default compose(
-  withRouter,
+const CommunitySettingsComposed = compose(
   connect(),
   getCommunitySettingsByMatch,
   viewNetworkHandler
 )(CommunitySettings);
+
+const CommunitySettingsWithHooks = props => {
+  const params = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const match = { params };
+  const history = {
+    push: navigate,
+    replace: loc => navigate(loc, { replace: true }),
+  };
+  return (
+    <CommunitySettingsComposed
+      {...props}
+      match={match}
+      history={history}
+      location={location}
+    />
+  );
+};
+
+export default CommunitySettingsWithHooks;

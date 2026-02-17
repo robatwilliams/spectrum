@@ -3,7 +3,7 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import Modal from 'react-modal';
 import compose from 'recompose/compose';
-import { withRouter, type History } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { closeModal } from 'src/actions/modals';
 import { addToastWithTimeout } from 'src/actions/toasts';
 import deleteCommunityMutation from 'shared/graphql/mutations/community/deleteCommunity';
@@ -59,7 +59,7 @@ type Props = {
   removeCommunityMember: Function,
   dispatch: Dispatch<Object>,
   isOpen: boolean,
-  history: History,
+  navigate: Function,
 };
 
 export const deleteMessageWithToast = (
@@ -95,7 +95,7 @@ class DeleteDoubleCheckModal extends React.Component<Props, State> {
 
   triggerDelete = () => {
     const {
-      history,
+      navigate,
       modalProps: { id, entity, redirect, extraProps },
       dispatch,
     } = this.props;
@@ -124,7 +124,7 @@ class DeleteDoubleCheckModal extends React.Component<Props, State> {
           .then(({ data }: DeleteThreadType) => {
             const { deleteThread } = data;
             if (deleteThread) {
-              history.replace(`/${community.slug}?tab=posts`);
+              navigate(`/${community.slug}?tab=posts`, { replace: true });
               dispatch(addToastWithTimeout('neutral', 'Thread deleted.'));
               this.setState({
                 isLoading: false,
@@ -299,9 +299,13 @@ const DeleteDoubleCheckModalWithMutations = compose(
   deleteThreadMutation,
   deleteMessage,
   archiveChannel,
-  removeCommunityMember,
-  withRouter
+  removeCommunityMember
 )(DeleteDoubleCheckModal);
+
+const DeleteDoubleCheckModalWithNavigate = props => {
+  const navigate = useNavigate();
+  return <DeleteDoubleCheckModalWithMutations {...props} navigate={navigate} />;
+};
 
 const map = state => ({
   isOpen: state.modals.isOpen,
@@ -309,4 +313,4 @@ const map = state => ({
 });
 
 // $FlowIssue
-export default connect(map)(DeleteDoubleCheckModalWithMutations);
+export default connect(map)(DeleteDoubleCheckModalWithNavigate);

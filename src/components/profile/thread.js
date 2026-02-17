@@ -1,6 +1,5 @@
 // @flow
 import * as React from 'react';
-import { withRouter } from 'react-router';
 import compose from 'recompose/compose';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
@@ -72,7 +71,4 @@ class ThreadWithData extends React.Component<Props> {
   }
 }
 
-export default compose(
-  connect(),
-  withRouter
-)(ThreadWithData);
+export default compose(connect())(ThreadWithData);

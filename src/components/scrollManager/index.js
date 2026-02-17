@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { withRouter } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import debounceFn from 'debounce';
 
 type Props = {
@@ -7,8 +7,6 @@ type Props = {
   scrollSyncDebounce: number,
   scrollSyncAttemptLimit: number,
   children: React$Node,
-  history: Object,
-  location: Object,
   onLocationChange: Function,
 };
 
@@ -31,7 +29,7 @@ class ScrollManager extends React.Component<Props> {
     const scrollCapture = () => {
       requestAnimationFrame(() => {
         const { pageXOffset, pageYOffset } = window;
-        const { pathname } = this.props.location;
+        const pathname = window.location.pathname;
 
         // use browser history instead of router history
         // to avoid infinite history.replace loop
@@ -91,9 +89,9 @@ class ScrollManager extends React.Component<Props> {
   }
 
   componentWillMount() {
-    const { location, onLocationChange } = this.props;
+    const { onLocationChange } = this.props;
     if (onLocationChange) {
-      onLocationChange(location);
+      onLocationChange(window.location);
     }
   }
 
@@ -110,7 +108,9 @@ class ScrollManager extends React.Component<Props> {
   }
 
   componentWillReceiveProps(nextProps) {
-    switch (nextProps.history.action) {
+    const action =
+      (window.history.state && window.history.state.action) || 'PUSH';
+    switch (action) {
       case 'PUSH':
       case 'REPLACE':
         this.onPush();
@@ -119,12 +119,10 @@ class ScrollManager extends React.Component<Props> {
         this.onPop(nextProps);
         break;
       default:
-        console.warn(
-          `Unrecognized location change action! "${nextProps.history.action}"`
-        );
+        console.warn(`Unrecognized location change action! "${action}"`);
     }
     if (nextProps.onLocationChange) {
-      nextProps.onLocationChange(nextProps.location);
+      nextProps.onLocationChange(window.location);
     }
   }
 
@@ -132,8 +130,9 @@ class ScrollManager extends React.Component<Props> {
     this.debouncedScrollSync(0, 0);
   }
 
-  onPop({ location: { state = {} } }) {
+  onPop({ location = {} }) {
     // attempt location restore
+    const state = (window.history.state && window.history.state.state) || {};
     const { x = 0, y = 0 } = state.scroll || {};
     this.debouncedScrollSync(x, y);
   }
@@ -143,4 +142,4 @@ class ScrollManager extends React.Component<Props> {
   }
 }
 
-export default withRouter(ScrollManager);
+export default ScrollManager;

@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import type { Dispatch } from 'redux';
 import queryString from 'query-string';
 import compose from 'recompose/compose';
-import { withRouter, type History, type Location } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { withCurrentUser } from 'src/components/withCurrentUser';
 import SetUsername from './components/setUsername';
 import type { UserInfoType } from 'shared/graphql/fragments/user/userInfo';
@@ -16,8 +16,6 @@ import { LogOutButton, Emoji, Heading, Description, Card } from './style';
 
 type Props = {
   currentUser: UserInfoType,
-  history: History,
-  location: Location,
   dispatch: Dispatch<Object>,
 };
 
@@ -31,19 +29,21 @@ class NewUserOnboarding extends React.Component<Props> {
     );
   }
 
-  saveUsername = () => {
-    const { history, location } = this.props;
+  saveUsername = (navigate, location) => () => {
     const { state } = location;
-    if (state && state.redirect) return history.replace(state.redirect);
-    return history.replace('/');
+    if (state && state.redirect)
+      return navigate(state.redirect, { replace: true });
+    return navigate('/', { replace: true });
   };
 
   render() {
     const { currentUser } = this.props;
+    const navigate = useNavigate();
+    const location = useLocation();
 
     let r;
-    if (this.props.location) {
-      const searchObj = queryString.parse(this.props.location.search);
+    if (location) {
+      const searchObj = queryString.parse(location.search);
       r = searchObj.r;
     }
 
@@ -58,7 +58,7 @@ class NewUserOnboarding extends React.Component<Props> {
     }
 
     if (currentUser && currentUser.username) {
-      this.saveUsername();
+      this.saveUsername(navigate, location)();
       return null;
     }
 
@@ -75,7 +75,10 @@ class NewUserOnboarding extends React.Component<Props> {
             <Heading>{heading}</Heading>
             <Description>{subheading}</Description>
 
-            <SetUsername user={currentUser} save={this.saveUsername} />
+            <SetUsername
+              user={currentUser}
+              save={this.saveUsername(navigate, location)}
+            />
 
             <LogOutButton
               data-cy="new-user-onboarding-logout"
@@ -92,7 +95,6 @@ class NewUserOnboarding extends React.Component<Props> {
 }
 
 export default compose(
-  withRouter,
   withCurrentUser,
   connect()
 )(NewUserOnboarding);

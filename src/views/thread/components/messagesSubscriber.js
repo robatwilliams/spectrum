@@ -1,6 +1,6 @@
 // @flow
 import React from 'react';
-import { withRouter } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import queryString from 'query-string';
 import compose from 'recompose/compose';
 import getThreadMessages, {
@@ -14,7 +14,6 @@ import viewNetworkHandler, {
 import ChatMessages from 'src/components/messageGroup';
 import { Loading } from 'src/components/loading';
 import NullMessages from './nullMessages';
-import type { Location } from 'react-router';
 import { NullMessagesWrapper } from '../style';
 
 type Props = {
@@ -28,7 +27,6 @@ type Props = {
   loadNextPage: Function,
   subscribeToNewMessages: Function,
   onMessagesLoaded?: Function,
-  location: Location,
   thread?: Object,
   ...$Exact<ViewNetworkHandlerType>,
 };
@@ -167,6 +165,7 @@ class Messages extends React.Component<Props> {
 
   render() {
     const { data, isLoading, isFetchingMore, hasError } = this.props;
+    const location = useLocation();
 
     const { thread } = data;
     if (thread && thread.messageConnection) {
@@ -189,9 +188,9 @@ class Messages extends React.Component<Props> {
               fetchMore={this.props.loadPreviousPage}
               automatic={!!thread.watercooler}
               href={{
-                pathname: this.props.location.pathname,
+                pathname: location.pathname,
                 search: queryString.stringify({
-                  ...queryString.parse(this.props.location.search),
+                  ...queryString.parse(location.search),
                   msgsbefore: messageConnection.edges[0].cursor,
                   msgsafter: undefined,
                 }),
@@ -212,9 +211,9 @@ class Messages extends React.Component<Props> {
               isFetchingMore={isFetchingMore}
               fetchMore={this.props.loadNextPage}
               href={{
-                pathname: this.props.location.pathname,
+                pathname: location.pathname,
                 search: queryString.stringify({
-                  ...queryString.parse(this.props.location.search),
+                  ...queryString.parse(location.search),
                   msgsafter:
                     messageConnection.edges[messageConnection.edges.length - 1]
                       .cursor,
@@ -243,7 +242,6 @@ class Messages extends React.Component<Props> {
 }
 
 export default compose(
-  withRouter,
   getThreadMessages,
   viewNetworkHandler
 )(Messages);

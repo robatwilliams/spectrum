@@ -2,7 +2,6 @@
 import * as React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 import {
   getCommunityById,
   type GetCommunityType,
@@ -23,7 +22,6 @@ import enableCommunityWatercooler from 'shared/graphql/mutations/community/enabl
 import disableCommunityWatercooler from 'shared/graphql/mutations/community/disableCommunityWatercooler';
 import { addToastWithTimeout } from 'src/actions/toasts';
 import type { Dispatch } from 'redux';
-import type { History } from 'react-router';
 
 type Props = {
   data: {
@@ -33,7 +31,6 @@ type Props = {
   enableCommunityWatercooler: Function,
   disableCommunityWatercooler: Function,
   dispatch: Dispatch<Object>,
-  history: History,
 };
 
 const Watercooler = (props: Props) => {
@@ -115,6 +112,5 @@ export default compose(
   viewNetworkHandler,
   enableCommunityWatercooler,
   disableCommunityWatercooler,
-  withRouter,
   connect()
 )(Watercooler);

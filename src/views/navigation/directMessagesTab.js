@@ -2,7 +2,6 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 import compose from 'recompose/compose';
-import { Route, withRouter } from 'react-router-dom';
 import Icon from 'src/components/icon';
 import Tooltip from 'src/components/tooltip';
 import { isDesktopApp } from 'src/helpers/desktop-app-utils';
@@ -82,38 +81,29 @@ const DirectMessagesTab = (props: Props) => {
   return (
     <NavigationContext.Consumer>
       {({ setNavigationIsOpen }) => (
-        <Route path="/messages">
-          {({ match }) => (
-            <Tooltip
-              content="Messages"
-              placement={'left'}
-              isEnabled={!isWideViewport}
+        <Tooltip
+          content="Messages"
+          placement={'left'}
+          isEnabled={!isWideViewport}
+        >
+          <AvatarGrid isActive={isActive}>
+            <AvatarLink
+              to={'/messages'}
+              data-cy="navigation-messages"
+              onClick={() => setNavigationIsOpen(false)}
+              {...getAccessibilityActiveState(isActive)}
             >
-              <AvatarGrid isActive={match && match.url.includes('/messages')}>
-                <AvatarLink
-                  to={'/messages'}
-                  data-cy="navigation-messages"
-                  onClick={() => setNavigationIsOpen(false)}
-                  {...getAccessibilityActiveState(
-                    match && match.url.includes('/messages')
-                  )}
-                >
-                  <IconWrapper>
-                    <Icon glyph="message-simple" />
-                    {count > 0 && (
-                      <RedDot
-                        data-cy="unread-dm-badge"
-                        style={{ right: '-3px' }}
-                      />
-                    )}
-                  </IconWrapper>
+              <IconWrapper>
+                <Icon glyph="message-simple" />
+                {count > 0 && (
+                  <RedDot data-cy="unread-dm-badge" style={{ right: '-3px' }} />
+                )}
+              </IconWrapper>
 
-                  <Label>Messages</Label>
-                </AvatarLink>
-              </AvatarGrid>
-            </Tooltip>
-          )}
-        </Route>
+              <Label>Messages</Label>
+            </AvatarLink>
+          </AvatarGrid>
+        </Tooltip>
       )}
     </NavigationContext.Consumer>
   );
@@ -131,6 +121,5 @@ export default compose(
   getUnreadDMQuery,
   markDirectMessageNotificationsSeenMutation,
   viewNetworkHandler,
-  withRouter,
   withCurrentUser
 )(DirectMessagesTab);

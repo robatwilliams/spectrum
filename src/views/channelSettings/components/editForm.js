@@ -2,7 +2,6 @@
 import * as React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
 import editChannelMutation from 'shared/graphql/mutations/channel/editChannel';
 import type { EditChannelType } from 'shared/graphql/mutations/channel/editChannel';
@@ -320,7 +319,6 @@ class ChannelWithData extends React.Component<Props, State> {
 
 const Channel = compose(
   deleteChannelMutation,
-  editChannelMutation,
-  withRouter
+  editChannelMutation
 )(ChannelWithData);
 export default connect()(Channel);

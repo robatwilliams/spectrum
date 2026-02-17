@@ -2,15 +2,15 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 import compose from 'recompose/compose';
-import { withRouter, type History, type Location } from 'react-router';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getCurrentUser } from 'shared/graphql/queries/user/getUser';
 import type { GetUserType } from 'shared/graphql/queries/user/getUser';
 import editUserMutation from 'shared/graphql/mutations/user/editUser';
 import NewUserOnboarding from 'src/views/newUserOnboarding';
 
 type Props = {
-  history: History,
-  location: Location,
+  navigate?: Function,
+  location?: Object,
   editUser: Function,
   children: (authed: boolean) => React$Element<*>,
   data: {
@@ -24,7 +24,7 @@ class AuthViewHandler extends React.Component<Props> {
     const {
       data: { user },
       editUser,
-      history,
+      navigate,
       location,
     } = this.props;
 
@@ -36,7 +36,9 @@ class AuthViewHandler extends React.Component<Props> {
         } catch (err) {}
       }
 
-      if (location.pathname === '/home') history.replace('/');
+      if (location && location.pathname === '/home' && navigate) {
+        navigate('/', { replace: true });
+      }
     }
   }
 
@@ -53,9 +55,14 @@ class AuthViewHandler extends React.Component<Props> {
   }
 }
 
+const AuthViewHandlerWrapper = (props: Props) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  return <AuthViewHandler {...props} navigate={navigate} location={location} />;
+};
+
 export default compose(
   getCurrentUser,
   editUserMutation,
-  withRouter,
   connect()
-)(AuthViewHandler);
+)(AuthViewHandlerWrapper);

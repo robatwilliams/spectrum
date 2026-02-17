@@ -1,7 +1,7 @@
 // @flow
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import compose from 'recompose/compose';
-import { Route, type History } from 'react-router-dom';
+import { useMatch, type History } from 'react-router-dom';
 import Tooltip from 'src/components/tooltip';
 import { MIN_WIDTH_TO_EXPAND_NAVIGATION } from 'src/components/layout';
 import viewNetworkHandler from 'src/components/viewNetworkHandler';
@@ -81,25 +81,28 @@ const CommunityListItem = props => {
 const CommunityList = (props: Props) => {
   const { data, history, sidenavIsOpen, setNavigationIsOpen } = props;
   const { user } = data;
+  const match = useMatch('/:communitySlug');
 
-  if (!user) return null;
+  // Compute sorted communities early, but only if user exists
+  const sorted = useMemo(() => {
+    if (!user || !user.communityConnection) return [];
 
-  const { communityConnection } = user;
-  const { edges } = communityConnection;
-  const communities = edges.map(edge => edge && edge.node);
+    const { edges } = user.communityConnection;
+    const communities = edges.map(edge => edge && edge.node);
 
-  const sorted = communities.slice().sort((a, b) => {
-    const bc = parseInt(b.communityPermissions.reputation, 10);
-    const ac = parseInt(a.communityPermissions.reputation, 10);
+    return communities.slice().sort((a, b) => {
+      const bc = parseInt(b.communityPermissions.reputation, 10);
+      const ac = parseInt(a.communityPermissions.reputation, 10);
 
-    // sort same-reputation communities alphabetically
-    if (ac === bc) {
-      return a.name.toUpperCase() <= b.name.toUpperCase() ? -1 : 1;
-    }
+      // sort same-reputation communities alphabetically
+      if (ac === bc) {
+        return a.name.toUpperCase() <= b.name.toUpperCase() ? -1 : 1;
+      }
 
-    // otherwise sort by reputation
-    return bc <= ac ? -1 : 1;
-  });
+      // otherwise sort by reputation
+      return bc <= ac ? -1 : 1;
+    });
+  }, [user]);
 
   useEffect(() => {
     const handleCommunitySwitch = e => {
@@ -144,11 +147,14 @@ const CommunityList = (props: Props) => {
 
     props.subscribeToUpdatedCommunities();
 
-    isDesktopApp() &&
+    if (isDesktopApp()) {
       window.addEventListener('keydown', handleCommunitySwitch, false);
-    return () =>
-      window.removeEventListener('keydown', handleCommunitySwitch, false);
-  }, []);
+      return () =>
+        window.removeEventListener('keydown', handleCommunitySwitch, false);
+    }
+  }, [sorted, setNavigationIsOpen, history, props]);
+
+  if (!user) return null;
 
   return sorted.map((community, index) => {
     if (!community) return null;
@@ -159,24 +165,17 @@ const CommunityList = (props: Props) => {
 
     return (
       <ErrorBoundary key={community.id}>
-        <Route path="/:communitySlug">
-          {({ match }) => {
-            const isActive =
-              match &&
-              match.params &&
-              match.params.communitySlug === community.slug;
-
-            return (
-              <CommunityListItem
-                isActive={isActive}
-                community={community}
-                index={index}
-                sidenavIsOpen={sidenavIsOpen}
-                onClick={() => setNavigationIsOpen(false)}
-              />
-            );
-          }}
-        </Route>
+        <CommunityListItem
+          isActive={
+            match &&
+            match.params &&
+            match.params.communitySlug === community.slug
+          }
+          community={community}
+          index={index}
+          sidenavIsOpen={sidenavIsOpen}
+          onClick={() => setNavigationIsOpen(false)}
+        />
       </ErrorBoundary>
     );
   });

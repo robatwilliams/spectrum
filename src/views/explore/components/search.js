@@ -1,7 +1,7 @@
 // @flow
 import * as React from 'react';
 import { withApollo } from 'react-apollo';
-import { withRouter } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { connect } from 'react-redux';
 import compose from 'recompose/compose';
 import { Link } from 'react-router-dom';
@@ -40,7 +40,7 @@ type State = {
 
 type Props = {
   client: Object,
-  history: Object,
+  navigate?: Function,
   dispatch: Dispatch<Object>,
 };
 
@@ -143,7 +143,8 @@ class Search extends React.Component<Props, State> {
       )
         return;
       const slug = searchResults[indexOfFocusedSearchResult].slug;
-      return this.props.history.push(`/${slug}`);
+      if (this.props.navigate) return this.props.navigate(`/${slug}`);
+      return;
     }
 
     if (e.keyCode === ARROW_DOWN) {
@@ -317,8 +318,12 @@ class Search extends React.Component<Props, State> {
   }
 }
 
+const SearchWrapper2 = (props: Props) => {
+  const navigate = useNavigate();
+  return <Search {...props} navigate={navigate} />;
+};
+
 export default compose(
   connect(),
-  withApollo,
-  withRouter
-)(Search);
+  withApollo
+)(SearchWrapper2);

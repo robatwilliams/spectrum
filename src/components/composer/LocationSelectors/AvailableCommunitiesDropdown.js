@@ -1,8 +1,7 @@
 // @flow
 import React from 'react';
 import compose from 'recompose/compose';
-import { withRouter } from 'react-router-dom';
-import type { Location } from 'react-router';
+import { useLocation } from 'react-router-dom';
 import querystring from 'query-string';
 import {
   getCurrentUserCommunityConnection,
@@ -16,7 +15,6 @@ import { RequiredSelector, CommunityPreview } from '../style';
 type Props = {
   onChange: Function,
   id: string,
-  location: Location,
   data: {
     loading: boolean,
     error: ?string,
@@ -25,7 +23,8 @@ type Props = {
 };
 
 const AvailableCommunitiesDropdown = (props: Props) => {
-  const { data, onChange, id, location } = props;
+  const { data, onChange, id } = props;
+  const location = useLocation();
   const { loading, error, user } = data;
 
   if (loading) return <LoadingSelect />;
@@ -138,7 +137,6 @@ const AvailableCommunitiesDropdown = (props: Props) => {
   );
 };
 
-export default compose(
-  withRouter,
-  getCurrentUserCommunityConnection
-)(AvailableCommunitiesDropdown);
+export default compose(getCurrentUserCommunityConnection)(
+  AvailableCommunitiesDropdown
+);

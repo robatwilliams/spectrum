@@ -2,7 +2,6 @@
 import * as React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 import editCommunityMutation from 'shared/graphql/mutations/community/editCommunity';
 import deleteCommunityMutation from 'shared/graphql/mutations/community/deleteCommunity';
 import type { GetCommunityType } from 'shared/graphql/queries/community/getCommunity';
@@ -311,7 +310,6 @@ class CommunityWithData extends React.Component<Props, State> {
 const Community = compose(
   deleteCommunityMutation,
   editCommunityMutation,
-  withRouter,
   connect()
 )(CommunityWithData);
 export default Community;

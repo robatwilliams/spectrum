@@ -1,6 +1,5 @@
 // @flow
 import React from 'react';
-import { withRouter } from 'react-router';
 import compose from 'recompose/compose';
 import {
   OutlineButton,
@@ -67,4 +66,4 @@ const Share = ({ community, onboarding }) => {
   );
 };
 
-export default compose(withRouter)(Share);
+export default compose()(Share);

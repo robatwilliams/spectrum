@@ -1,11 +1,6 @@
 // @flow
 import React, { useEffect } from 'react';
-import {
-  withRouter,
-  type Location,
-  type History,
-  type Match,
-} from 'react-router-dom';
+import { useNavigate, type Location } from 'react-router-dom';
 import Icon from 'src/components/icon';
 import { ErrorBoundary } from 'src/components/error';
 import { ESC } from 'src/helpers/keycodes';
@@ -13,21 +8,20 @@ import { Container, Overlay, ComposerContainer, CloseButton } from '../style';
 
 type Props = {
   previousLocation: Location,
-  history: History,
-  match: Match,
   isModal?: boolean,
   children: React$Node,
 };
 
 const NewDirectMessage = (props: Props) => {
-  const { previousLocation, history, isModal, children } = props;
+  const { previousLocation, isModal, children } = props;
+  const navigate = useNavigate();
 
   const closeComposer = (e: any) => {
     e && e.stopPropagation();
     if (isModal) {
-      history.push(previousLocation);
+      navigate(previousLocation);
     } else {
-      history.push('/messages');
+      navigate('/messages');
     }
   };
 
@@ -60,4 +54,4 @@ const NewDirectMessage = (props: Props) => {
   );
 };
 
-export default withRouter(NewDirectMessage);
+export default NewDirectMessage;

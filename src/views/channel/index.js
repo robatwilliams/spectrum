@@ -3,7 +3,7 @@ import * as React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import querystring from 'query-string';
-import { withRouter, type History, type Location } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import generateMetaInfo from 'shared/generate-meta-info';
 import Head from 'src/components/head';
 import viewNetworkHandler from 'src/components/viewNetworkHandler';
@@ -48,8 +48,8 @@ type Props = {
   isLoading: boolean,
   hasError: boolean,
   dispatch: Dispatch<Object>,
-  history: History,
-  location: Location,
+  history: Object,
+  location: Object,
 };
 
 class ChannelView extends React.Component<Props> {
@@ -282,10 +282,39 @@ class ChannelView extends React.Component<Props> {
   }
 }
 
-export default compose(
-  withRouter,
+const ChannelViewComposed = compose(
   withCurrentUser,
   getChannelByMatch,
   viewNetworkHandler,
   connect()
 )(ChannelView);
+
+const ChannelViewWithHooks = props => {
+  const params = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const match = { params };
+  const history = {
+    replace: loc => {
+      if (typeof loc === 'string') {
+        navigate(loc, { replace: true });
+      } else {
+        navigate(
+          { pathname: loc.pathname, search: loc.search },
+          { replace: true }
+        );
+      }
+    },
+    push: navigate,
+  };
+  return (
+    <ChannelViewComposed
+      {...props}
+      match={match}
+      history={history}
+      location={location}
+    />
+  );
+};
+
+export default ChannelViewWithHooks;

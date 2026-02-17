@@ -3,7 +3,6 @@ import * as React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import { deduplicateChildren } from 'src/components/infiniteScroll/deduplicateChildren';
-import { withRouter } from 'react-router';
 import getChannelMembersQuery, {
   type GetChannelMemberConnectionType,
 } from 'shared/graphql/queries/channel/getChannelMemberConnection';
@@ -25,7 +24,6 @@ type Props = {
   dispatch: Dispatch<Object>,
   isLoading: boolean,
   isFetchingMore: boolean,
-  history: Object,
   currentUser: ?Object,
 };
 
@@ -102,7 +100,6 @@ class MembersList extends React.Component<Props> {
 }
 
 export default compose(
-  withRouter,
   withCurrentUser,
   getChannelMembersQuery,
   viewNetworkHandler,

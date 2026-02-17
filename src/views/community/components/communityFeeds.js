@@ -1,7 +1,7 @@
 // @flow
 import React, { useEffect, useLayoutEffect } from 'react';
 import compose from 'recompose/compose';
-import { withRouter, type History, type Location } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import querystring from 'query-string';
 import type { UserInfoType } from 'shared/graphql/fragments/user/userInfo';
 import type { CommunityInfoType } from 'shared/graphql/fragments/community/communityInfo';
@@ -25,21 +25,21 @@ import { FeedsContainer, SidebarSection, InfoContainer } from '../style';
 
 type Props = {
   community: CommunityInfoType,
-  location: Location,
-  history: History,
   currentUser: UserInfoType,
 };
 
 const Feeds = (props: Props) => {
-  const { community, location, history, currentUser } = props;
+  const { community, currentUser } = props;
+  const location = useLocation();
+  const navigate = useNavigate();
   const { search } = location;
   const { tab } = querystring.parse(search);
 
   const changeTab = (tab: string) => {
-    return history.replace({
-      ...location,
-      search: querystring.stringify({ tab }),
-    });
+    return navigate(
+      { search: querystring.stringify({ tab }) },
+      { replace: true }
+    );
   };
 
   const handleTabRedirect = () => {
@@ -154,7 +154,11 @@ const Feeds = (props: Props) => {
     if (tab === 'chat') {
       scrollToBottom();
       // If the user goes back, restore the scroll position
-    } else if (stored && history.action === 'POP') {
+    } else if (
+      stored &&
+      window.history.state &&
+      window.history.state.action === 'POP'
+    ) {
       scrollTo(Number(stored));
     } else {
       scrollToTop();
@@ -200,7 +204,4 @@ const Feeds = (props: Props) => {
   );
 };
 
-export const CommunityFeeds = compose(
-  withRouter,
-  withCurrentUser
-)(Feeds);
+export const CommunityFeeds = compose(withCurrentUser)(Feeds);

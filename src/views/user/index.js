@@ -2,12 +2,7 @@
 import * as React from 'react';
 import compose from 'recompose/compose';
 import querystring from 'query-string';
-import {
-  withRouter,
-  type History,
-  type Location,
-  type Match,
-} from 'react-router';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { connect } from 'react-redux';
 import generateMetaInfo from 'shared/generate-meta-info';
 import Head from 'src/components/head';
@@ -374,10 +369,39 @@ class UserView extends React.Component<Props, State> {
   }
 }
 
-export default compose(
+const UserViewComposed = compose(
   getUserByMatch,
   withCurrentUser,
   viewNetworkHandler,
-  withRouter,
   connect()
 )(UserView);
+
+const UserViewWithHooks = props => {
+  const params = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const match = { params };
+  const history = {
+    replace: loc => {
+      if (typeof loc === 'string') {
+        navigate(loc, { replace: true });
+      } else {
+        navigate(
+          { pathname: loc.pathname, search: loc.search },
+          { replace: true }
+        );
+      }
+    },
+    push: navigate,
+  };
+  return (
+    <UserViewComposed
+      {...props}
+      match={match}
+      history={history}
+      location={location}
+    />
+  );
+};
+
+export default UserViewWithHooks;

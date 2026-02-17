@@ -3,7 +3,7 @@ import * as React from 'react';
 import { connect } from 'react-redux';
 import Modal from 'react-modal';
 import compose from 'recompose/compose';
-import { withRouter } from 'react-router';
+
 import slugg from 'slugg';
 import { CHANNEL_SLUG_DENY_LIST } from 'shared/slug-deny-lists';
 import { withApollo } from 'react-apollo';
@@ -381,6 +381,5 @@ export default compose(
   connect(map),
   withApollo,
   withCurrentUser,
-  createChannelMutation,
-  withRouter
+  createChannelMutation
 )(CreateChannelModal);

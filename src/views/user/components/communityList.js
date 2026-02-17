@@ -1,7 +1,6 @@
 //@flow
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 import compose from 'recompose/compose';
 import { CommunityListItem } from 'src/components/entities';
 import { ErrorBoundary } from 'src/components/error';
@@ -77,7 +76,6 @@ class CommunityList extends React.Component<Props> {
 }
 
 export default compose(
-  withRouter,
   getUserCommunityConnection,
   connect()
 )(CommunityList);

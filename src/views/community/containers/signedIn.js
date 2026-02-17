@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import type { Dispatch } from 'redux';
-import { withRouter, type Location } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import type { UserInfoType } from 'shared/graphql/fragments/user/userInfo';
 import type { CommunityInfoType } from 'shared/graphql/fragments/community/communityInfo';
 import generateMetaInfo from 'shared/generate-meta-info';
@@ -28,18 +28,12 @@ type Props = {
   community: CommunityInfoType,
   currentUser: ?UserInfoType,
   dispatch: Dispatch<Object>,
-  location: Location,
   setCommunityLastSeen: Function,
 };
 
 const Component = (props: Props) => {
-  const {
-    community,
-    currentUser,
-    dispatch,
-    location,
-    setCommunityLastSeen,
-  } = props;
+  const { community, currentUser, dispatch, setCommunityLastSeen } = props;
+  const location = useLocation();
 
   const previousCommunity = usePrevious(community);
   useEffect(() => {
@@ -154,7 +148,6 @@ const Component = (props: Props) => {
 
 export const SignedIn = compose(
   withCurrentUser,
-  withRouter,
   setCommunityLastSeenMutation,
   connect()
 )(Component);

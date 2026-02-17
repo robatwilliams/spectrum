@@ -1,6 +1,5 @@
 // @flow
 import * as React from 'react';
-import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import compose from 'recompose/compose';
 import { OutlineButton } from 'src/components/button';
@@ -100,7 +99,4 @@ class Login extends React.Component<Props> {
   }
 }
 
-export default compose(
-  withRouter,
-  connect()
-)(Login);
+export default compose(connect())(Login);

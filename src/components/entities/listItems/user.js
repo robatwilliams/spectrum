@@ -1,6 +1,5 @@
 // @flow
 import * as React from 'react';
-import { withRouter } from 'react-router';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import type { UserInfoType } from 'shared/graphql/fragments/user/userInfo';
@@ -121,7 +120,4 @@ const User = (props: Props) => {
   );
 };
 
-export const UserListItem = compose(
-  withRouter,
-  connect()
-)(User);
+export const UserListItem = compose(connect())(User);

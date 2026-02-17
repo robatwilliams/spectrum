@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import compose from 'recompose/compose';
 import SetUsername from 'src/components/setUsername';
 import { Button, OutlineButton } from 'src/components/button';
@@ -80,7 +80,7 @@ class UpsellNewUser extends Component {
   };
 
   createCommunity = () => {
-    this.props.history.push('/new/community');
+    this.props.navigate('/new/community');
   };
 
   clickShareLink = () => {};
@@ -207,7 +207,9 @@ class UpsellNewUser extends Component {
   }
 }
 
-export default compose(
-  withRouter,
-  connect()
-)(UpsellNewUser);
+const UpsellNewUserWithHooks = props => {
+  const navigate = useNavigate();
+  return <UpsellNewUser {...props} navigate={navigate} />;
+};
+
+export default compose(connect())(UpsellNewUserWithHooks);

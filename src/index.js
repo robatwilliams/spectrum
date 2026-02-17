@@ -4,30 +4,17 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { ApolloProvider } from 'react-apollo';
 import { Provider } from 'react-redux';
-import { Router } from 'react-router';
-import queryString from 'query-string';
+import { BrowserRouter } from 'react-router-dom';
 import Loadable from 'react-loadable';
 import * as OfflinePluginRuntime from 'offline-plugin/runtime';
 import { HelmetProvider } from 'react-helmet-async';
 import webPushManager from 'src/helpers/web-push-manager';
-import { history } from 'src/helpers/history';
 import { client } from 'shared/graphql';
 import { initStore } from 'src/store';
 import { wsLink } from 'shared/graphql';
 import { subscribeToDesktopPush } from 'src/subscribe-to-desktop-push';
 import RedirectHandler from 'src/components/redirectHandler';
-const params = queryString.parse(history.location.search);
 
-// Redirect legacy ?thread=asdf & ?t=asdf URLs to the proper /<community>/<channel>/<thread>
-// equivalents via the /thread/<id> shorthand
-const threadParam = params.thread || params.t;
-if (threadParam) {
-  if (params.m) {
-    history.replace(`/thread/${threadParam}?m=${params.m}`);
-  } else {
-    history.replace(`/thread/${threadParam}`);
-  }
-}
 // If the server passes an initial redux state use that, otherwise construct our own
 const store = initStore(window.__SERVER_STATE__ || {});
 
@@ -36,13 +23,13 @@ const App = () => {
     <Provider store={store}>
       <HelmetProvider>
         <ApolloProvider client={client}>
-          <Router history={history}>
+          <BrowserRouter>
             <RedirectHandler
               maintenanceMode={
                 process.env.REACT_APP_MAINTENANCE_MODE === 'enabled'
               }
             />
-          </Router>
+          </BrowserRouter>
         </ApolloProvider>
       </HelmetProvider>
     </Provider>

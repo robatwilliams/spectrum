@@ -2,7 +2,6 @@
 import * as React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 import { ErrorBoundary } from 'src/components/error';
 import { deduplicateChildren } from 'src/components/infiniteScroll/deduplicateChildren';
 import getCommunityMembersQuery, {
@@ -26,7 +25,6 @@ type Props = {
   dispatch: Dispatch<Object>,
   isLoading: boolean,
   isFetchingMore: boolean,
-  history: Object,
   currentUser: ?Object,
 };
 
@@ -105,7 +103,6 @@ class MembersList extends React.Component<Props> {
 }
 
 export default compose(
-  withRouter,
   withCurrentUser,
   getCommunityMembersQuery,
   viewNetworkHandler,

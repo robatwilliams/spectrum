@@ -1,7 +1,6 @@
 // @flow
 import * as React from 'react';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
 import compose from 'recompose/compose';
 import viewNetworkHandler from 'src/components/viewNetworkHandler';
 import { Loading } from 'src/components/loading';
@@ -20,7 +19,6 @@ type Props = {
     community: GetCommunityTopMembersType,
   },
   dispatch: Dispatch<Object>,
-  history: Object,
   currentUser: ?Object,
 };
 
@@ -100,7 +98,6 @@ class ConversationGrowth extends React.Component<Props> {
 }
 
 export default compose(
-  withRouter,
   withCurrentUser,
   getCommunityTopMembers,
   viewNetworkHandler,

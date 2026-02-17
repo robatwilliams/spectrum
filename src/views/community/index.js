@@ -1,7 +1,7 @@
 // @flow
 import React from 'react';
 import compose from 'recompose/compose';
-import { withRouter } from 'react-router';
+import { useParams } from 'react-router-dom';
 import type { Match } from 'react-router-dom';
 import { connect } from 'react-redux';
 import type { UserInfoType } from 'shared/graphql/fragments/user/userInfo';
@@ -62,10 +62,17 @@ const CommunityView = (props: Props) => {
   return <SignedIn community={community} />;
 };
 
-export default compose(
-  withRouter,
+const CommunityViewComposed = compose(
   withCurrentUser,
   getCommunityByMatch,
   viewNetworkHandler,
   connect()
 )(CommunityView);
+
+const CommunityViewWithHooks = props => {
+  const params = useParams();
+  const match = { params };
+  return <CommunityViewComposed {...props} match={match} />;
+};
+
+export default CommunityViewWithHooks;

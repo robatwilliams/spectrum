@@ -1,15 +1,15 @@
 // @flow
 import React from 'react';
 import compose from 'recompose/compose';
-import { withRouter, type Location, type History } from 'react-router';
+import { useLocation, useNavigate } from 'react-router-dom';
 import querystring from 'querystring';
 import { connect } from 'react-redux';
 import type { Dispatch } from 'redux';
 import { addToastWithTimeout } from 'src/actions/toasts';
 
 type Props = {
-  location: Location,
-  history: History,
+  location?: Object,
+  navigate?: Function,
   dispatch: Dispatch<Object>,
 };
 
@@ -79,7 +79,10 @@ class QueryParamToastDispatcher extends React.Component<Props> {
       has two equals signs at the end. If we don't decode the cleanParams it will become
       spectrum/general/another-thread~thread-2?m=MTQ4MzIyNTIwMDAwMg%3D%3D
     */
-    return this.props.history.push({ search: decodeURIComponent(cleanParams) });
+    return (
+      this.props.navigate &&
+      this.props.navigate({ search: decodeURIComponent(cleanParams) })
+    );
   };
 
   render() {
@@ -87,7 +90,16 @@ class QueryParamToastDispatcher extends React.Component<Props> {
   }
 }
 
-export default compose(
-  withRouter,
-  connect()
-)(QueryParamToastDispatcher);
+const QueryParamToastDispatcherWrapper = props => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  return (
+    <QueryParamToastDispatcher
+      {...props}
+      location={location}
+      navigate={navigate}
+    />
+  );
+};
+
+export default compose(connect())(QueryParamToastDispatcherWrapper);

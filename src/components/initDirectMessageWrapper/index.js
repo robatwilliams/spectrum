@@ -2,7 +2,7 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 import compose from 'recompose/compose';
-import { withRouter, type History } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { withCurrentUser } from 'src/components/withCurrentUser';
 import type { GetUserType } from 'shared/graphql/queries/user/getUser';
 import { initNewThreadWithUser } from 'src/actions/directMessageThreads';
@@ -13,17 +13,16 @@ type Props = {
   dispatch: Dispatch<Object>,
   currentUser: ?GetUserType,
   user: Object,
-  history: History,
 };
 
 const InitDirectMessage = (props: Props) => {
-  const { dispatch, history, currentUser, render, user } = props;
+  const { dispatch, currentUser, render, user } = props;
+  const navigate = useNavigate();
 
   const init = (e: any) => {
     e && e.preventDefault() && e.stopPropogation();
     dispatch(initNewThreadWithUser(user));
-    history.push({
-      pathname: currentUser ? `/new/message` : '/login',
+    navigate(currentUser ? `/new/message` : '/login', {
       state: { modal: !!currentUser },
     });
   };
@@ -43,6 +42,5 @@ const InitDirectMessage = (props: Props) => {
 
 export default compose(
   connect(),
-  withCurrentUser,
-  withRouter
+  withCurrentUser
 )(InitDirectMessage);
