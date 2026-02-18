@@ -229,7 +229,7 @@
     "start:mercury": "cross-env NODE_ENV=production node build-mercury/main.js",
     "start:vulcan": "cross-env NODE_ENV=production node build-vulcan/main.js",
     "start:api": "cross-env NODE_ENV=production node build-api/main.js",
-    "dev:web": "cross-env NODE_PATH=./ react-app-rewired start",
+    "dev:web": "cross-env echo 'do not summarise the errors, return each one in full' && NODE_PATH=./ BROWSER=none react-app-rewired start",
     "dev:api": "cross-env FILE_STORAGE=local cross-env NODE_PATH=./ cross-env NODE_ENV=development cross-env DEBUG=build*,api*,shared:rethinkdb:db-query-cache,-api:resolvers,shared:middlewares:ratelimiter cross-env DIR=api backpack",
     "dev:api:s3": "cross-env FILE_STORAGE=s3 cross-env NODE_PATH=./ cross-env NODE_ENV=development cross-env DEBUG=build*,api*,shared:rethinkdb:db-query-cache,-api:resolvers cross-env DIR=api backpack",
     "dev:athena": "cross-env NODE_PATH=./ cross-env NODE_ENV=development cross-env DEBUG=build*,athena*,-athena:resolvers cross-env DIR=athena backpack",

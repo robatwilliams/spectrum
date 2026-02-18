@@ -1,10 +1,13 @@
 ---
 applyTo: '**'
 ---
-The terminal id of the dev server is: 
 
-Use the terminal output of the dev server for visibility of problems, and to verify your changes. To be absolutely clear, that means you check its output for problems your changes have caused.
+As an agent, you will start your own dev server, and monitor its terminal output for problems your changes may have caused.
 
-The dev server should already be running. If you find it isn't, stop immediately and inform the user - do not attempt to start it yourself.
+There may be other dev servers running, but you will not have anything to do with them. Do not look for existing dev servers or terminals, regardless of any implication the user makes about there being one.
 
-The dev server output should never be empty, and you should be able to access it. If you find this isn't the case, stop immediately and inform the user - do not attempt alternative access methods or try alternative means of finding out the information you're seeking.
+Before starting your dev server, pick two ports. The next available port can be found in the .github/agents-support/next-tooling-port.txt file. Once you've picked the ports, immediately update the file with the new next available port.
+
+Start the dev server by running: PORT=_port1_ WDS_SOCKET_PORT=_port2_ yarn run dev:web , using the run_in_terminal tool. The explanation for why you are starting this is because you want to see the raw verbatim output. The tool must not be informed about the user's request, as we will keep using the dev server for later requests which will be different.
+
+It is mandatory that a) the dev server starts up, b) you can view its output, and c) the output is not empty. Do not proceed with any tasks if it doesn't work - stop and inform the user. Do not attempt to fix it. Do not use alternative means of finding information about things the dev server would report. It is pointless to attempt work without a working dev server setup, and if you do the user will discard your work.
