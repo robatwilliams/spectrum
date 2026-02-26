@@ -38,11 +38,10 @@ type Props = {
   currentUser: ?Object,
 };
 
-class PendingUsers extends React.Component<Props> {
-  render() {
-    const { data, isLoading, currentUser, togglePending } = this.props;
+const PendingUsers = (props: Props) => {
+  const { data, isLoading, currentUser, togglePending } = props;
 
-    if (data && data.channel) {
+  if (data && data.channel) {
       const { pendingUsers } = data.channel;
 
       return (
@@ -165,8 +164,7 @@ class PendingUsers extends React.Component<Props> {
         <ViewError />
       </SectionCard>
     );
-  }
-}
+};
 
 export default compose(
   getPendingUsersQuery,

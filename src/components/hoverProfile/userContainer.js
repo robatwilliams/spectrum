@@ -36,28 +36,22 @@ type Props = {
   client: Client,
 };
 
-type State = {
-  visible: boolean,
-};
+const UserHoverProfileWrapper = (props: Props) => {
+  const { children, currentUser, username, style = {}, client } = props;
+  
+  const [visible, setVisible] = React.useState(false);
+  const isMountedRef = React.useRef();
+  const timeoutRef = React.useRef();
 
-class UserHoverProfileWrapper extends React.Component<Props, State> {
-  ref: ?any;
-  ref = null;
-  state = { visible: false };
-  _isMounted = false;
+  React.useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-  componentDidMount() {
-    this._isMounted = true;
-  }
-
-  componentWillUnmount() {
-    this._isMounted = false;
-  }
-
-  handleMouseEnter = () => {
-    const { username, client } = this.props;
-
-    if (!this._isMounted) return;
+  const handleMouseEnter = () => {
+    if (!isMountedRef.current) return;
 
     client
       .query({
@@ -65,78 +59,74 @@ class UserHoverProfileWrapper extends React.Component<Props, State> {
         variables: { username },
       })
       .then(() => {
-        if (!this._isMounted) return;
+        if (!isMountedRef.current) return;
       });
 
     const ref = setTimeout(() => {
-      if (this._isMounted) {
-        return this.setState({ visible: true });
+      if (isMountedRef.current) {
+        return setVisible(true);
       }
     }, 500);
-    this.ref = ref;
+    timeoutRef.current = ref;
   };
 
-  handleMouseLeave = () => {
-    if (this.ref) {
-      clearTimeout(this.ref);
+  const handleMouseLeave = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
 
-    if (this._isMounted && this.state.visible) {
-      this.setState({ visible: false });
+    if (isMountedRef.current && visible) {
+      setVisible(false);
     }
   };
 
-  render() {
-    const { children, currentUser, username, style = {} } = this.props;
-    const { visible } = this.state;
-    const me = currentUser && currentUser.username === username;
+  const me = currentUser && currentUser.username === username;
 
-    return (
-      <Span
-        onMouseEnter={this.handleMouseEnter}
-        onMouseLeave={this.handleMouseLeave}
-        style={style}
-      >
-        <Manager tag={false}>
-          <Reference>
-            {({ ref }) => (
-              <div ref={ref} style={style}>
-                {children}
-              </div>
-            )}
-          </Reference>
-          {visible &&
-            document.body &&
-            createPortal(
-              <Popper
-                placement="bottom-start"
-                modifiers={{
-                  flip: {
-                    enabled: true,
-                  },
-                  preventOverflow: {
-                    enabled: true,
-                    padding: 25,
-                  },
-                }}
-              >
-                {({ style, ref, placement }) => (
-                  <PopperWrapper
-                    ref={ref}
-                    popperStyle={style}
-                    data-placement={placement}
-                  >
-                    <MentionHoverProfile username={username} me={me} />
-                  </PopperWrapper>
-                )}
-              </Popper>,
-              document.body
-            )}
-        </Manager>
-      </Span>
-    );
-  }
-}
+  return (
+    <Span
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={style}
+    >
+      <Manager tag={false}>
+        <Reference>
+          {({ ref }) => (
+            <div ref={ref} style={style}>
+              {children}
+            </div>
+          )}
+        </Reference>
+        {visible &&
+          document.body &&
+          createPortal(
+            <Popper
+              placement="bottom-start"
+              modifiers={{
+                flip: {
+                  enabled: true,
+                },
+                preventOverflow: {
+                  enabled: true,
+                  padding: 25,
+                },
+              }}
+            >
+              {({ style, ref, placement }) => (
+                <PopperWrapper
+                  ref={ref}
+                  popperStyle={style}
+                  data-placement={placement}
+                >
+                  <MentionHoverProfile username={username} me={me} />
+                </PopperWrapper>
+              )}
+            </Popper>,
+            document.body
+          )}
+      </Manager>
+    </Span>
+  );
+};
 
 export default compose(
   withCurrentUser,

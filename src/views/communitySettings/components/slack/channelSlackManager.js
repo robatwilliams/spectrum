@@ -30,10 +30,11 @@ type Props = {
   dispatch: Dispatch<Object>,
 };
 
-class ChannelSlackManager extends React.Component<Props> {
-  handleSlackChannelChange = e => {
+const ChannelSlackManager = (props: Props) => {
+  const { slackChannels, channel, updateChannelSlackBotLinks, dispatch } = props;
+
+  const handleSlackChannelChange = e => {
     const { value } = e.target;
-    const { channel, dispatch, updateChannelSlackBotLinks } = this.props;
     const type = 'threadCreated';
     const input = {
       slackChannelId: value,
@@ -46,33 +47,30 @@ class ChannelSlackManager extends React.Component<Props> {
       .catch(err => dispatch(addToastWithTimeout('error', err.message)));
   };
 
-  render() {
-    const { slackChannels, channel } = this.props;
-    const selectedSlackChannelId =
-      channel.slackSettings &&
-      channel.slackSettings.botLinks &&
-      channel.slackSettings.botLinks.threadCreated;
+  const selectedSlackChannelId =
+    channel.slackSettings &&
+    channel.slackSettings.botLinks &&
+    channel.slackSettings.botLinks.threadCreated;
 
-    return (
-      <SlackChannelRow>
-        <ChannelName>{channel.name}</ChannelName>
+  return (
+    <SlackChannelRow>
+      <ChannelName>{channel.name}</ChannelName>
 
-        <SendsTo>send notifications to &rarr;</SendsTo>
-        <Select
-          onChange={this.handleSlackChannelChange}
-          defaultValue={selectedSlackChannelId}
-          style={{ maxWidth: '170px' }}
-        >
-          <option value={''}>{'# '}</option>
-          {slackChannels.map(channel => (
-            <option key={channel.id} value={channel.id}>
-              # {channel.name}
-            </option>
-          ))}
-        </Select>
-      </SlackChannelRow>
-    );
-  }
+      <SendsTo>send notifications to &rarr;</SendsTo>
+      <Select
+        onChange={handleSlackChannelChange}
+        defaultValue={selectedSlackChannelId}
+        style={{ maxWidth: '170px' }}
+      >
+        <option value={''}>{'# '}</option>
+        {slackChannels.map(channel => (
+          <option key={channel.id} value={channel.id}>
+            # {channel.name}
+          </option>
+        ))}
+      </Select>
+    </SlackChannelRow>
+  );
 }
 
 export default compose(

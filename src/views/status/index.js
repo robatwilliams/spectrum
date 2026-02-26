@@ -23,8 +23,10 @@ type State = {|
   hidden: boolean,
 |};
 
-class Status extends React.Component<Props, State> {
-  initialState = {
+const Status = (props: Props) => {
+  const { websocketConnection, dispatch, history, currentUser } = props;
+
+  const initialState = {
     color: null,
     label: null,
     online: true,
@@ -32,105 +34,108 @@ class Status extends React.Component<Props, State> {
     hidden: true,
   };
 
-  state = this.initialState;
+  const [color, setColor] = React.useState(null);
+  const [label, setLabel] = React.useState(null);
+  const [online, setOnline] = React.useState(true);
+  const [wsConnected, setWsConnected] = React.useState(true);
+  const [hidden, setHidden] = React.useState(true);
 
-  componentDidMount() {
-    window.addEventListener('offline', this.handleOnlineChange);
-    window.addEventListener('online', this.handleOnlineChange);
-    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+  const isFirstRender = React.useRef(true);
 
-    // Only show the bar after a five second timeout
-    setTimeout(() => {
-      this.setState({
-        hidden: false,
-      });
-    }, 5000);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('offline', this.handleOnlineChange);
-    window.removeEventListener('online', this.handleOnlineChange);
-  }
-
-  handleVisibilityChange = () => {
+  const handleVisibilityChange = () => {
     if (document && document.visibilityState === 'hidden') {
-      return this.props.dispatch({ type: 'PAGE_VISIBILITY', value: 'hidden' });
+      return dispatch({ type: 'PAGE_VISIBILITY', value: 'hidden' });
     } else if (document && document.visibilityState === 'visible') {
-      return this.props.dispatch({ type: 'PAGE_VISIBILITY', value: 'visible' });
+      return dispatch({ type: 'PAGE_VISIBILITY', value: 'visible' });
     } else {
       return;
     }
   };
 
-  handleOnlineChange = () => {
-    const online = window.navigator.onLine;
-    this.setState({
-      online,
-      label: online ? null : 'Lost internet connection.',
-      color: online ? null : 'warn',
-    });
+  const handleOnlineChange = () => {
+    const onlineStatus = window.navigator.onLine;
+    setOnline(onlineStatus);
+    setLabel(onlineStatus ? null : 'Lost internet connection.');
+    setColor(onlineStatus ? null : 'warn');
 
-    this.props.dispatch({ type: 'NETWORK_CONNECTION', value: online });
+    dispatch({ type: 'NETWORK_CONNECTION', value: onlineStatus });
   };
 
-  handleWsChange = () => {
-    const { websocketConnection } = this.props;
-
+  const handleWsChange = () => {
     if (websocketConnection === 'connected') {
-      return setTimeout(() => this.setState(this.initialState), 1000);
+      return setTimeout(() => {
+        setColor(initialState.color);
+        setLabel(initialState.label);
+        setOnline(initialState.online);
+        setWsConnected(initialState.wsConnected);
+        setHidden(initialState.hidden);
+      }, 1000);
     }
 
     if (websocketConnection === 'disconnected') {
-      return this.setState({
-        color: 'special',
-        label: 'Reconnecting to server...',
-        wsConnected: false,
-        hidden: false,
-      });
+      setColor('special');
+      setLabel('Reconnecting to server...');
+      setWsConnected(false);
+      setHidden(false);
+      return;
     }
 
     if (websocketConnection === 'reconnected') {
-      this.setState({
-        color: 'success',
-        label: 'Reconnected!',
-        hidden: false,
-      });
+      setColor('success');
+      setLabel('Reconnected!');
+      setHidden(false);
 
-      return setTimeout(() => this.setState(this.initialState), 1000);
+      return setTimeout(() => {
+        setColor(initialState.color);
+        setLabel(initialState.label);
+        setOnline(initialState.online);
+        setWsConnected(initialState.wsConnected);
+        setHidden(initialState.hidden);
+      }, 1000);
     }
   };
 
-  componentDidUpdate(prevProps) {
-    const curr = this.props;
+  React.useEffect(() => {
+    window.addEventListener('offline', handleOnlineChange);
+    window.addEventListener('online', handleOnlineChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    if (prevProps.websocketConnection !== curr.websocketConnection) {
-      this.setState({
-        hidden: true,
-      });
+    // Only show the bar after a five second timeout
+    setTimeout(() => {
+      setHidden(false);
+    }, 5000);
 
-      if (curr.websocketConnection === 'disconnected') {
-        return setTimeout(() => {
-          return this.handleWsChange();
-        }, 5000);
-      }
+    return () => {
+      window.removeEventListener('offline', handleOnlineChange);
+      window.removeEventListener('online', handleOnlineChange);
+    };
+  }, []);
 
-      return this.handleWsChange();
-    }
-  }
-
-  render() {
-    const { history, currentUser } = this.props;
-    const { color, online, wsConnected, label, hidden } = this.state;
-
-    if (isViewingMarketingPage(history, currentUser)) {
-      return null;
+  React.useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
     }
 
-    if (hidden) return null;
-    // if online and connected to the websocket, we don't need anything
-    if (online && wsConnected) return null;
-    return <Bar color={color}>{label}</Bar>;
+    setHidden(true);
+
+    if (websocketConnection === 'disconnected') {
+      setTimeout(() => {
+        handleWsChange();
+      }, 5000);
+    } else {
+      handleWsChange();
+    }
+  }, [websocketConnection]);
+
+  if (isViewingMarketingPage(history, currentUser)) {
+    return null;
   }
+
+  if (hidden) return null;
+  // if online and connected to the websocket, we don't need anything
+  if (online && wsConnected) return null;
+  return <Bar color={color}>{label}</Bar>;
 }
 
 const map = state => ({

@@ -88,8 +88,10 @@ type Props = {
   user: GetCurrentUserSettingsType,
 };
 
-class EmailSettings extends React.Component<Props> {
-  handleChange = e => {
+const EmailSettings = (props: Props) => {
+  const { user, toggleNotificationSettings, dispatch, smallOnly, largeOnly } = props;
+
+  const handleChange = e => {
     let notificationType = e.target.id;
     let deliveryMethod = 'email';
     let input = {
@@ -97,36 +99,31 @@ class EmailSettings extends React.Component<Props> {
       notificationType,
     };
 
-    this.props
-      .toggleNotificationSettings(input)
+    toggleNotificationSettings(input)
       .then(() => {
-        return this.props.dispatch(
+        return dispatch(
           addToastWithTimeout('success', 'Settings saved!')
         );
       })
       .catch(err => {
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+        dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  render() {
-    const {
-      user: {
-        settings: { notifications },
-      },
-      user,
-    } = this.props;
+  const {
+    settings: { notifications },
+  } = user;
 
-    const settings = parseNotificationTypes(notifications).filter(
-      notification => notification.hasOwnProperty('emailValue')
-    );
+  const settings = parseNotificationTypes(notifications).filter(
+    notification => notification.hasOwnProperty('emailValue')
+  );
 
-    if (!user.email) {
-      return (
-        <SectionCard
-          smallOnly={this.props.smallOnly}
-          largeOnly={this.props.largeOnly}
-        >
+  if (!user.email) {
+    return (
+      <SectionCard
+        smallOnly={smallOnly}
+        largeOnly={largeOnly}
+      >
           <SectionTitle>Turn on email notifications</SectionTitle>
           <ListContainer>
             <Description>
@@ -136,27 +133,27 @@ class EmailSettings extends React.Component<Props> {
             </Description>
 
             <UserEmailConfirmation user={user} />
-          </ListContainer>
-        </SectionCard>
-      );
-    }
+    </ListContainer>
+  </SectionCard>
+    );
+  }
 
-    return (
-      <SectionCard
-        smallOnly={this.props.smallOnly}
-        largeOnly={this.props.largeOnly}
-      >
-        <SectionTitle>Email Preferences</SectionTitle>
-        <ListContainer>
-          {settings.map((setting, i) => {
-            return (
-              <EmailListItem key={i}>
-                <Checkbox
-                  checked={setting.emailValue}
-                  onChange={this.handleChange}
-                  id={setting.type}
-                  align={setting.display}
-                >
+  return (
+    <SectionCard
+      smallOnly={smallOnly}
+      largeOnly={largeOnly}
+    >
+    <SectionTitle>Email Preferences</SectionTitle>
+    <ListContainer>
+        {settings.map((setting, i) => {
+          return (
+            <EmailListItem key={i}>
+              <Checkbox
+                checked={setting.emailValue}
+                onChange={handleChange}
+                id={setting.type}
+                align={setting.display}
+              >
                   <CheckboxContent>
                     {setting.label}
                     {setting.type === 'newMessageInThreads' && (
@@ -187,14 +184,13 @@ class EmailSettings extends React.Component<Props> {
                     )}
                   </CheckboxContent>
                 </Checkbox>
-              </EmailListItem>
-            );
-          })}
-        </ListContainer>
-      </SectionCard>
-    );
-  }
-}
+            </EmailListItem>
+          );
+        })}
+      </ListContainer>
+    </SectionCard>
+  );
+};
 
 export default compose(
   toggleUserNotificationSettingsMutation,

@@ -19,102 +19,79 @@ type Props = {
   dispatch: Dispatch<Object>,
 };
 
-type State = {
-  isLoading: boolean,
-  emailError: string,
-  email: string,
-};
+const UserEmailConfirmation = (props: Props) => {
+  const { user, updateUserEmail, dispatch } = props;
 
-class UserEmailConfirmation extends React.Component<Props, State> {
-  initialState = {
-    isLoading: false,
-    emailError: '',
-    email: '',
-  };
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [emailError, setEmailError] = React.useState('');
+  const [email, setEmail] = React.useState('');
 
-  state = this.initialState;
-
-  init = e => {
-    e.preventDefault();
-    if (!this.props.updateUserEmail) return;
-    this.setState({ isLoading: true });
-    return this.mutate();
-  };
-
-  mutate = () => {
-    const { email } = this.state;
-
+  const mutate = () => {
     if (!email || email.length === 0 || !isEmail(email)) {
-      return this.setState({
-        isLoading: false,
-        emailError: 'Please enter a working email address',
-      });
+      setIsLoading(false);
+      setEmailError('Please enter a working email address');
+      return;
     }
 
-    return this.props
-      .updateUserEmail(email)
+    return updateUserEmail(email)
       .then(() => {
-        this.props.dispatch(
+        dispatch(
           addToastWithTimeout('success', `Confirmation email sent to ${email}`)
         );
-        return this.setState({
-          isLoading: false,
-          emailError: '',
-        });
+        setIsLoading(false);
+        setEmailError('');
       })
       .catch(err => {
-        this.props.dispatch(addToastWithTimeout('error', err.message));
-        return this.setState({
-          isLoading: false,
-          emailError: err.message,
-        });
+        dispatch(addToastWithTimeout('error', err.message));
+        setIsLoading(false);
+        setEmailError(err.message);
       });
   };
 
-  handleEmailChange = e => {
-    this.setState({
-      email: e.target.value,
-      emailError: '',
-    });
+  const init = e => {
+    e.preventDefault();
+    if (!updateUserEmail) return;
+    setIsLoading(true);
+    return mutate();
   };
 
-  render() {
-    const { emailError, email, isLoading } = this.state;
-    const { user } = this.props;
+  const handleEmailChange = e => {
+    setEmail(e.target.value);
+    setEmailError('');
+  };
 
-    return (
-      <React.Fragment>
-        <EmailForm
-          onSubmit={this.init}
-          style={{ marginTop: '8px', marginBottom: '8px' }}
+  return (
+    <React.Fragment>
+      <EmailForm
+        onSubmit={init}
+        style={{ marginTop: '8px', marginBottom: '8px' }}
+      >
+        <Input
+          type="email"
+          defaultValue={email}
+          onChange={handleEmailChange}
+          placeholder={'Add your email address'}
         >
-          <Input
-            type="email"
-            defaultValue={email}
-            onChange={this.handleEmailChange}
-            placeholder={'Add your email address'}
-          >
-            Email Address
-          </Input>
+          Email Address
+        </Input>
 
-          <Button onClick={this.init} loading={isLoading}>
-            {isLoading ? 'Sending...' : 'Send'}
-          </Button>
-        </EmailForm>
+        <Button onClick={init} loading={isLoading}>
+          {isLoading ? 'Sending...' : 'Send'}
+        </Button>
+      </EmailForm>
 
-        {user.pendingEmail && (
-          <Notice>
-            A confirmation link was sent to {user.pendingEmail}. Click the
-            confirmation link and then return to this page. You can resend the
-            confirmation here, or enter a new email address.
-          </Notice>
-        )}
+      {user.pendingEmail && (
+        <Notice>
+          A confirmation link was sent to {user.pendingEmail}. Click the
+          confirmation link and then return to this page. You can resend the
+          confirmation here, or enter a new email address.
+        </Notice>
+      )}
 
-        {emailError && <Error>{emailError}</Error>}
-      </React.Fragment>
-    );
-  }
-}
+      {emailError && <Error>{emailError}</Error>}
+    </React.Fragment>
+  );
+};
 
 export default compose(
   updateUserEmailMutation,

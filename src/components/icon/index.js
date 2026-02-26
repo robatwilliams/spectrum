@@ -933,43 +933,41 @@ export const Glyph = ({ glyph }: GlyphProps) => {
   }
 };
 
-class Icon extends React.Component<Props> {
-  render() {
-    const {
-      size = 32,
-      onboarding,
-      count,
-      onClick,
-      glyph,
-      ...rest
-    } = this.props;
+const Icon = (props: Props) => {
+  const {
+    size = 32,
+    onboarding,
+    count,
+    onClick,
+    glyph,
+    ...rest
+  } = props;
 
-    return (
-      <SvgWrapper
-        size={size}
-        onboarding={onboarding}
-        count={count}
-        className={'icon'}
-        onClick={onClick}
-        {...rest}
+  return (
+    <SvgWrapper
+      size={size}
+      onboarding={onboarding}
+      count={count}
+      className={'icon'}
+      onClick={onClick}
+      {...rest}
+    >
+      <InlineSvg
+        fillRule="evenodd"
+        clipRule="evenodd"
+        strokeLinejoin="round"
+        strokeMiterlimit="1.414"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-labelledby="title"
+        viewBox="0 0 32 32"
+        preserveAspectRatio="xMidYMid meet"
+        fit
       >
-        <InlineSvg
-          fillRule="evenodd"
-          clipRule="evenodd"
-          strokeLinejoin="round"
-          strokeMiterlimit="1.414"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-labelledby="title"
-          viewBox="0 0 32 32"
-          preserveAspectRatio="xMidYMid meet"
-          fit
-        >
-          <title id="title">{glyph}</title>
-          <Glyph glyph={glyph} />
-        </InlineSvg>
-      </SvgWrapper>
-    );
-  }
-}
+        <title id="title">{glyph}</title>
+        <Glyph glyph={glyph} />
+      </InlineSvg>
+    </SvgWrapper>
+  );
+};
 
 export default Icon;

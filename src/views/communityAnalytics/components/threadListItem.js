@@ -13,23 +13,22 @@ type Props = {
   thread: GetThreadType,
 };
 
-class ThreadListItem extends React.Component<Props> {
-  render() {
-    const {
-      thread: {
-        author: {
-          user: { name, username },
-        },
-        content: { title },
-        messageCount,
+const ThreadListItem = (props: Props) => {
+  const {
+    thread: {
+      author: {
+        user: { name, username },
       },
-    } = this.props;
+      content: { title },
+      messageCount,
+    },
+  } = props;
 
-    return (
+  return (
       <StyledThreadListItem>
         <Link
           to={{
-            pathname: getThreadLink(this.props.thread),
+            pathname: getThreadLink(props.thread),
             state: { modal: true },
           }}
         >
@@ -45,7 +44,6 @@ class ThreadListItem extends React.Component<Props> {
         </ThreadListItemSubtitle>
       </StyledThreadListItem>
     );
-  }
-}
+};
 
 export default ThreadListItem;

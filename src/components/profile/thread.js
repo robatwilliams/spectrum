@@ -20,16 +20,16 @@ type Props = {
   children: any,
 };
 
-class ThreadWithData extends React.Component<Props> {
-  componentDidMount() {
-    const {
-      data: { thread },
-      data,
-      setName,
-      markAsDeleted,
-      id,
-    } = this.props;
+const ThreadWithData = (props: Props) => {
+  const {
+    data: { thread, error },
+    data,
+    setName,
+    markAsDeleted,
+    id,
+  } = props;
 
+  React.useEffect(() => {
     if (setName && thread) {
       setName(thread.community.name);
     }
@@ -39,38 +39,33 @@ class ThreadWithData extends React.Component<Props> {
     if (data.networkStatus === 7 && !data.thread && markAsDeleted) {
       markAsDeleted(id);
     }
+  }, []);
+
+  if (error || !thread) {
+    return null;
   }
 
-  render() {
-    const {
-      data: { thread, error },
-    } = this.props;
-    if (error || !thread) {
-      return null;
-    }
-
-    return (
-      <ThreadProfileCard>
-        <Link
-          to={{
-            pathname: getThreadLink(thread),
-            state: {
-              modal: true,
-            },
-          }}
-        >
-          <ThreadListItem
-            contents={thread}
-            withDescription={false}
-            meta={`${thread.messageCount} message${
-              thread.messageCount === 1 ? '' : 's'
-            }`}
-          />
-        </Link>
-      </ThreadProfileCard>
-    );
-  }
-}
+  return (
+    <ThreadProfileCard>
+      <Link
+        to={{
+          pathname: getThreadLink(thread),
+          state: {
+            modal: true,
+          },
+        }}
+      >
+        <ThreadListItem
+          contents={thread}
+          withDescription={false}
+          meta={`${thread.messageCount} message${
+            thread.messageCount === 1 ? '' : 's'
+          }`}
+        />
+      </Link>
+    </ThreadProfileCard>
+  );
+};
 
 export default compose(
   connect(),

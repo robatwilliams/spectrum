@@ -20,9 +20,8 @@ type Props = {
   thread: GetDirectMessageThreadType,
 };
 
-class ListCardItemDirectMessageThread extends React.Component<Props> {
-  render() {
-    const { thread, currentUser, active } = this.props;
+const ListCardItemDirectMessageThread = (props: Props) => {
+  const { thread, currentUser, active } = props;
 
     // convert the server time to an iso timestamp
     const timestamp = new Date(thread.threadLastActive).getTime();
@@ -78,7 +77,6 @@ class ListCardItemDirectMessageThread extends React.Component<Props> {
         </WrapperLink>
       </Wrapper>
     );
-  }
-}
+};
 
 export default ListCardItemDirectMessageThread;

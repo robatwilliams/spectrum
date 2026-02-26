@@ -15,55 +15,43 @@ type Props = {
   dispatch: Function,
 };
 
-type State = {
-  isLoading: boolean,
-};
+const ResetJoinToken = (props: Props) => {
+  const [isLoading, setIsLoading] = React.useState(false);
 
-class ResetJoinToken extends React.Component<Props, State> {
-  state = { isLoading: false };
-
-  reset = () => {
-    this.setState({ isLoading: true });
-    return this.props
-      .resetCommunityJoinToken({ id: this.props.id })
+  const reset = () => {
+    setIsLoading(true);
+    return props
+      .resetCommunityJoinToken({ id: props.id })
       .then(() => {
-        this.setState({
-          isLoading: false,
-        });
-        return this.props.dispatch(
+        setIsLoading(false);
+        return props.dispatch(
           addToastWithTimeout('success', 'Link reset!')
         );
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
-        return this.props.dispatch(addToastWithTimeout('error', err.message));
+        setIsLoading(false);
+        return props.dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  render() {
-    const { isLoading } = this.state;
-
-    return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginTop: '16px',
-        }}
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'flex-end',
+        marginTop: '16px',
+      }}
+    >
+      <OutlineButton
+        loading={isLoading}
+        onClick={reset}
+        data-cy="refresh-join-link-token"
       >
-        <OutlineButton
-          loading={isLoading}
-          onClick={this.reset}
-          data-cy="refresh-join-link-token"
-        >
-          {isLoading ? 'Resetting...' : 'Reset this link'}
-        </OutlineButton>
-      </div>
-    );
-  }
-}
+        {isLoading ? 'Resetting...' : 'Reset this link'}
+      </OutlineButton>
+    </div>
+  );
+};
 
 export default compose(
   connect(),

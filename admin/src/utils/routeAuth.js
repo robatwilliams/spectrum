@@ -3,28 +3,28 @@ import { Route } from 'react-router';
 import compose from 'recompose/compose';
 import { isAdmin } from '../api/queries';
 
-class Protect extends React.Component {
-  state = { isAuthed: false };
+const Protect = (props) => {
+  const [isAuthed, setIsAuthed] = React.useState(false);
+  const prevPropsRef = React.useRef();
 
-  componentDidUpdate(prev) {
-    const { data } = this.props;
-    if (prev.data.loading && !data.loading && data.meta) {
-      this.setState({
-        isAuthed: data.meta.isAdmin,
-      });
-    }
-  }
+  React.useEffect(() => {
+    const { data } = props;
+    const prevData = prevPropsRef.current && prevPropsRef.current.data;
 
-  render() {
-    const { component: Component, ...rest } = this.props;
-    const { isAuthed } = this.state;
-
-    if (isAuthed) {
-      return <Route {...rest} render={props => <Component {...props} />} />;
+    if (prevData && prevData.loading && !data.loading && data.meta) {
+      setIsAuthed(data.meta.isAdmin);
     }
 
-    return null;
+    prevPropsRef.current = props;
+  });
+
+  const { component: Component, ...rest } = props;
+
+  if (isAuthed) {
+    return <Route {...rest} render={props => <Component {...props} />} />;
   }
-}
+
+  return null;
+};
 
 export default compose(isAdmin)(Protect);

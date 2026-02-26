@@ -127,8 +127,15 @@ const ChatTab = ({ location, community, currentUser }) =>
     </Route>
   );
 
-class Component extends React.Component<Props> {
-  sortChannels = (array: Array<any>): Array<?any> => {
+const Component = (props: Props) => {
+  const {
+    isLoading,
+    currentUser,
+    data: { community },
+    location,
+  } = props;
+
+  const sortChannels = (array: Array<any>): Array<?any> => {
     if (!array || array.length === 0) return [];
 
     const generalChannel = array.find(channel => channel.slug === 'general');
@@ -146,57 +153,49 @@ class Component extends React.Component<Props> {
     }
   };
 
-  render() {
-    const {
-      isLoading,
-      currentUser,
-      data: { community },
-      location,
-    } = this.props;
+  if (isLoading) {
+    return (
+      <React.Fragment>
+        <SidebarSectionHeader>
+          <SidebarSectionHeading>Channels</SidebarSectionHeading>
+        </SidebarSectionHeader>
+        <Loading style={{ padding: '32px' }} />
+      </React.Fragment>
+    );
+  }
 
-    if (isLoading) {
-      return (
-        <React.Fragment>
-          <SidebarSectionHeader>
-            <SidebarSectionHeading>Channels</SidebarSectionHeading>
-          </SidebarSectionHeader>
-          <Loading style={{ padding: '32px' }} />
-        </React.Fragment>
-      );
-    }
+  if (community && community.channelConnection) {
+    const { isOwner } = community.communityPermissions;
+    const channels = community.channelConnection.edges
+      .map(channel => channel && channel.node)
+      .filter(channel => {
+        if (!channel) return null;
+        if (channel.isArchived) return null;
+        if (channel.isPrivate && !channel.channelPermissions.isMember)
+          return null;
 
-    if (community && community.channelConnection) {
-      const { isOwner } = community.communityPermissions;
-      const channels = community.channelConnection.edges
-        .map(channel => channel && channel.node)
-        .filter(channel => {
-          if (!channel) return null;
-          if (channel.isArchived) return null;
-          if (channel.isPrivate && !channel.channelPermissions.isMember)
-            return null;
+        return channel;
+      })
+      .filter(channel => channel && !channel.channelPermissions.isBlocked);
 
-          return channel;
-        })
-        .filter(channel => channel && !channel.channelPermissions.isBlocked);
+    const sortedChannels = sortChannels(channels);
 
-      const sortedChannels = this.sortChannels(channels);
+    return (
+      <React.Fragment>
+        <SidebarSectionHeader>
+          <SidebarSectionHeading>Channels</SidebarSectionHeading>
+          {isOwner && (
+            <Tooltip content={'Manage channels'}>
+              <span>
+                <WhiteIconButton to={`/${community.slug}/settings`}>
+                  <Icon glyph={'settings'} size={24} />
+                </WhiteIconButton>
+              </span>
+            </Tooltip>
+          )}
+        </SidebarSectionHeader>
 
-      return (
-        <React.Fragment>
-          <SidebarSectionHeader>
-            <SidebarSectionHeading>Channels</SidebarSectionHeading>
-            {isOwner && (
-              <Tooltip content={'Manage channels'}>
-                <span>
-                  <WhiteIconButton to={`/${community.slug}/settings`}>
-                    <Icon glyph={'settings'} size={24} />
-                  </WhiteIconButton>
-                </span>
-              </Tooltip>
-            )}
-          </SidebarSectionHeader>
-
-          <List data-cy="channel-list">
+        <List data-cy="channel-list">
             <ChatTab
               location={location}
               community={community}
@@ -245,11 +244,10 @@ class Component extends React.Component<Props> {
           </List>
         </React.Fragment>
       );
-    }
-
-    return null;
   }
-}
+
+  return null;
+};
 
 export const ChannelsList = compose(
   getCommunityChannels,

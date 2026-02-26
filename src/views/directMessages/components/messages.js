@@ -28,198 +28,214 @@ type Props = {
   setLastSeen: Function,
 };
 
-type State = {
-  subscription: ?Function,
-};
+const MessagesWithData = (props: Props) => {
+  const subscriptionRef = React.useRef(null);
+  const prevPropsRef = React.useRef(null);
+  const prevScrollStateRef = React.useRef(null);
 
-class MessagesWithData extends React.Component<Props, State> {
-  subscription: ?Function;
+  const subscribe = () => {
+    subscriptionRef.current = props.subscribeToNewMessages();
+  };
 
-  componentDidMount() {
-    this.subscribe();
+  const unsubscribe = () => {
+    if (subscriptionRef.current) subscriptionRef.current();
+  };
 
-    const thread = this.props.data.directMessageThread;
+  // componentDidMount and componentWillUnmount
+  React.useEffect(() => {
+    subscribe();
+
+    const thread = props.data.directMessageThread;
     // Scroll to bottom on mount if we got cached data as getSnapshotBeforeUpdate does not fire for mounts
     if (thread) {
       const elem = document.getElementById('main');
       if (!elem) return;
       elem.scrollTop = elem.scrollHeight;
     }
-  }
 
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
-  subscribe = () => {
-    this.subscription = this.props.subscribeToNewMessages();
-  };
+  // getSnapshotBeforeUpdate and componentDidUpdate pattern
+  React.useLayoutEffect(() => {
+    const prev = prevPropsRef.current;
+    const curr = props;
+    const elem = document.getElementById('main');
 
-  unsubscribe = () => {
-    if (this.subscription) this.subscription();
-  };
+    let snapshot = null;
 
-  getSnapshotBeforeUpdate(prev) {
-    const curr = this.props;
-    // First load
-    if (
-      !prev.data.directMessageThread &&
-      curr.data.directMessageThread &&
-      curr.data.directMessageThread.messageConnection.edges.length > 0
-    ) {
-      return {
-        type: 'bottom',
-      };
-    }
-
-    // New messages
-    if (
-      prev.data.directMessageThread &&
-      curr.data.directMessageThread &&
-      prev.data.directMessageThread.messageConnection.edges.length <
-        curr.data.directMessageThread.messageConnection.edges.length
-    ) {
-      const elem = document.getElementById('main');
-      if (!elem) return null;
-
-      // If we are near the bottom when new messages come in, stick to the bottom
-      if (elem.scrollHeight < elem.scrollTop + elem.clientHeight + 400) {
-        return {
+    if (prev && elem && prevScrollStateRef.current) {
+      // First load
+      if (
+        !prev.data.directMessageThread &&
+        curr.data.directMessageThread &&
+        curr.data.directMessageThread.messageConnection.edges.length > 0
+      ) {
+        snapshot = {
           type: 'bottom',
         };
       }
 
-      const prevEdges = prev.data.directMessageThread.messageConnection.edges.filter(
-        Boolean
-      );
-      const currEdges = curr.data.directMessageThread.messageConnection.edges.filter(
-        Boolean
-      );
-      // If messages were added at the end, keep the scroll position the same
+      // New messages
       if (
-        currEdges[currEdges.length - 1].node.id ===
-        prevEdges[prevEdges.length - 1].node.id
+        prev.data.directMessageThread &&
+        curr.data.directMessageThread &&
+        prev.data.directMessageThread.messageConnection.edges.length <
+          curr.data.directMessageThread.messageConnection.edges.length
       ) {
-        return null;
-      }
-
-      // If messages were added at the top, persist the scroll position
-      return {
-        type: 'persist',
-        values: {
-          top: elem.scrollTop,
-          height: elem.scrollHeight,
-        },
-      };
-    }
-    return null;
-  }
-
-  componentDidUpdate(prev, _, snapshot) {
-    const { data, setLastSeen } = this.props;
-
-    if (snapshot) {
-      const elem = document.getElementById('main');
-      if (elem) {
-        switch (snapshot.type) {
-          case 'bottom': {
-            elem.scrollTop = elem.scrollHeight;
-            break;
-          }
-          case 'persist': {
-            elem.scrollTop =
-              elem.scrollHeight - snapshot.values.height + snapshot.values.top;
-            break;
-          }
-          default: {
-            break;
-          }
-        }
-      }
-    }
-
-    const firstLoad =
-      !prev.data.directMessageThread && data.directMessageThread;
-    const newThread =
-      prev.data.directMessageThread &&
-      data.directMessageThread &&
-      prev.data.directMessageThread.id !== data.directMessageThread.id;
-
-    if (firstLoad) {
-      this.subscribe();
-      setLastSeen(data.directMessageThread.id);
-    } else if (newThread) {
-      this.unsubscribe();
-      this.subscribe();
-      setLastSeen(data.directMessageThread.id);
-    }
-  }
-
-  render() {
-    const {
-      data: { messages, directMessageThread, hasNextPage, fetchMore },
-      hasError,
-      isLoading,
-      isFetchingMore,
-    } = this.props;
-
-    if (hasError) {
-      return <div>Error!</div>;
-    }
-
-    // NOTE(@mxstbr): The networkStatus check shouldn't be there, but if I remove
-    // it the loading indicator doesn't show when switching between threads which
-    // is hella annoying as the old msgs stick around until the new ones are there.
-    // TODO: FIXME and remove the networkStatus === 7
-    if (isFetchingMore || (messages && messages.length > 0)) {
-      let unsortedMessages = messages.map(message => message.node);
-
-      const unique = array => {
-        const processed = [];
-        for (let i = array.length - 1; i >= 0; i--) {
-          if (processed.indexOf(array[i].id) < 0) {
-            processed.push(array[i].id);
+        // If we are near the bottom when new messages come in, stick to the bottom
+        if (
+          prevScrollStateRef.current.scrollHeight <
+          prevScrollStateRef.current.scrollTop +
+            prevScrollStateRef.current.clientHeight +
+            400
+        ) {
+          snapshot = {
+            type: 'bottom',
+          };
+        } else {
+          const prevEdges = prev.data.directMessageThread.messageConnection.edges.filter(
+            Boolean
+          );
+          const currEdges = curr.data.directMessageThread.messageConnection.edges.filter(
+            Boolean
+          );
+          // If messages were added at the end, keep the scroll position the same
+          if (
+            currEdges[currEdges.length - 1].node.id ===
+            prevEdges[prevEdges.length - 1].node.id
+          ) {
+            snapshot = null;
           } else {
-            array.splice(i, 1);
+            // If messages were added at the top, persist the scroll position
+            snapshot = {
+              type: 'persist',
+              values: {
+                top: prevScrollStateRef.current.scrollTop,
+                height: prevScrollStateRef.current.scrollHeight,
+              },
+            };
           }
         }
-        return array;
+      }
+    }
+
+    // Apply snapshot (componentDidUpdate logic)
+    if (snapshot && elem) {
+      switch (snapshot.type) {
+        case 'bottom': {
+          elem.scrollTop = elem.scrollHeight;
+          break;
+        }
+        case 'persist': {
+          elem.scrollTop =
+            elem.scrollHeight - snapshot.values.height + snapshot.values.top;
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+    }
+
+    // componentDidUpdate subscription management
+    if (prev) {
+      const { data, setLastSeen } = props;
+
+      const firstLoad =
+        !prev.data.directMessageThread && data.directMessageThread;
+      const newThread =
+        prev.data.directMessageThread &&
+        data.directMessageThread &&
+        prev.data.directMessageThread.id !== data.directMessageThread.id;
+
+      if (firstLoad) {
+        subscribe();
+        setLastSeen(data.directMessageThread.id);
+      } else if (newThread) {
+        unsubscribe();
+        subscribe();
+        setLastSeen(data.directMessageThread.id);
+      }
+    }
+
+    // Capture current scroll state for next render
+    if (elem) {
+      prevScrollStateRef.current = {
+        scrollTop: elem.scrollTop,
+        scrollHeight: elem.scrollHeight,
+        clientHeight: elem.clientHeight,
       };
-
-      const uniqueMessages = unique(unsortedMessages);
-      const sortedMessages = sortAndGroupMessages(uniqueMessages);
-
-      return (
-        <MessagesScrollWrapper>
-          <ErrorBoundary>
-            {hasNextPage && (
-              <NextPageButton
-                isFetchingMore={isFetchingMore}
-                fetchMore={fetchMore}
-              />
-            )}
-            <ChatMessages
-              messages={sortedMessages}
-              uniqueMessageCount={uniqueMessages.length}
-              threadType={'directMessageThread'}
-              thread={directMessageThread}
-            />
-          </ErrorBoundary>
-        </MessagesScrollWrapper>
-      );
     }
 
-    if (isLoading) {
-      return (
-        <MessagesScrollWrapper>
-          <Loading style={{ padding: '64px 0' }} />
-        </MessagesScrollWrapper>
-      );
-    }
+    prevPropsRef.current = props;
+  });
 
-    return null;
+  const {
+    data: { messages, directMessageThread, hasNextPage, fetchMore },
+    hasError,
+    isLoading,
+    isFetchingMore,
+  } = props;
+
+  if (hasError) {
+    return <div>Error!</div>;
   }
-}
+
+  // NOTE(@mxstbr): The networkStatus check shouldn't be there, but if I remove
+  // it the loading indicator doesn't show when switching between threads which
+  // is hella annoying as the old msgs stick around until the new ones are there.
+  // TODO: FIXME and remove the networkStatus === 7
+  if (isFetchingMore || (messages && messages.length > 0)) {
+    let unsortedMessages = messages.map(message => message.node);
+
+    const unique = array => {
+      const processed = [];
+      for (let i = array.length - 1; i >= 0; i--) {
+        if (processed.indexOf(array[i].id) < 0) {
+          processed.push(array[i].id);
+        } else {
+          array.splice(i, 1);
+        }
+      }
+      return array;
+    };
+
+    const uniqueMessages = unique(unsortedMessages);
+    const sortedMessages = sortAndGroupMessages(uniqueMessages);
+
+    return (
+      <MessagesScrollWrapper>
+        <ErrorBoundary>
+          {hasNextPage && (
+            <NextPageButton
+              isFetchingMore={isFetchingMore}
+              fetchMore={fetchMore}
+            />
+          )}
+          <ChatMessages
+            messages={sortedMessages}
+            uniqueMessageCount={uniqueMessages.length}
+            threadType={"directMessageThread"}
+            thread={directMessageThread}
+          />
+        </ErrorBoundary>
+      </MessagesScrollWrapper>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <MessagesScrollWrapper>
+        <Loading style={{ padding: '64px 0' }} />
+      </MessagesScrollWrapper>
+    );
+  }
+
+  return null;
+};
 
 const Messages = compose(
   setLastSeenMutation,

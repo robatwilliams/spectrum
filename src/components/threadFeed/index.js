@@ -46,51 +46,34 @@ type Props = {
   websocketConnection: WebsocketConnectionType,
 };
 
-type State = {
-  subscription: ?Function,
-};
+const ThreadFeedPure = (props: Props) => {
+  const {
+    data,
+    viewContext,
+    networkOnline,
+    websocketConnection,
+    hasThreads,
+    hasNoThreads,
+    search,
+  } = props;
 
-class ThreadFeedPure extends React.Component<Props, State> {
-  state = {
-    subscription: null,
-  };
+  const subscriptionRef = React.useRef(null);
+  const prevPropsRef = React.useRef(props);
 
-  subscribe = () => {
-    this.setState({
-      subscription:
-        this.props.data.subscribeToUpdatedThreads &&
-        this.props.data.subscribeToUpdatedThreads(),
-    });
-  };
+  React.useEffect(() => {
+    subscriptionRef.current =
+      data.subscribeToUpdatedThreads && data.subscribeToUpdatedThreads();
 
-  unsubscribe = () => {
-    const { subscription } = this.state;
-    if (subscription) {
-      // This unsubscribes the subscription
-      subscription();
-    }
-  };
+    return () => {
+      if (subscriptionRef.current) {
+        subscriptionRef.current();
+      }
+    };
+  }, []);
 
-  shouldComponentUpdate(nextProps: Props) {
-    const curr = this.props;
-    if (curr.networkOnline !== nextProps.networkOnline) return true;
-    if (curr.websocketConnection !== nextProps.websocketConnection) return true;
-    // fetching more
-    if (curr.data.networkStatus === 7 && nextProps.data.networkStatus === 3)
-      return false;
-    return true;
-  }
-
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
-
-  componentDidMount() {
-    this.subscribe();
-  }
-
-  componentDidUpdate(prev: Props) {
-    const curr = this.props;
+  React.useEffect(() => {
+    const prev = prevPropsRef.current;
+    const curr = props;
 
     const didReconnect = useConnectionRestored({ curr, prev });
     if (didReconnect && curr.data.refetch) {
@@ -110,79 +93,77 @@ class ThreadFeedPure extends React.Component<Props, State> {
         curr.hasNoThreads();
       }
     }
+
+    prevPropsRef.current = props;
+  });
+
+  const { threads, networkStatus, error } = data;
+
+  const threadNodes =
+    threads && threads.length > 0
+      ? threads
+          .slice()
+          .map(thread => thread.node)
+          .filter(
+            thread =>
+              !thread.channel.channelPermissions.isBlocked &&
+              !thread.community.communityPermissions.isBlocked
+          )
+      : [];
+
+  let filteredThreads = threadNodes;
+  if (
+    data.community &&
+    data.community.watercooler &&
+    data.community.watercooler.id
+  ) {
+    filteredThreads = filteredThreads.filter(
+      // $FlowIssue
+      t => t.id !== data.community.watercooler.id
+    );
+  }
+  if (
+    data.community &&
+    data.community.pinnedThread &&
+    data.community.pinnedThread.id
+  ) {
+    filteredThreads = filteredThreads.filter(
+      // $FlowIssue
+      t => t.id !== data.community.pinnedThread.id
+    );
+  }
+  if (
+    data.channel &&
+    data.channel.community &&
+    data.channel.community.watercoolerId
+  ) {
+    filteredThreads = filteredThreads.filter(
+      // $FlowIssue
+      t => t.id !== data.channel.community.watercoolerId
+    );
   }
 
-  render() {
-    const {
-      data: { threads, networkStatus, error },
-      viewContext,
-    } = this.props;
+  const uniqueThreads = deduplicateChildren(filteredThreads, 'id');
+  if (uniqueThreads && uniqueThreads.length > 0 && networkStatus === 7) {
+    return (
+      <Container data-cy="thread-feed">
+        {data.community &&
+          data.community.pinnedThread &&
+          data.community.pinnedThread.id && (
+            <ErrorBoundary>
+              <InboxThread
+                data={data.community.pinnedThread}
+                viewContext={viewContext}
+                pinnedThreadId={data.community.pinnedThread.id}
+              />
+            </ErrorBoundary>
+          )}
 
-    const threadNodes =
-      threads && threads.length > 0
-        ? threads
-            .slice()
-            .map(thread => thread.node)
-            .filter(
-              thread =>
-                !thread.channel.channelPermissions.isBlocked &&
-                !thread.community.communityPermissions.isBlocked
-            )
-        : [];
-
-    let filteredThreads = threadNodes;
-    if (
-      this.props.data.community &&
-      this.props.data.community.watercooler &&
-      this.props.data.community.watercooler.id
-    ) {
-      filteredThreads = filteredThreads.filter(
-        // $FlowIssue
-        t => t.id !== this.props.data.community.watercooler.id
-      );
-    }
-    if (
-      this.props.data.community &&
-      this.props.data.community.pinnedThread &&
-      this.props.data.community.pinnedThread.id
-    ) {
-      filteredThreads = filteredThreads.filter(
-        // $FlowIssue
-        t => t.id !== this.props.data.community.pinnedThread.id
-      );
-    }
-    if (
-      this.props.data.channel &&
-      this.props.data.channel.community &&
-      this.props.data.channel.community.watercoolerId
-    ) {
-      filteredThreads = filteredThreads.filter(
-        // $FlowIssue
-        t => t.id !== this.props.data.channel.community.watercoolerId
-      );
-    }
-
-    const uniqueThreads = deduplicateChildren(filteredThreads, 'id');
-    if (uniqueThreads && uniqueThreads.length > 0 && networkStatus === 7) {
-      return (
-        <Container data-cy="thread-feed">
-          {this.props.data.community &&
-            this.props.data.community.pinnedThread &&
-            this.props.data.community.pinnedThread.id && (
-              <ErrorBoundary>
-                <InboxThread
-                  data={this.props.data.community.pinnedThread}
-                  viewContext={viewContext}
-                  pinnedThreadId={this.props.data.community.pinnedThread.id}
-                />
-              </ErrorBoundary>
-            )}
-
-          <InfiniteList
-            loadMore={this.props.data.fetchMore}
-            hasMore={this.props.data.hasNextPage}
-            loader={<LoadingInboxThread key={0} />}
-          >
+        <InfiniteList
+          loadMore={data.fetchMore}
+          hasMore={data.hasNextPage}
+          loader={<LoadingInboxThread key={0} />}
+        >
             {uniqueThreads.map(thread => {
               return (
                 <ErrorBoundary key={thread.id}>
@@ -224,31 +205,40 @@ class ThreadFeedPure extends React.Component<Props, State> {
       );
     }
 
-    const nullComposerCommunityId = this.props.data.community
-      ? this.props.data.community.id
-      : this.props.data.channel
-      ? this.props.data.channel.community.id
-      : null;
+  const nullComposerCommunityId = data.community
+    ? data.community.id
+    : data.channel
+    ? data.channel.community.id
+    : null;
 
-    return (
-      <NullState
-        communityId={nullComposerCommunityId}
-        channelId={this.props.data.channel && this.props.data.channel.id}
-        isSearch={!!this.props.search}
-        viewContext={viewContext}
-      />
-    );
-  }
-}
+  return (
+    <NullState
+      communityId={nullComposerCommunityId}
+      channelId={data.channel && data.channel.id}
+      isSearch={!!search}
+      viewContext={viewContext}
+    />
+  );
+};
 
 const map = state => ({
   networkOnline: state.connectionStatus.networkOnline,
   websocketConnection: state.connectionStatus.websocketConnection,
 });
+
+const ThreadFeedPureMemo = React.memo(ThreadFeedPure, (prevProps, nextProps) => {
+  if (prevProps.networkOnline !== nextProps.networkOnline) return false;
+  if (prevProps.websocketConnection !== nextProps.websocketConnection) return false;
+  // fetching more
+  if (prevProps.data.networkStatus === 7 && nextProps.data.networkStatus === 3)
+    return true;
+  return false;
+});
+
 const ThreadFeed = compose(
   // $FlowIssue
   connect(map),
   withCurrentUser
-)(ThreadFeedPure);
+)(ThreadFeedPureMemo);
 
 export default ThreadFeed;

@@ -10,45 +10,37 @@ type Props = {
   children: React$Node,
 };
 
-type State = {
-  menuIsOpen: boolean,
-};
-class Menu extends React.Component<Props, State> {
-  state = {
-    menuIsOpen: false,
+const Menu = (props: Props) => {
+  const { hasNavBar, darkContext, hasTabBar, children } = props;
+  const [menuIsOpen, setMenuIsOpen] = React.useState(false);
+
+  const toggleMenu = () => {
+    setMenuIsOpen(!menuIsOpen);
   };
 
-  toggleMenu() {
-    this.setState({ menuIsOpen: !this.state.menuIsOpen });
-  }
-
-  render() {
-    const { hasNavBar, darkContext, hasTabBar } = this.props;
-    const { menuIsOpen } = this.state;
-    return (
-      <Wrapper darkContext={darkContext}>
+  return (
+    <Wrapper darkContext={darkContext}>
+      <Icon
+        data-cy={'community-menu-open'}
+        glyph={'menu'}
+        onClick={() => toggleMenu()}
+      />
+      <Absolute open={menuIsOpen} hasNavBar={hasNavBar}>
+        <MenuContainer hasNavBar={hasNavBar} hasTabBar={hasTabBar}>
+          {menuIsOpen && children}
+        </MenuContainer>
         <Icon
-          data-cy={'community-menu-open'}
-          glyph={'menu'}
-          onClick={() => this.toggleMenu()}
+          glyph={'view-close'}
+          onClick={() => toggleMenu()}
+          hasNavBar={hasNavBar}
         />
-        <Absolute open={this.state.menuIsOpen} hasNavBar={hasNavBar}>
-          <MenuContainer hasNavBar={hasNavBar} hasTabBar={hasTabBar}>
-            {menuIsOpen && this.props.children}
-          </MenuContainer>
-          <Icon
-            glyph={'view-close'}
-            onClick={() => this.toggleMenu()}
-            hasNavBar={hasNavBar}
-          />
-          <MenuOverlay
-            data-cy={'community-menu-close'}
-            onClick={() => this.toggleMenu()}
-          />
-        </Absolute>
-      </Wrapper>
-    );
-  }
-}
+        <MenuOverlay
+          data-cy={'community-menu-close'}
+          onClick={() => toggleMenu()}
+        />
+      </Absolute>
+    </Wrapper>
+  );
+};
 
 export default Menu;

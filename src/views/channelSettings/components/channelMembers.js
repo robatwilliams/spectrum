@@ -1,5 +1,5 @@
 //@flow
-import React, { Component } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 import compose from 'recompose/compose';
 import { Loading } from 'src/components/loading';
@@ -26,30 +26,15 @@ type Props = {
   currentUser: ?Object,
 };
 
-class ChannelMembers extends Component<Props> {
-  shouldComponentUpdate(nextProps: Props) {
-    const curr = this.props;
-    if (curr.data.channel && nextProps.data.channel && !curr.isFetchingMore) {
-      if (
-        curr.data.channel.memberConnection &&
-        nextProps.data.channel.memberConnection &&
-        curr.data.channel.memberConnection.edges.length ===
-          nextProps.data.channel.memberConnection.edges.length
-      ) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  render() {
+const ChannelMembers = React.memo<Props>(
+  (props: Props) => {
     const {
       data: { channel, fetchMore },
       data,
       isLoading,
       isFetchingMore,
       currentUser,
-    } = this.props;
+    } = props;
 
     if (data && data.channel) {
       const members =
@@ -113,8 +98,21 @@ class ChannelMembers extends Component<Props> {
         <ViewError />
       </SectionCard>
     );
+  },
+  (prevProps: Props, nextProps: Props) => {
+    if (prevProps.data.channel && nextProps.data.channel && !prevProps.isFetchingMore) {
+      if (
+        prevProps.data.channel.memberConnection &&
+        nextProps.data.channel.memberConnection &&
+        prevProps.data.channel.memberConnection.edges.length ===
+          nextProps.data.channel.memberConnection.edges.length
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
-}
+);
 
 export default compose(
   getChannelMembersQuery,

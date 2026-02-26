@@ -50,19 +50,15 @@ type Props = {
   },
 };
 
-type State = { isOpen: boolean };
+const EditDropdown = (props: Props) => {
+  const [isOpen, setIsOpen] = React.useState(false);
 
-class EditDropdown extends React.Component<Props, State> {
-  initialState = { isOpen: false };
-
-  state = this.initialState;
-
-  input = {
-    communityId: this.props.community.id,
-    userId: this.props.user.id,
+  const input = {
+    communityId: props.community.id,
+    userId: props.user.id,
   };
 
-  permissionConfigurations = {
+  const permissionConfigurations = {
     owner: {
       id: 'owner',
       title: 'Owner',
@@ -105,13 +101,13 @@ class EditDropdown extends React.Component<Props, State> {
     },
   };
 
-  getRolesConfiguration = () => {
-    const { permissions } = this.props;
+  const getRolesConfiguration = () => {
+    const { permissions } = props;
 
     if (permissions.isOwner) {
       return [
         {
-          ...this.permissionConfigurations.owner,
+          ...permissionConfigurations.owner,
           selected: true,
         },
       ];
@@ -120,17 +116,17 @@ class EditDropdown extends React.Component<Props, State> {
     if (permissions.isModerator) {
       return [
         {
-          ...this.permissionConfigurations.moderator,
+          ...permissionConfigurations.moderator,
           mutation: null,
           selected: true,
         },
         {
-          ...this.permissionConfigurations.member,
-          mutation: this.props.removeCommunityModerator,
+          ...permissionConfigurations.member,
+          mutation: props.removeCommunityModerator,
         },
         {
-          ...this.permissionConfigurations.blocked,
-          mutation: this.props.blockCommunityMember,
+          ...permissionConfigurations.blocked,
+          mutation: props.blockCommunityMember,
         },
       ];
     }
@@ -138,17 +134,17 @@ class EditDropdown extends React.Component<Props, State> {
     if (permissions.isMember) {
       return [
         {
-          ...this.permissionConfigurations.moderator,
-          mutation: this.props.addCommunityModerator,
+          ...permissionConfigurations.moderator,
+          mutation: props.addCommunityModerator,
         },
         {
-          ...this.permissionConfigurations.member,
+          ...permissionConfigurations.member,
           mutation: null,
           selected: true,
         },
         {
-          ...this.permissionConfigurations.blocked,
-          mutation: this.props.blockCommunityMember,
+          ...permissionConfigurations.blocked,
+          mutation: props.blockCommunityMember,
         },
       ];
     }
@@ -156,15 +152,15 @@ class EditDropdown extends React.Component<Props, State> {
     if (permissions.isBlocked) {
       return [
         {
-          ...this.permissionConfigurations.moderator,
-          mutation: this.props.addCommunityModerator,
+          ...permissionConfigurations.moderator,
+          mutation: props.addCommunityModerator,
         },
         {
-          ...this.permissionConfigurations.member,
-          mutation: this.props.unblockCommunityMember,
+          ...permissionConfigurations.member,
+          mutation: props.unblockCommunityMember,
         },
         {
-          ...this.permissionConfigurations.blocked,
+          ...permissionConfigurations.blocked,
           mutation: null,
           selected: true,
         },
@@ -174,109 +170,106 @@ class EditDropdown extends React.Component<Props, State> {
     if (permissions.isPending) {
       return [
         {
-          ...this.permissionConfigurations.approvePendingMember,
-          mutation: this.props.approvePendingCommunityMember,
+          ...permissionConfigurations.approvePendingMember,
+          mutation: props.approvePendingCommunityMember,
         },
         {
-          ...this.permissionConfigurations.blockPendingMember,
-          mutation: this.props.blockPendingCommunityMember,
+          ...permissionConfigurations.blockPendingMember,
+          mutation: props.blockPendingCommunityMember,
         },
       ];
     }
   };
 
-  toggleOpen = () => this.setState({ isOpen: true });
+  const toggleOpen = () => setIsOpen(true);
 
-  close = () => this.setState({ isOpen: false });
+  const close = () => setIsOpen(false);
 
-  render() {
-    const { user } = this.props;
-    const { isOpen } = this.state;
-    const configuration = this.getRolesConfiguration();
+  const { user } = props;
+  const configuration = getRolesConfiguration();
 
-    return (
-      <EditDropdownContainer data-cy="community-settings-member-edit-dropdown-trigger">
-        <Icon onClick={this.toggleOpen} isOpen={isOpen} glyph={'settings'} />
+  return (
+    <EditDropdownContainer data-cy="community-settings-member-edit-dropdown-trigger">
+      <Icon onClick={toggleOpen} isOpen={isOpen} glyph={'settings'} />
 
-        {isOpen && (
-          <OutsideClickHandler onOutsideClick={this.close}>
-            <Dropdown>
-              <InitDirectMessageWrapper
-                user={user}
-                render={
-                  <DropdownSection style={{ borderBottom: '0' }}>
+      {isOpen && (
+        <OutsideClickHandler onOutsideClick={close}>
+          <Dropdown>
+            <InitDirectMessageWrapper
+              user={user}
+              render={
+                <DropdownSection style={{ borderBottom: '0' }}>
+                  <DropdownAction>
+                    <Icon glyph={'message-simple-new'} size={'32'} />
+                  </DropdownAction>
+                  <DropdownSectionText>
+                    <DropdownSectionTitle>
+                      Send Direct Message
+                    </DropdownSectionTitle>
+                  </DropdownSectionText>
+                </DropdownSection>
+              }
+            />
+
+            <DropdownSectionDivider />
+
+            {configuration &&
+              configuration.map((role, i) => {
+                return role.mutation ? (
+                  <MutationWrapper
+                    key={i}
+                    mutation={role.mutation && role.mutation}
+                    variables={{ input: input }}
+                    render={({ isLoading }) => (
+                      <DropdownSection>
+                        <DropdownAction>
+                          {isLoading ? (
+                            <Spinner size={20} />
+                          ) : (
+                            <Icon
+                              glyph={role.selected ? 'checkmark' : 'checkbox'}
+                              size={'32'}
+                            />
+                          )}
+                        </DropdownAction>
+
+                        <DropdownSectionText>
+                          <DropdownSectionTitle>
+                            {role.title}
+                          </DropdownSectionTitle>
+                          <DropdownSectionSubtitle>
+                            {role.subtitle}
+                          </DropdownSectionSubtitle>
+                        </DropdownSectionText>
+                      </DropdownSection>
+                    )}
+                  />
+                ) : (
+                  <DropdownSection key={i} onClick={role.onClick}>
                     <DropdownAction>
-                      <Icon glyph={'message-simple-new'} size={'32'} />
+                      <Icon
+                        glyph={role.selected ? 'checkmark' : 'checkbox'}
+                        size={'32'}
+                      />
                     </DropdownAction>
+
                     <DropdownSectionText>
                       <DropdownSectionTitle>
-                        Send Direct Message
+                        {role.title}
                       </DropdownSectionTitle>
+                      <DropdownSectionSubtitle>
+                        {role.subtitle}
+                      </DropdownSectionSubtitle>
                     </DropdownSectionText>
                   </DropdownSection>
-                }
-              />
-
-              <DropdownSectionDivider />
-
-              {configuration &&
-                configuration.map((role, i) => {
-                  return role.mutation ? (
-                    <MutationWrapper
-                      key={i}
-                      mutation={role.mutation && role.mutation}
-                      variables={{ input: this.input }}
-                      render={({ isLoading }) => (
-                        <DropdownSection>
-                          <DropdownAction>
-                            {isLoading ? (
-                              <Spinner size={20} />
-                            ) : (
-                              <Icon
-                                glyph={role.selected ? 'checkmark' : 'checkbox'}
-                                size={'32'}
-                              />
-                            )}
-                          </DropdownAction>
-
-                          <DropdownSectionText>
-                            <DropdownSectionTitle>
-                              {role.title}
-                            </DropdownSectionTitle>
-                            <DropdownSectionSubtitle>
-                              {role.subtitle}
-                            </DropdownSectionSubtitle>
-                          </DropdownSectionText>
-                        </DropdownSection>
-                      )}
-                    />
-                  ) : (
-                    <DropdownSection key={i} onClick={role.onClick}>
-                      <DropdownAction>
-                        <Icon
-                          glyph={role.selected ? 'checkmark' : 'checkbox'}
-                          size={'32'}
-                        />
-                      </DropdownAction>
-
-                      <DropdownSectionText>
-                        <DropdownSectionTitle>
-                          {role.title}
-                        </DropdownSectionTitle>
-                        <DropdownSectionSubtitle>
-                          {role.subtitle}
-                        </DropdownSectionSubtitle>
-                      </DropdownSectionText>
-                    </DropdownSection>
-                  );
-                })}
-            </Dropdown>
-          </OutsideClickHandler>
-        )}
-      </EditDropdownContainer>
-    );
-  }
-}
+                );
+              })}
+          </Dropdown>
+        </OutsideClickHandler>
+      )}
+    </EditDropdownContainer>
+  );
+};
 
 export default compose(
   connect(),

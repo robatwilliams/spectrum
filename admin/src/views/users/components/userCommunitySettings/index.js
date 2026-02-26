@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 // $FlowFixMe
 import compose from 'recompose/compose';
 // $FlowFixMe
@@ -21,138 +21,107 @@ import {
   Save,
 } from './style';
 
-class UserCommunitySettings extends Component {
-  state: {
-    isEditing: boolean,
-    isLoading: boolean,
-    permissions: {
-      isOwner: boolean,
-      isMember: boolean,
-      isBlocked: boolean,
-      isModerator: boolean,
-      receiveNotifications: boolean,
-    },
-  };
+const UserCommunitySettings = (props) => {
+  const { community, dispatch, saveUserCommunityPermissions } = props;
 
-  constructor(props) {
-    super(props);
+  const getInitialPermissions = () => {
     const {
-      community: {
-        communityPermissions: {
-          isOwner,
-          isMember,
-          isBlocked,
-          isModerator,
-          receiveNotifications,
-        },
-      },
-    } = this.props;
-
-    this.state = {
-      isEditing: false,
-      isLoading: false,
-      permissions: {
+      communityPermissions: {
         isOwner,
         isMember,
         isBlocked,
         isModerator,
         receiveNotifications,
       },
+    } = community;
+
+    return {
+      isOwner,
+      isMember,
+      isBlocked,
+      isModerator,
+      receiveNotifications,
     };
-  }
-
-  initEdit = () => {
-    const { isEditing } = this.state;
-
-    if (isEditing) return;
-
-    this.setState({
-      isEditing: true,
-    });
   };
 
-  save = () => {
-    let input = { ...this.state.permissions };
-    input['id'] = this.props.community.id;
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [permissions, setPermissions] = React.useState(getInitialPermissions());
 
-    this.setState({
-      isLoading: true,
-    });
+  const initEdit = () => {
+    if (isEditing) return;
+    setIsEditing(true);
+  };
 
-    this.props
-      .saveUserCommunityPermissions(input)
+  const save = () => {
+    let input = { ...permissions };
+    input['id'] = community.id;
+
+    setIsLoading(true);
+
+    saveUserCommunityPermissions(input)
       .then(({ data: { saveUserCommunityPermissions } }) => {
-        this.setState({
-          isLoading: false,
-        });
-        this.props.dispatch(addToastWithTimeout('success', 'Saved'));
+        setIsLoading(false);
+        dispatch(addToastWithTimeout('success', 'Saved'));
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
         console.error('error', err);
       });
   };
 
-  changePermission = e => {
+  const changePermission = e => {
     const perm = e.target.id;
-    const current = this.state.permissions[perm];
-    let newState = {};
-    newState['permissions'] = { ...this.state.permissions };
-    newState['permissions'][perm] = !current;
-    this.setState({
-      ...newState,
+    const current = permissions[perm];
+    setPermissions({
+      ...permissions,
+      [perm]: !current,
     });
   };
 
-  render() {
-    const { community } = this.props;
-    const { isEditing, isLoading } = this.state;
-    const roles = Object.keys(community.communityPermissions).filter(
-      key => community.communityPermissions[key] && key.indexOf('__') === -1
-    );
-    const role =
-      roles.indexOf('isOwner') > -1 ? 'isOwner' : (roles && roles[0]) || '';
-    const permissions = Object.keys(this.state.permissions);
+  const roles = Object.keys(community.communityPermissions).filter(
+    key => community.communityPermissions[key] && key.indexOf('__') === -1
+  );
+  const role =
+    roles.indexOf('isOwner') > -1 ? 'isOwner' : (roles && roles[0]) || '';
+  const permissionKeys = Object.keys(permissions);
 
-    return (
-      <Container onClick={this.initEdit}>
-        <Row>
-          <Avatar size={32} radius={4} src={community.profilePhoto} />
-          <Column>
-            <Name>{community.name}</Name>
-            <Username>{role.substr(2)}</Username>
-          </Column>
-        </Row>
+  return (
+    <Container onClick={initEdit}>
+      <Row>
+        <Avatar size={32} radius={4} src={community.profilePhoto} />
+        <Column>
+          <Name>{community.name}</Name>
+          <Username>{role.substr(2)}</Username>
+        </Column>
+      </Row>
 
-        {isEditing && (
-          <EditForm>
-            <List>
-              {permissions.map(perm => {
-                return (
-                  <Checkbox
-                    id={perm}
-                    checked={this.state.permissions[perm]}
-                    onChange={this.changePermission}
-                    key={perm}
-                  >
-                    <span>{perm}</span>
-                  </Checkbox>
-                );
-              })}
-            </List>
-            <Save>
-              <Button onClick={this.save} loading={isLoading}>
-                Save
-              </Button>
-            </Save>
-          </EditForm>
-        )}
-      </Container>
-    );
-  }
-}
+      {isEditing && (
+        <EditForm>
+          <List>
+            {permissionKeys.map(perm => {
+              return (
+                <Checkbox
+                  id={perm}
+                  checked={permissions[perm]}
+                  onChange={changePermission}
+                  key={perm}
+                >
+                  <span>{perm}</span>
+                </Checkbox>
+              );
+            })}
+          </List>
+          <Save>
+            <Button onClick={save} loading={isLoading}>
+              Save
+            </Button>
+          </Save>
+        </EditForm>
+      )}
+    </Container>
+  );
+};
 
 export default compose(saveUserCommunityPermissionsMutation, connect(), pure)(
   UserCommunitySettings

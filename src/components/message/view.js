@@ -1,5 +1,5 @@
 // @flow
-import React from 'react';
+import React, { useState } from 'react';
 import redraft from 'redraft';
 import Icon from 'src/components/icon';
 import {
@@ -89,47 +89,24 @@ type QuotedMessageProps = {
   openGallery?: Function,
 };
 
-type QuotedMessageState = {
-  isShort: boolean,
-  isExpanded: boolean,
-};
+export const QuotedMessage = React.memo<QuotedMessageProps>(
+  (props: QuotedMessageProps) => {
+    const { message, openGallery } = props;
 
-export class QuotedMessage extends React.Component<
-  QuotedMessageProps,
-  QuotedMessageState
-> {
-  constructor(props: QuotedMessageProps) {
-    super(props);
+    const short = isShort(message);
+    const [isShortState, setIsShortState] = useState(short);
+    const [isExpanded, setIsExpanded] = useState(short);
 
-    const short = isShort(props.message);
-    this.state = {
-      isShort: short,
-      isExpanded: short,
+    const toggle = (e: any) => {
+      e.stopPropagation();
+      if (isShortState) return;
+      setIsExpanded(prev => !prev);
     };
-  }
 
-  shouldComponentUpdate(
-    nextProps: QuotedMessageProps,
-    nextState: QuotedMessageState
-  ) {
-    const curr = this.props;
-    if (curr.message.id !== nextProps.message.id) return true;
-    return nextState.isExpanded !== this.state.isExpanded;
-  }
-
-  toggle = (e: any) => {
-    e.stopPropagation();
-    if (this.state.isShort) return;
-    this.setState(prev => ({ isExpanded: !prev.isExpanded }));
-  };
-
-  render() {
-    const { message, openGallery } = this.props;
-    const { isExpanded } = this.state;
     return (
       <QuoteWrapper
         expanded={isExpanded}
-        onClick={this.toggle}
+        onClick={toggle}
         data-cy="quoted-message"
       >
         <Byline>
@@ -147,5 +124,8 @@ export class QuotedMessage extends React.Component<
         {!isExpanded && <QuoteWrapperGradient />}
       </QuoteWrapper>
     );
+  },
+  (prevProps, nextProps) => {
+    return prevProps.message.id === nextProps.message.id;
   }
-}
+);

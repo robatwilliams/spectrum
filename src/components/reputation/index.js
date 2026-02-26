@@ -15,33 +15,30 @@ type Props = {
   ignoreClick?: boolean,
 };
 
-class Reputation extends React.Component<Props> {
-  open = e => {
-    const { reputation, ignoreClick, dispatch } = this.props;
+const Reputation = (props: Props) => {
+  const { reputation, ignoreClick, dispatch } = props;
+
+  const open = e => {
     e.preventDefault();
     if (ignoreClick) return;
     return dispatch(openModal('REP_EXPLAINER_MODAL', { reputation }));
   };
 
-  render() {
-    const { reputation } = this.props;
+  if (reputation === undefined || reputation === null) return null;
 
-    if (reputation === undefined || reputation === null) return null;
+  const renderedReputation = reputation > 0 ? `${reputation}` : '0';
 
-    const renderedReputation = reputation > 0 ? `${reputation}` : '0';
+  return (
+    <Tooltip content={'Reputation'}>
+      <ReputationWrapper onClick={open}>
+        <Icon glyph="rep" size={24} />
 
-    return (
-      <Tooltip content={'Reputation'}>
-        <ReputationWrapper onClick={this.open}>
-          <Icon glyph="rep" size={24} />
-
-          <ReputationLabel>
-            {truncateNumber(parseInt(renderedReputation, 10), 1)}
-          </ReputationLabel>
-        </ReputationWrapper>
-      </Tooltip>
-    );
-  }
+        <ReputationLabel>
+          {truncateNumber(parseInt(renderedReputation, 10), 1)}
+        </ReputationLabel>
+      </ReputationWrapper>
+    </Tooltip>
+  );
 }
 
 export default connect()(Reputation);

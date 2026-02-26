@@ -1,5 +1,5 @@
 // @flow
-import React, { Component } from 'react';
+import React, { useEffect } from 'react';
 import {
   ClusterOne,
   ClusterTwo,
@@ -15,43 +15,37 @@ type Props = {
   children: any,
 };
 
-class FullscreenView extends Component<Props> {
-  componentDidMount() {
-    document.addEventListener('keydown', this.handleKeyPress, false);
-  }
+const FullscreenView = ({ closePath, children }: Props) => {
+  useEffect(() => {
+    const handleKeyPress = (e: any) => {
+      // if person taps esc, close the dialog
+      if (closePath && e.keyCode === ESC) {
+        return (window.location = closePath);
+      }
+    };
 
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.handleKeyPress, false);
-  }
+    document.addEventListener('keydown', handleKeyPress, false);
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress, false);
+    };
+  }, [closePath]);
 
-  handleKeyPress = (e: any) => {
-    const { closePath } = this.props;
-    // if person taps esc, close the dialog
-    if (closePath && e.keyCode === ESC) {
-      return (window.location = closePath);
-    }
-  };
+  return (
+    <FullscreenViewContainer>
+      <CloseLink href={closePath}>
+        <Icon glyph={'view-close'} size={32} />
+      </CloseLink>
 
-  render() {
-    const { closePath, children } = this.props;
+      <Illustrations>
+        <ClusterOne src="/img/cluster-2.svg" role="presentation" />
+        <ClusterTwo src="/img/cluster-1.svg" role="presentation" />
+        <ClusterThree src="/img/cluster-5.svg" role="presentation" />
+        <ClusterFour src="/img/cluster-4.svg" role="presentation" />
+      </Illustrations>
 
-    return (
-      <FullscreenViewContainer>
-        <CloseLink href={closePath}>
-          <Icon glyph={'view-close'} size={32} />
-        </CloseLink>
-
-        <Illustrations>
-          <ClusterOne src="/img/cluster-2.svg" role="presentation" />
-          <ClusterTwo src="/img/cluster-1.svg" role="presentation" />
-          <ClusterThree src="/img/cluster-5.svg" role="presentation" />
-          <ClusterFour src="/img/cluster-4.svg" role="presentation" />
-        </Illustrations>
-
-        {children}
-      </FullscreenViewContainer>
-    );
-  }
-}
+      {children}
+    </FullscreenViewContainer>
+  );
+};
 
 export default FullscreenView;

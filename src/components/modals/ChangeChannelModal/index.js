@@ -21,48 +21,34 @@ type Props = {
   isOpen: boolean,
   moveThread: Function,
 };
-type State = {
-  activeChannel: string,
-  isLoading: boolean,
-};
-class ChangeChannelModal extends React.Component<Props, State> {
-  constructor(props) {
-    super(props);
-    this.state = {
-      activeChannel: props.thread.channel.id,
-      isLoading: false,
-    };
-  }
 
-  closeModal = () => {
-    this.props.dispatch(closeModal());
+const ChangeChannelModal = (props: Props) => {
+  const { thread, isOpen, dispatch, moveThread } = props;
+  const [activeChannel, setActiveChannel] = React.useState(thread.channel.id);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const closeModalHandler = () => {
+    dispatch(closeModal());
   };
 
-  setActiveChannel = e => this.setState({ activeChannel: e.target.value });
+  const setActiveChannelHandler = e => setActiveChannel(e.target.value);
 
-  saveNewChannel = () => {
-    const { activeChannel } = this.state;
+  const saveNewChannel = () => {
     const {
       thread: { id },
-      dispatch,
-    } = this.props;
+    } = props;
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
-    return this.props
-      .moveThread({ threadId: id, channelId: activeChannel })
+    return moveThread({ threadId: id, channelId: activeChannel })
       .then(({ data }: MoveThreadType) => {
         const { moveThread } = data;
         if (moveThread) {
           dispatch(
             addToastWithTimeout('success', 'Channel changed successfully.')
           );
-          this.setState({
-            isLoading: false,
-          });
-          this.closeModal();
+          setIsLoading(false);
+          closeModalHandler();
         }
         return;
       })
@@ -76,17 +62,13 @@ class ChangeChannelModal extends React.Component<Props, State> {
       });
   };
 
-  render() {
-    const { thread, isOpen } = this.props;
-    const { activeChannel } = this.state;
-
-    return (
+  return (
       <Modal
         /* TODO(@mxstbr): Fix this */
         ariaHideApp={false}
         isOpen={isOpen}
         contentLabel={'Reputation'}
-        onRequestClose={this.closeModal}
+        onRequestClose={closeModalHandler}
         shouldCloseOnOverlayClick={true}
         style={modalStyles}
         closeTimeoutMS={330}
@@ -94,7 +76,7 @@ class ChangeChannelModal extends React.Component<Props, State> {
         <ModalContainer
           noHeader={false}
           title={null}
-          closeModal={this.closeModal}
+          closeModal={closeModalHandler}
         >
           {thread.channel.isPrivate ? (
             <Section>
@@ -118,18 +100,18 @@ class ChangeChannelModal extends React.Component<Props, State> {
               <ChannelSelector
                 currentChannel={activeChannel}
                 communitySlug={thread.community.slug}
-                setActiveChannel={this.setActiveChannel}
+                setActiveChannel={setActiveChannelHandler}
                 id={thread.community.id}
               />
 
               <Actions>
-                <TextButton onClick={this.closeModal}>Cancel</TextButton>
+                <TextButton onClick={closeModalHandler}>Cancel</TextButton>
                 <PrimaryOutlineButton
-                  loading={this.state.isLoading}
-                  onClick={this.saveNewChannel}
+                  loading={isLoading}
+                  onClick={saveNewChannel}
                   disabled={activeChannel === thread.channel.id}
                 >
-                  {this.state.isLoading ? 'Saving...' : 'Save'}
+                  {isLoading ? 'Saving...' : 'Save'}
                 </PrimaryOutlineButton>
               </Actions>
             </Section>
@@ -137,8 +119,7 @@ class ChangeChannelModal extends React.Component<Props, State> {
         </ModalContainer>
       </Modal>
     );
-  }
-}
+};
 
 const map = state => ({ isOpen: state.modals.isOpen });
 export default compose(

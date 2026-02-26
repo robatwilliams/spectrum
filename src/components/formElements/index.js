@@ -181,25 +181,23 @@ export const TextArea = (props: InputProps) => {
   );
 };
 
-export class UnderlineInput extends React.Component<InputProps> {
-  render() {
-    return (
-      <StyledPrefixLabel disabled={this.props.disabled}>
-        {this.props.children}
-        <StyledUnderlineInput
-          type="text"
-          id={this.props.id}
-          placeholder={this.props.placeholder}
-          value={this.props.value || this.props.defaultValue}
-          onChange={this.props.onChange}
-          autoFocus={this.props.autoFocus}
-          disabled={this.props.disabled}
-          data-cy={this.props.dataCy}
-        />
-      </StyledPrefixLabel>
-    );
-  }
-}
+export const UnderlineInput = (props: InputProps) => {
+  return (
+    <StyledPrefixLabel disabled={props.disabled}>
+      {props.children}
+      <StyledUnderlineInput
+        type="text"
+        id={props.id}
+        placeholder={props.placeholder}
+        value={props.value || props.defaultValue}
+        onChange={props.onChange}
+        autoFocus={props.autoFocus}
+        disabled={props.disabled}
+        data-cy={props.dataCy}
+      />
+    </StyledPrefixLabel>
+  );
+};
 
 export const Error = (props: Object) => {
   const { children, ...rest } = props;

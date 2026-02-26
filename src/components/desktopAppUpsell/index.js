@@ -19,62 +19,48 @@ import {
   Subtitle,
 } from './style';
 
-type State = {
-  isVisible: boolean,
-};
+const DesktopAppUpsell = () => {
+  const [isVisible, setIsVisible] = React.useState(false);
 
-class DesktopAppUpsell extends React.Component<{}, State> {
-  constructor() {
-    super();
-
-    this.state = {
-      isVisible: false,
-    };
-  }
-
-  componentDidMount() {
+  React.useEffect(() => {
     const desktopUpsellVisible =
       isMac() && !isDesktopApp() && !hasDismissedDesktopAppUpsell();
 
     if (desktopUpsellVisible) {
-      this.setState({ isVisible: true });
+      setIsVisible(true);
     }
-  }
+  }, []);
 
-  close = () => {
+  const close = () => {
     dismissDesktopAppUpsell();
-    return this.setState({ isVisible: false });
+    return setIsVisible(false);
   };
 
-  download = () => {
+  const download = () => {
     dismissDesktopAppUpsell();
-    return this.setState({ isVisible: false });
+    return setIsVisible(false);
   };
 
-  render() {
-    const { isVisible } = this.state;
+  if (!isVisible) return null;
 
-    if (!isVisible) return null;
+  return (
+    <Container>
+      <Card>
+        <AppIcon src={'/img/homescreen-icon-72x72.png'} />
+        <CloseIconContainer onClick={close}>
+          <Icon glyph="view-close" size={20} />
+        </CloseIconContainer>
+        <Content>
+          <Title>Download Spectrum for Mac</Title>
+          <Subtitle>A better way to keep up with your communities.</Subtitle>
 
-    return (
-      <Container>
-        <Card>
-          <AppIcon src={'/img/homescreen-icon-72x72.png'} />
-          <CloseIconContainer onClick={this.close}>
-            <Icon glyph="view-close" size={20} />
-          </CloseIconContainer>
-          <Content>
-            <Title>Download Spectrum for Mac</Title>
-            <Subtitle>A better way to keep up with your communities.</Subtitle>
-
-            <a href={DESKTOP_APP_MAC_URL} onClick={this.download}>
-              <OutlineButton>Download</OutlineButton>
-            </a>
-          </Content>
-        </Card>
-      </Container>
-    );
-  }
-}
+          <a href={DESKTOP_APP_MAC_URL} onClick={download}>
+            <OutlineButton>Download</OutlineButton>
+          </a>
+        </Content>
+      </Card>
+    </Container>
+  );
+};
 
 export default DesktopAppUpsell;

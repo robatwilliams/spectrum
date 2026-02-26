@@ -24,88 +24,42 @@ type Props = {
   dataCy?: string,
 };
 
-type State = {
-  username: string,
-  isSearching: boolean,
-};
+const UsernameSearch = (props: Props) => {
+  const { client, username: initialUsername, onValidationResult, onError, label, size, dataCy, ...rest } = props;
+  const [username, setUsername] = React.useState(slugg(initialUsername));
+  const [isSearching, setIsSearching] = React.useState(false);
 
-class UsernameSearch extends React.Component<Props, State> {
-  constructor(props) {
-    super(props);
-    const { username } = props;
+  const isUsernameValid = (username) => username.length > 0 && username.length <= 20;
 
-    this.state = {
-      username: slugg(username),
-      isSearching: false,
-    };
-
-    this.search = debounce(this.search, 500, false);
-  }
-
-  componentDidMount() {
-    const { username } = this.state;
-    // if no username was able to be suggested, don't kick off a search
-    // with an empty string
-    if (username.length === 0) return;
-
-    // $FlowIssue
-    this.search(username);
-  }
-
-  handleChange = e => {
-    const username = slugg(e.target.value.trim());
-
-    this.setState({
-      isSearching: false,
-      username,
-    });
-
-    if (!this.isUsernameValid(username)) {
-      return this.notifyParentWithValidationResult(username);
-    }
-
-    this.props.onValidationResult({
-      error: '',
-      success: '',
-    });
-
-    // $FlowIssue
-    return this.search(username);
-  };
-
-  isUsernameValid = username => username.length > 0 && username.length <= 20;
-
-  notifyParentWithValidationResult = username => {
+  const notifyParentWithValidationResult = (username) => {
     if (username.length > 20) {
-      this.props.onValidationResult({
+      onValidationResult({
         error: 'Usernames can be up to 20 characters',
         success: '',
       });
     } else if (username.length === 0) {
-      this.props.onValidationResult({
+      onValidationResult({
         error: 'Be sure to set a username so that people can find you!',
         success: '',
       });
     } else {
-      this.props.onValidationResult({
+      onValidationResult({
         error: '',
         success: '',
       });
     }
   };
 
-  search = (username: string) => {
+  const search = React.useRef(debounce((username: string) => {
     // username in state could not be the same as username argument here
     // so dont make a call with previous username
-    if (!this.isUsernameValid(this.state.username)) return;
+    if (!isUsernameValid(username)) return;
 
     // username argument here is already validated
-    this.setState({
-      isSearching: true,
-    });
+    setIsSearching(true);
 
     // check the db to see if this channel slug exists
-    this.props.client
+    client
       .query({
         query: getUserByUsernameQuery,
         variables: {
@@ -114,54 +68,73 @@ class UsernameSearch extends React.Component<Props, State> {
       })
       .then(({ data: { user } }: { data: { user: GetUserType } }) => {
         if (user && user.id) {
-          this.props.onValidationResult({
+          onValidationResult({
             error: 'That username has already been taken.',
             success: '',
             username,
           });
         } else {
-          this.props.onValidationResult({
+          onValidationResult({
             error: '',
             success: 'That username is available!',
             username,
           });
         }
-        this.setState({
-          isSearching: false,
-        });
+        setIsSearching(false);
       })
       .catch(err => {
-        this.props.onError && this.props.onError(err);
-        this.setState({
-          isSearching: false,
-        });
+        onError && onError(err);
+        setIsSearching(false);
       });
+  }, 500, false)).current;
+
+  React.useEffect(() => {
+    // if no username was able to be suggested, don't kick off a search
+    // with an empty string
+    if (username.length === 0) return;
+
+    // $FlowIssue
+    search(username);
+  }, []);
+
+  const handleChange = e => {
+    const username = slugg(e.target.value.trim());
+
+    setIsSearching(false);
+    setUsername(username);
+
+    if (!isUsernameValid(username)) {
+      return notifyParentWithValidationResult(username);
+    }
+
+    onValidationResult({
+      error: '',
+      success: '',
+    });
+
+    // $FlowIssue
+    return search(username);
   };
 
-  render() {
-    const { username, isSearching } = this.state;
-    // eslint-disable-next-line
-    const { label, size, dataCy, onValidationResult, ...rest } = this.props;
-    return (
-      <React.Fragment>
-        <Input
-          {...rest}
-          size={size}
-          defaultValue={username}
-          onChange={this.handleChange}
-          dataCy={dataCy}
-        >
-          {label && label}
-          {isSearching && (
-            <Loading size={size}>
-              <Spinner size={16} color={'brand.default'} />
-            </Loading>
-          )}
-        </Input>
-      </React.Fragment>
-    );
-  }
-}
+  return (
+    <React.Fragment>
+      <Input
+        {...rest}
+        size={size}
+        defaultValue={username}
+        onChange={handleChange}
+        dataCy={dataCy}
+      >
+        {label && label}
+        {isSearching && (
+          <Loading size={size}>
+            <Spinner size={16} color={'brand.default'} />
+          </Loading>
+        )}
+      </Input>
+    </React.Fragment>
+  );
+};
 
 export default compose(
   withApollo,

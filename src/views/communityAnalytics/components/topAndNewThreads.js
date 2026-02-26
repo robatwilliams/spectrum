@@ -16,14 +16,13 @@ type Props = {
   },
 };
 
-class TopAndNewThreads extends React.Component<Props> {
-  render() {
-    const {
-      data: { community },
-      isLoading,
-    } = this.props;
+const TopAndNewThreads = (props: Props) => {
+  const {
+    data: { community },
+    isLoading,
+  } = props;
 
-    if (community) {
+  if (community) {
       const {
         topAndNewThreads: { topThreads, newThreads },
       } = community;
@@ -86,8 +85,7 @@ class TopAndNewThreads extends React.Component<Props> {
     }
 
     return null;
-  }
-}
+};
 
 export default compose(
   getCommunityTopAndNewThreads,

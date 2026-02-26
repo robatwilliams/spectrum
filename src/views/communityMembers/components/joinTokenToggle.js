@@ -17,53 +17,51 @@ type Props = {
   dispatch: Function,
 };
 
-class TokenJoinToggle extends React.Component<Props> {
-  init = () => {
-    return this.props.settings.tokenJoinEnabled
-      ? this.disable()
-      : this.enable();
+const TokenJoinToggle = (props: Props) => {
+  const init = () => {
+    return props.settings.tokenJoinEnabled
+      ? disable()
+      : enable();
   };
 
-  disable = () => {
-    return this.props
-      .disableCommunityTokenJoin({ id: this.props.id })
+  const disable = () => {
+    return props
+      .disableCommunityTokenJoin({ id: props.id })
       .then(() => {
-        return this.props.dispatch(
+        return props.dispatch(
           addToastWithTimeout('neutral', 'Link disabled')
         );
       })
       .catch(err => {
-        return this.props.dispatch(addToastWithTimeout('error', err.message));
+        return props.dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  enable = () => {
-    return this.props
-      .enableCommunityTokenJoin({ id: this.props.id })
+  const enable = () => {
+    return props
+      .enableCommunityTokenJoin({ id: props.id })
       .then(() => {
-        return this.props.dispatch(
+        return props.dispatch(
           addToastWithTimeout('success', 'Link enabled')
         );
       })
       .catch(err => {
-        return this.props.dispatch(addToastWithTimeout('error', err.message));
+        return props.dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  render() {
-    const { tokenJoinEnabled } = this.props.settings;
+  const { tokenJoinEnabled } = props.settings;
 
-    return (
-      <Checkbox
-        checked={tokenJoinEnabled}
-        onChange={this.init}
-        dataCy="toggle-token-link-invites"
-      >
-        Enable users to join via link
-      </Checkbox>
-    );
-  }
-}
+  return (
+    <Checkbox
+      checked={tokenJoinEnabled}
+      onChange={init}
+      dataCy="toggle-token-link-invites"
+    >
+      Enable users to join via link
+    </Checkbox>
+  );
+};
 
 export default compose(
   connect(),

@@ -8,16 +8,16 @@ type Props = {
   style: CSSStyleDeclaration,
 };
 
-export default class LoadingHoverProfile extends React.Component<Props> {
-  render() {
-    const { ref, style } = this.props;
+const LoadingHoverProfile = (props: Props) => {
+  const { ref, style } = props;
 
-    return (
-      <HoverWrapper popperStyle={style} ref={ref}>
-        <ProfileCard style={{ display: 'flex', alignItems: 'center' }}>
-          <Loading />
-        </ProfileCard>
-      </HoverWrapper>
-    );
-  }
-}
+  return (
+    <HoverWrapper popperStyle={style} ref={ref}>
+      <ProfileCard style={{ display: 'flex', alignItems: 'center' }}>
+        <Loading />
+      </ProfileCard>
+    </HoverWrapper>
+  );
+};
+
+export default LoadingHoverProfile;

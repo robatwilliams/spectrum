@@ -29,22 +29,13 @@ type Props = {
   currentUser: ?Object,
 };
 
-class MembersList extends React.Component<Props> {
-  shouldComponentUpdate(nextProps) {
-    const curr = this.props;
-    // fetching more
-    if (curr.data.networkStatus === 7 && nextProps.data.networkStatus === 3)
-      return false;
-    return true;
-  }
-
-  render() {
-    const {
-      data: { channel },
-      isLoading,
-      currentUser,
-      isFetchingMore,
-    } = this.props;
+const MembersList = (props: Props) => {
+  const {
+    data: { channel },
+    isLoading,
+    currentUser,
+    isFetchingMore,
+  } = props;
 
     if (channel && channel.memberConnection) {
       const { edges: members, pageInfo } = channel.memberConnection;
@@ -76,7 +67,7 @@ class MembersList extends React.Component<Props> {
           {hasNextPage && (
             <NextPageButton
               isFetchingMore={isFetchingMore}
-              fetchMore={this.props.data.fetchMore}
+              fetchMore={props.data.fetchMore}
               bottomOffset={-100}
             >
               Load more members
@@ -98,8 +89,14 @@ class MembersList extends React.Component<Props> {
         />
       </Card>
     );
-  }
-}
+};
+
+const MembersListWithMemo = React.memo(MembersList, (prevProps, nextProps) => {
+  // fetching more
+  if (prevProps.data.networkStatus === 7 && nextProps.data.networkStatus === 3)
+    return true;
+  return false;
+});
 
 export default compose(
   withRouter,
@@ -107,4 +104,4 @@ export default compose(
   getChannelMembersQuery,
   viewNetworkHandler,
   connect()
-)(MembersList);
+)(MembersListWithMemo);

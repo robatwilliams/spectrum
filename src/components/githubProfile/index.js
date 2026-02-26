@@ -17,21 +17,19 @@ type Props = {
   render: Function,
 };
 
-class GithubProfile extends React.Component<Props> {
-  render() {
-    const {
-      data: { user },
-      render,
-    } = this.props;
+const GithubProfile = (props: Props) => {
+  const {
+    data: { user },
+    render,
+  } = props;
 
-    if (user) {
-      if (!user.githubProfile || !user.githubProfile.id) return render(null);
-      return render(user.githubProfile);
-    }
-
-    return null;
+  if (user) {
+    if (!user.githubProfile || !user.githubProfile.id) return render(null);
+    return render(user.githubProfile);
   }
-}
+
+  return null;
+};
 
 export default compose(
   getUserGithubProfile,

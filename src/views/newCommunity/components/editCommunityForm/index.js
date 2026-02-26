@@ -1,5 +1,6 @@
 // @flow
 import * as React from 'react';
+import { useState } from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
@@ -21,22 +22,6 @@ import { ImageInputWrapper } from 'src/components/editForm/style';
 import { Actions, FormContainer, Form } from '../../style';
 import type { Dispatch } from 'redux';
 
-type State = {
-  name: string,
-  slug: string,
-  description: string,
-  communityId: string,
-  website: string,
-  image: string,
-  coverPhoto: string,
-  file: ?Object,
-  coverFile: ?Object,
-  communityData: Object,
-  photoSizeError: boolean,
-  nameError: boolean,
-  isLoading: boolean,
-};
-
 type Props = {
   community: GetCommunityType,
   dispatch: Dispatch<Object>,
@@ -44,142 +29,107 @@ type Props = {
   editCommunity: Function,
 };
 
-class CommunityWithData extends React.Component<Props, State> {
-  constructor(props) {
-    super(props);
+const CommunityWithData = (props: Props) => {
+  const { community, dispatch, communityUpdated, editCommunity } = props;
 
-    const { community } = this.props;
-    this.state = {
-      name: community.name,
-      slug: community.slug,
-      description: community.description ? community.description : '',
-      communityId: community.id,
-      website: community.website ? community.website : '',
-      image: community.profilePhoto,
-      coverPhoto: community.coverPhoto,
-      file: null,
-      coverFile: null,
-      communityData: community,
-      photoSizeError: false,
-      nameError: false,
-      isLoading: false,
-    };
-  }
+  const [name, setName] = useState(community.name);
+  const [slug, setSlug] = useState(community.slug);
+  const [description, setDescription] = useState(community.description ? community.description : '');
+  const [communityId, setCommunityId] = useState(community.id);
+  const [website, setWebsite] = useState(community.website ? community.website : '');
+  const [image, setImage] = useState(community.profilePhoto);
+  const [coverPhoto, setCoverPhoto] = useState(community.coverPhoto);
+  const [file, setFile] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [communityData, setCommunityData] = useState(community);
+  const [photoSizeError, setPhotoSizeError] = useState(false);
+  const [nameError, setNameError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  changeName = e => {
-    const name = e.target.value;
+  const changeName = e => {
+    const nameValue = e.target.value;
 
-    if (name.length > 20) {
-      this.setState({
-        name,
-        nameError: true,
-      });
-
+    if (nameValue.length > 20) {
+      setName(nameValue);
+      setNameError(true);
       return;
     }
 
-    this.setState({
-      name,
-      nameError: false,
-    });
+    setName(nameValue);
+    setNameError(false);
   };
 
-  changeDescription = e => {
-    const description = e.target.value;
-    this.setState({
-      description,
-    });
+  const changeDescription = e => {
+    const descriptionValue = e.target.value;
+    setDescription(descriptionValue);
   };
 
-  changeSlug = e => {
-    const slug = e.target.value;
-    this.setState({
-      slug,
-    });
+  const changeSlug = e => {
+    const slugValue = e.target.value;
+    setSlug(slugValue);
   };
 
-  changeWebsite = e => {
-    const website = e.target.value;
-    this.setState({
-      website,
-    });
+  const changeWebsite = e => {
+    const websiteValue = e.target.value;
+    setWebsite(websiteValue);
   };
 
-  setCommunityPhoto = e => {
+  const setCommunityPhoto = e => {
     let reader = new FileReader();
-    let file = e.target.files[0];
+    let fileValue = e.target.files[0];
 
-    if (!file) return;
+    if (!fileValue) return;
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
-    if (file && file.size > 3000000) {
-      return this.setState({
-        photoSizeError: true,
-        isLoading: false,
-      });
+    if (fileValue && fileValue.size > 3000000) {
+      setPhotoSizeError(true);
+      setIsLoading(false);
+      return;
     }
 
     reader.onloadend = () => {
-      this.setState({
-        file: file,
-        // $FlowFixMe
-        image: reader.result,
-        photoSizeError: false,
-        isLoading: false,
-      });
+      setFile(fileValue);
+      // $FlowFixMe
+      setImage(reader.result);
+      setPhotoSizeError(false);
+      setIsLoading(false);
     };
 
-    if (file) {
-      reader.readAsDataURL(file);
+    if (fileValue) {
+      reader.readAsDataURL(fileValue);
     }
   };
 
-  setCommunityCover = e => {
+  const setCommunityCover = e => {
     let reader = new FileReader();
-    let file = e.target.files[0];
+    let fileValue = e.target.files[0];
 
-    if (!file) return;
+    if (!fileValue) return;
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
-    if (file && file.size > 3000000) {
-      return this.setState({
-        photoSizeError: true,
-        isLoading: false,
-      });
+    if (fileValue && fileValue.size > 3000000) {
+      setPhotoSizeError(true);
+      setIsLoading(false);
+      return;
     }
 
     reader.onloadend = () => {
-      this.setState({
-        coverFile: file,
-        // $FlowFixMe
-        coverPhoto: reader.result,
-        photoSizeError: false,
-        isLoading: false,
-      });
+      setCoverFile(fileValue);
+      // $FlowFixMe
+      setCoverPhoto(reader.result);
+      setPhotoSizeError(false);
+      setIsLoading(false);
     };
 
-    if (file) {
-      reader.readAsDataURL(file);
+    if (fileValue) {
+      reader.readAsDataURL(fileValue);
     }
   };
 
-  save = e => {
+  const save = e => {
     e.preventDefault();
-    const {
-      name,
-      description,
-      website,
-      file,
-      coverFile,
-      communityId,
-      photoSizeError,
-    } = this.state;
     const input = {
       name,
       description,
@@ -193,34 +143,27 @@ class CommunityWithData extends React.Component<Props, State> {
       return;
     }
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
-    this.props
-      .editCommunity(input)
-      .then(({ data: { editCommunity } }) => {
-        const community = editCommunity;
+    editCommunity(input)
+      .then(({ data: { editCommunity: editedCommunity } }) => {
+        const communityResult = editedCommunity;
 
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
 
         // community was returned
-        if (community !== undefined) {
-          this.props.dispatch(
+        if (communityResult !== undefined) {
+          dispatch(
             addToastWithTimeout('success', 'Community saved!')
           );
-          this.props.communityUpdated(community);
+          communityUpdated(communityResult);
         }
         return;
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
 
-        this.props.dispatch(
+        dispatch(
           addToastWithTimeout(
             'error',
             `Something went wrong and we weren't able to save these changes. ${err}`
@@ -229,25 +172,12 @@ class CommunityWithData extends React.Component<Props, State> {
       });
   };
 
-  render() {
-    const {
-      name,
-      slug,
-      description,
-      image,
-      coverPhoto,
-      website,
-      photoSizeError,
-      nameError,
-      isLoading,
-    } = this.state;
-
-    return (
+  return (
       <FormContainer>
-        <Form onSubmit={this.save}>
+        <Form onSubmit={save}>
           <ImageInputWrapper>
             <CoverInput
-              onChange={this.setCommunityCover}
+              onChange={setCommunityCover}
               defaultValue={coverPhoto}
               preview={true}
               allowGif
@@ -255,12 +185,12 @@ class CommunityWithData extends React.Component<Props, State> {
 
             <PhotoInput
               type={'community'}
-              onChange={this.setCommunityPhoto}
+              onChange={setCommunityPhoto}
               defaultValue={image}
             />
           </ImageInputWrapper>
 
-          <Input defaultValue={name} onChange={this.changeName}>
+          <Input defaultValue={name} onChange={changeName}>
             Name
           </Input>
           <UnderlineInput defaultValue={slug} disabled>
@@ -273,14 +203,14 @@ class CommunityWithData extends React.Component<Props, State> {
 
           <TextArea
             defaultValue={description}
-            onChange={this.changeDescription}
+            onChange={changeDescription}
           >
             Description
           </TextArea>
 
           <Input
             defaultValue={website}
-            onChange={this.changeWebsite}
+            onChange={changeWebsite}
             autoFocus={true}
           >
             Optional: Add your community’s website
@@ -297,7 +227,7 @@ class CommunityWithData extends React.Component<Props, State> {
           <div />
           <Button
             loading={isLoading}
-            onClick={this.save}
+            onClick={save}
             disabled={photoSizeError}
           >
             {isLoading ? 'Saving...' : 'Save & Continue'}
@@ -305,7 +235,6 @@ class CommunityWithData extends React.Component<Props, State> {
         </Actions>
       </FormContainer>
     );
-  }
 }
 
 const Community = compose(

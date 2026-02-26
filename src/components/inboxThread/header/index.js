@@ -18,17 +18,15 @@ export type HeaderProps = {
     | 'userProfileReplies',
 };
 
-class Header extends React.Component<HeaderProps> {
-  render() {
-    if (
-      this.props.viewContext === 'userProfile' ||
-      this.props.viewContext === 'userProfileReplies'
-    ) {
-      return <UserProfileThreadHeader {...this.props} />;
-    }
-
-    return <ThreadHeader {...this.props} />;
+const Header = (props: HeaderProps) => {
+  if (
+    props.viewContext === 'userProfile' ||
+    props.viewContext === 'userProfileReplies'
+  ) {
+    return <UserProfileThreadHeader {...props} />;
   }
-}
+
+  return <ThreadHeader {...props} />;
+};
 
 export default Header;

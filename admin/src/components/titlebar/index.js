@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 // $FlowFixMe
 import { connect } from 'react-redux';
 // $FlowFixMe
@@ -9,43 +9,41 @@ import Icon from '../../components/icons';
 import { IconButton } from '../../components/buttons';
 import { TitleBar, Text, Subtitle, Title, Spacer } from './style';
 
-class Titlebar extends Component {
-  handleBack = () => {
-    const { history } = this.props;
+const Titlebar = (props) => {
+  const { title, subtitle, provideBack, history, backRoute } = props;
+
+  const handleBack = () => {
     const length = history.length;
 
     if (length > 3) {
       history.goBack();
     } else {
-      history.push(this.props.backRoute);
+      history.push(backRoute);
     }
   };
 
-  render() {
-    const { title, subtitle, provideBack } = this.props;
-    return (
-      <TitleBar>
-        {provideBack ? (
-          <IconButton
-            glyph="view-back"
-            color="text.reverse"
-            onClick={this.handleBack}
-          />
+  return (
+    <TitleBar>
+      {provideBack ? (
+        <IconButton
+          glyph="view-back"
+          color="text.reverse"
+          onClick={handleBack}
+        />
+      ) : (
+        <Spacer />
+      )}
+      <Text>
+        {subtitle && <Subtitle>{subtitle}</Subtitle>}
+        {title ? (
+          <Title large={subtitle ? false : true}>{title}</Title>
         ) : (
-          <Spacer />
+          <Icon glyph="logo" />
         )}
-        <Text>
-          {subtitle && <Subtitle>{subtitle}</Subtitle>}
-          {title ? (
-            <Title large={subtitle ? false : true}>{title}</Title>
-          ) : (
-            <Icon glyph="logo" />
-          )}
-        </Text>
-      </TitleBar>
-    );
-  }
-}
+      </Text>
+    </TitleBar>
+  );
+};
 
 const mapStateToProps = state => ({
   currentUser: state.users.currentUser,

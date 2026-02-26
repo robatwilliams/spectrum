@@ -67,114 +67,89 @@ type Props = {
   user: GetCurrentUserSettingsType,
 };
 
-class UserWithData extends React.Component<Props, State> {
-  constructor(props) {
-    super(props);
+const UserWithData = (props: Props) => {
+  const { user, editUser, dispatch } = props;
 
-    const user = this.props.user;
+  const [website, setWebsite] = React.useState(user.website ? user.website : '');
+  const [name, setName] = React.useState(user.name ? user.name : '');
+  const [username, setUsername] = React.useState(user.username ? user.username : '');
+  const [description, setDescription] = React.useState(user.description ? user.description : '');
+  const [image, setImage] = React.useState(user.profilePhoto);
+  const [coverPhoto, setCoverPhoto] = React.useState(user.coverPhoto);
+  const [file, setFile] = React.useState(null);
+  const [coverFile, setCoverFile] = React.useState(null);
+  const [descriptionError, setDescriptionError] = React.useState(false);
+  const [nameError, setNameError] = React.useState(false);
+  const [createError, setCreateError] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [photoSizeError, setPhotoSizeError] = React.useState('');
+  const [usernameError, setUsernameError] = React.useState('');
+  const [email, setEmail] = React.useState(user.email ? user.email : '');
+  const [emailError, setEmailError] = React.useState('');
+  const [didChangeEmail, setDidChangeEmail] = React.useState(false);
 
-    this.state = {
-      website: user.website ? user.website : '',
-      name: user.name ? user.name : '',
-      username: user.username ? user.username : '',
-      description: user.description ? user.description : '',
-      image: user.profilePhoto,
-      coverPhoto: user.coverPhoto,
-      file: null,
-      coverFile: null,
-      descriptionError: false,
-      nameError: false,
-      createError: false,
-      isLoading: false,
-      photoSizeError: '',
-      usernameError: '',
-      email: user.email ? user.email : '',
-      emailError: '',
-      didChangeEmail: false,
-    };
-  }
-
-  changeName = e => {
+  const changeName = e => {
     const name = e.target.value;
     if (name.length > 50) {
-      this.setState({
-        name,
-        nameError: true,
-      });
-
+      setName(name);
+      setNameError(true);
       return;
     }
-    this.setState({
-      name,
-      nameError: false,
-    });
+    setName(name);
+    setNameError(false);
   };
 
-  changeEmail = e => {
+  const changeEmail = e => {
     const email = e.target.value;
 
     if (!email || email.length === 0) {
-      return this.setState({
-        email,
-        emailError: 'Your email can’t be blank',
-        didChangeEmail: false,
-      });
-    }
-
-    this.setState({
-      email,
-      emailError: '',
-      didChangeEmail: false,
-    });
-  };
-
-  changeDescription = e => {
-    const description = e.target.value;
-    if (description.length >= 140) {
-      this.setState({
-        descriptionError: true,
-      });
+      setEmail(email);
+      setEmailError("Your email can't be blank");
+      setDidChangeEmail(false);
       return;
     }
 
-    this.setState({
-      description,
-      descriptionError: false,
-    });
+    setEmail(email);
+    setEmailError('');
+    setDidChangeEmail(false);
   };
 
-  changeWebsite = e => {
+  const changeDescription = e => {
+    const description = e.target.value;
+    if (description.length >= 140) {
+      setDescriptionError(true);
+      return;
+    }
+
+    setDescription(description);
+    setDescriptionError(false);
+  };
+
+  const changeWebsite = e => {
     const website = e.target.value;
-    this.setState({
-      website,
-    });
+    setWebsite(website);
   };
 
-  setProfilePhoto = e => {
+  const setProfilePhoto = e => {
     let reader = new FileReader();
     let file = e.target.files[0];
 
     if (!file) return;
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
     if (file && file.size > PRO_USER_MAX_IMAGE_SIZE_BYTES) {
-      return this.setState({
-        photoSizeError: `Try uploading a file less than ${PRO_USER_MAX_IMAGE_SIZE_STRING}.`,
-        isLoading: false,
-      });
+      setPhotoSizeError(`Try uploading a file less than ${PRO_USER_MAX_IMAGE_SIZE_STRING}.`);
+      setIsLoading(false);
+      return;
     }
 
     reader.onloadend = () => {
-      this.setState({
-        file: file,
-        // $FlowFixMe
-        image: reader.result,
-        photoSizeError: '',
-        isLoading: false,
-      });
+      setFile(file);
+      // $FlowFixMe
+      setImage(reader.result);
+      setPhotoSizeError('');
+      setIsLoading(false);
     };
 
     if (file) {
@@ -182,31 +157,26 @@ class UserWithData extends React.Component<Props, State> {
     }
   };
 
-  setCoverPhoto = e => {
+  const setCoverPhotoHandler = e => {
     let reader = new FileReader();
     let file = e.target.files[0];
 
     if (!file) return;
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
     if (file && file.size > PRO_USER_MAX_IMAGE_SIZE_BYTES) {
-      return this.setState({
-        photoSizeError: `Try uploading a file less than ${PRO_USER_MAX_IMAGE_SIZE_STRING}.`,
-        isLoading: false,
-      });
+      setPhotoSizeError(`Try uploading a file less than ${PRO_USER_MAX_IMAGE_SIZE_STRING}.`);
+      setIsLoading(false);
+      return;
     }
 
     reader.onloadend = () => {
-      this.setState({
-        coverFile: file,
-        // $FlowFixMe
-        coverPhoto: reader.result,
-        photoSizeError: '',
-        isLoading: false,
-      });
+      setCoverFile(file);
+      // $FlowFixMe
+      setCoverPhoto(reader.result);
+      setPhotoSizeError('');
+      setIsLoading(false);
     };
 
     if (file) {
@@ -214,23 +184,23 @@ class UserWithData extends React.Component<Props, State> {
     }
   };
 
-  save = e => {
+  const save = e => {
     e.preventDefault();
 
-    const {
-      name,
-      description,
-      website,
-      file,
-      coverFile,
-      photoSizeError,
-      username,
-      usernameError,
-      email,
-      emailError,
-    } = this.state;
+    if (!isEmail(email)) {
+      setEmailError('Please add a valid email address.');
+      return;
+    }
 
-    const { user } = this.props;
+    if (email !== user.email) {
+      setDidChangeEmail(true);
+    }
+
+    if (photoSizeError || usernameError || emailError) {
+      return;
+    }
+
+    setIsLoading(true);
 
     const input = {
       name,
@@ -242,107 +212,54 @@ class UserWithData extends React.Component<Props, State> {
       email,
     };
 
-    if (!isEmail(email)) {
-      return this.setState({
-        emailError: 'Please add a valid email address.',
-      });
-    }
-
-    if (email !== user.email) {
-      this.setState({
-        didChangeEmail: true,
-      });
-    }
-
-    if (photoSizeError || usernameError || emailError) {
-      return;
-    }
-
-    this.setState({
-      isLoading: true,
-    });
-
-    this.props
-      .editUser(input)
-      .then(({ data: { editUser } }: { data: { editUser: EditUserType } }) => {
-        const user = editUser;
-
-        this.setState({
-          isLoading: false,
-        });
+    editUser(input)
+      .then(({ data: { editUser: editedUser } }: { data: { editUser: EditUserType } }) => {
+        setIsLoading(false);
 
         // the mutation returns a user object. if it exists,
-        if (user !== undefined) {
-          this.props.dispatch(addToastWithTimeout('success', 'Changes saved!'));
-          this.setState({
-            file: null,
-          });
+        if (editedUser !== undefined) {
+          dispatch(addToastWithTimeout('success', 'Changes saved!'));
+          setFile(null);
         }
 
         return;
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
-
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+        setIsLoading(false);
+        dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  handleUsernameValidation = ({ error, username }) => {
-    const { user } = this.props;
+  const handleUsernameValidation = ({ error, username: newUsername }) => {
     // we want to reset error if was typed same username which was set before
-    const usernameError = user.username === username ? '' : error;
-    this.setState({
-      usernameError,
-      username,
-    });
+    const usernameErr = user.username === newUsername ? '' : error;
+    setUsernameError(usernameErr);
+    setUsername(newUsername);
   };
 
-  handleOnError = err => {
-    this.props.dispatch(addToastWithTimeout('error', err.message));
+  const handleOnError = err => {
+    dispatch(addToastWithTimeout('error', err.message));
   };
 
-  render() {
-    const { user } = this.props;
-    const {
-      name,
-      username,
-      description,
-      website,
-      image,
-      coverPhoto,
-      descriptionError,
-      createError,
-      nameError,
-      isLoading,
-      photoSizeError,
-      usernameError,
-      email,
-      emailError,
-      didChangeEmail,
-    } = this.state;
+  const postAuthRedirectPath = `${CLIENT_URL}/users/${username}/settings`;
 
-    const postAuthRedirectPath = `${CLIENT_URL}/users/${username}/settings`;
-
-    return (
+  return (
       <SectionCard data-cy="user-edit-form">
         <Location>
           <Icon glyph="view-back" size={16} />
           <Link to={`/users/${username}`}>Return to Profile</Link>
         </Location>
         <SectionTitle>Profile Settings</SectionTitle>
-        <Form onSubmit={this.save}>
+        <Form onSubmit={save}>
           <ImageInputWrapper>
             <CoverInput
-              onChange={this.setCoverPhoto}
+              onChange={setCoverPhotoHandler}
               defaultValue={coverPhoto}
               preview={true}
             />
             <PhotoInput
               type={'user'}
-              onChange={this.setProfilePhoto}
+              onChange={setProfilePhoto}
               defaultValue={image}
             />
           </ImageInputWrapper>
@@ -356,7 +273,7 @@ class UserWithData extends React.Component<Props, State> {
           <Input
             type="text"
             defaultValue={name}
-            onChange={this.changeName}
+            onChange={changeName}
             placeholder={"What's your name?"}
             dataCy="user-name-input"
           >
@@ -371,8 +288,8 @@ class UserWithData extends React.Component<Props, State> {
             size={'small'}
             username={username}
             placeholder="Set a username..."
-            onValidationResult={this.handleUsernameValidation}
-            onError={this.handleOnError}
+            onValidationResult={handleUsernameValidation}
+            onError={handleOnError}
             dataCy="user-username-input"
           />
 
@@ -382,7 +299,7 @@ class UserWithData extends React.Component<Props, State> {
 
           <TextArea
             defaultValue={description}
-            onChange={this.changeDescription}
+            onChange={changeDescription}
             placeholder={'Introduce yourself to the class...'}
             dataCy="user-description-input"
           >
@@ -393,7 +310,7 @@ class UserWithData extends React.Component<Props, State> {
 
           <Input
             defaultValue={website}
-            onChange={this.changeWebsite}
+            onChange={changeWebsite}
             dataCy="user-website-input"
           >
             Optional: Add your website
@@ -402,7 +319,7 @@ class UserWithData extends React.Component<Props, State> {
           <Input
             type="text"
             defaultValue={email}
-            onChange={this.changeEmail}
+            onChange={changeEmail}
             placeholder={'Email address'}
             dataCy="user-email-input"
           >
@@ -463,7 +380,7 @@ class UserWithData extends React.Component<Props, State> {
                 !!emailError
               }
               loading={isLoading}
-              onClick={this.save}
+              onClick={save}
               data-cy="save-button"
             >
               {isLoading ? 'Saving...' : 'Save'}
@@ -476,8 +393,7 @@ class UserWithData extends React.Component<Props, State> {
         </Form>
       </SectionCard>
     );
-  }
-}
+};
 
 const UserSettings = compose(
   editUserMutation,

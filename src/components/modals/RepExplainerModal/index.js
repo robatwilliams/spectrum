@@ -26,21 +26,20 @@ type Props = {
   currentUser: ?Object,
 };
 
-class RepExplainerModal extends React.Component<Props> {
-  closeModal = () => {
-    this.props.dispatch(closeModal());
+const RepExplainerModal = (props: Props) => {
+  const handleCloseModal = () => {
+    props.dispatch(closeModal());
   };
 
-  render() {
-    const { currentUser, isOpen, reputation } = this.props;
+  const { currentUser, isOpen, reputation } = props;
 
-    return (
+  return (
       <Modal
         /* TODO(@mxstbr): Fix this */
         ariaHideApp={false}
         isOpen={isOpen}
         contentLabel={'Reputation'}
-        onRequestClose={this.closeModal}
+        onRequestClose={handleCloseModal}
         shouldCloseOnOverlayClick={true}
         style={modalStyles}
         closeTimeoutMS={330}
@@ -48,7 +47,7 @@ class RepExplainerModal extends React.Component<Props> {
         <ModalContainer
           noHeader={true}
           title={null}
-          closeModal={this.closeModal}
+          closeModal={handleCloseModal}
         >
           <Section>
             <IconContainer>
@@ -86,8 +85,7 @@ class RepExplainerModal extends React.Component<Props> {
         </ModalContainer>
       </Modal>
     );
-  }
-}
+};
 
 const map = state => ({
   isOpen: state.modals.isOpen,

@@ -15,12 +15,6 @@ import { TextArea, Error } from '../../formElements';
 import { Form, Actions, Subtitle } from './style';
 import { withCurrentUser } from 'src/components/withCurrentUser';
 
-type State = {
-  reason: ?string,
-  reasonError: boolean,
-  isLoading: boolean,
-};
-
 type Props = {
   dispatch: Dispatch<Object>,
   isOpen: boolean,
@@ -29,38 +23,31 @@ type Props = {
   banUser: Function,
 };
 
-class BanUserModal extends React.Component<Props, State> {
-  state = {
-    reason: '',
-    reasonError: false,
-    isLoading: false,
+const BanUserModal = (props: Props) => {
+  const { dispatch, isOpen, user, banUser } = props;
+  const [reason, setReason] = React.useState('');
+  const [reasonError, setReasonError] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const close = () => {
+    dispatch(closeModal());
   };
 
-  close = () => {
-    this.props.dispatch(closeModal());
-  };
-
-  changeReason = e => {
+  const changeReason = e => {
     const reason = e.target.value;
 
-    this.setState({
-      reason,
-      reasonError: false,
-    });
+    setReason(reason);
+    setReasonError(false);
   };
 
-  submit = e => {
+  const submit = e => {
     e.preventDefault();
-    const { reason } = this.state;
-    const { user, dispatch, banUser } = this.props;
 
     if (!reason || reason.length === 0) {
-      return this.setState({ reasonError: false });
+      return setReasonError(false);
     }
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
     const input = {
       userId: user.id,
@@ -69,73 +56,68 @@ class BanUserModal extends React.Component<Props, State> {
 
     banUser(input)
       .then(() => {
-        this.setState({ isLoading: false });
-        this.close();
+        setIsLoading(false);
+        close();
         return dispatch(
           addToastWithTimeout('success', 'User has been banned.')
         );
       })
       .catch(err => {
-        this.setState({ isLoading: false });
+        setIsLoading(false);
         return dispatch(addToastWithTimeout('error', err.toString()));
       });
   };
 
-  render() {
-    const { isOpen, user } = this.props;
-    const { reason, reasonError, isLoading } = this.state;
+  const styles = modalStyles(420);
 
-    const styles = modalStyles(420);
-
-    return (
-      <Modal
-        /* TODO(@mxstbr): Fix this */
-        ariaHideApp={false}
-        isOpen={isOpen}
-        contentLabel={`Ban ${user.name}`}
-        onRequestClose={this.close}
-        shouldCloseOnOverlayClick={true}
-        style={styles}
-        closeTimeoutMS={330}
+  return (
+    <Modal
+      /* TODO(@mxstbr): Fix this */
+      ariaHideApp={false}
+      isOpen={isOpen}
+      contentLabel={`Ban ${user.name}`}
+      onRequestClose={close}
+      shouldCloseOnOverlayClick={true}
+      style={styles}
+      closeTimeoutMS={330}
+    >
+      <ModalContainer
+        title={`Ban ${user.name} (@${user.username})`}
+        closeModal={close}
       >
-        <ModalContainer
-          title={`Ban ${user.name} (@${user.username})`}
-          closeModal={this.close}
-        >
-          <Subtitle>
-            Banning a user is very hard to undo. Please be sure you want this
-            user to be permanently banned before completing this step.
-          </Subtitle>
-          <Form>
-            <TextArea
-              defaultValue={reason}
-              onChange={this.changeReason}
-              placeholder={'Add a reason for banning this user...'}
-            />
+        <Subtitle>
+          Banning a user is very hard to undo. Please be sure you want this
+          user to be permanently banned before completing this step.
+        </Subtitle>
+        <Form>
+          <TextArea
+            defaultValue={reason}
+            onChange={changeReason}
+            placeholder={'Add a reason for banning this user...'}
+          />
 
-            {reasonError && (
-              <Error>
-                Please be sure to add a reason for banning this user for our
-                records.
-              </Error>
-            )}
+          {reasonError && (
+            <Error>
+              Please be sure to add a reason for banning this user for our
+              records.
+            </Error>
+          )}
 
-            <Actions>
-              <TextButton onClick={this.close}>Cancel</TextButton>
-              <WarnButton
-                disabled={!reason || reason.length === 0}
-                loading={isLoading}
-                onClick={this.submit}
-              >
-                {isLoading ? 'Banning...' : 'Ban User'}
-              </WarnButton>
-            </Actions>
-          </Form>
-        </ModalContainer>
-      </Modal>
-    );
-  }
-}
+          <Actions>
+            <TextButton onClick={close}>Cancel</TextButton>
+            <WarnButton
+              disabled={!reason || reason.length === 0}
+              loading={isLoading}
+              onClick={submit}
+            >
+              {isLoading ? 'Banning...' : 'Ban User'}
+            </WarnButton>
+          </Actions>
+        </Form>
+      </ModalContainer>
+    </Modal>
+  );
+};
 
 const map = state => ({
   isOpen: state.modals.isOpen,

@@ -1,5 +1,5 @@
 // @flow
-import * as React from 'react';
+import React, { useState } from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
@@ -36,77 +36,61 @@ import {
 } from 'src/components/editForm/style';
 import type { Dispatch } from 'redux';
 
-type State = {
-  name: string,
-  nameError: boolean,
-  slug: string,
-  description: ?string,
-  descriptionError: boolean,
-  isPrivate: boolean,
-  channelId: string,
-  channelData: Object,
-  isLoading: boolean,
-};
-
 type Props = {
   editChannel: Function,
   dispatch: Dispatch<Object>,
   channel: GetChannelType,
 };
-class ChannelWithData extends React.Component<Props, State> {
-  constructor(props) {
-    super(props);
 
-    const { channel } = this.props;
+const ChannelWithData = (props: Props) => {
+  const { channel, editChannel, dispatch } = props;
 
-    this.state = {
-      name: channel.name,
-      nameError: false,
-      slug: channel.slug,
-      description: channel.description,
-      descriptionError: false,
-      isPrivate: channel.isPrivate || false,
-      channelId: channel.id,
-      channelData: channel,
-      isLoading: false,
-    };
-  }
+  const [name, setName] = useState(channel.name);
+  const [nameError, setNameError] = useState(false);
+  const [slug, setSlug] = useState(channel.slug);
+  const [description, setDescription] = useState(channel.description);
+  const [descriptionError, setDescriptionError] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(channel.isPrivate || false);
+  const [channelId, setChannelId] = useState(channel.id);
+  const [channelData, setChannelData] = useState(channel);
+  const [isLoading, setIsLoading] = useState(false);
 
-  handleChange = e => {
-    const key = e.target.id;
-    const value = e.target.value;
-    const { isPrivate } = this.state;
-
-    const newState = {};
-    // checkboxes should reverse the value
-    if (key === 'isPrivate') {
-      newState[key] = !isPrivate;
-    } else {
-      newState[key] = value;
-
-      let hasInvalidChars = value.search(whiteSpaceRegex) >= 0;
-      let hasOddHyphens = value.search(oddHyphenRegex) >= 0;
-      this.updateStateOnError(newState, key, hasInvalidChars || hasOddHyphens);
-    }
-
-    this.setState(prevState => {
-      return Object.assign({}, prevState, {
-        ...newState,
-      });
-    });
-  };
-
-  updateStateOnError(state, key, setError) {
+  const updateStateOnError = (state, key, setError) => {
     if (key === 'name') {
       state['nameError'] = setError;
     } else {
       state['descriptionError'] = setError;
     }
-  }
+  };
 
-  save = e => {
+  const handleChange = e => {
+    const key = e.target.id;
+    const value = e.target.value;
+
+    const newState = {};
+    // checkboxes should reverse the value
+    if (key === 'isPrivate') {
+      newState[key] = !isPrivate;
+      setIsPrivate(!isPrivate);
+    } else {
+      newState[key] = value;
+
+      let hasInvalidChars = value.search(whiteSpaceRegex) >= 0;
+      let hasOddHyphens = value.search(oddHyphenRegex) >= 0;
+      updateStateOnError(newState, key, hasInvalidChars || hasOddHyphens);
+
+      if (key === 'name') {
+        setName(value);
+        setNameError(hasInvalidChars || hasOddHyphens);
+      } else if (key === 'description') {
+        setDescription(value);
+        setDescriptionError(hasInvalidChars || hasOddHyphens);
+      }
+    }
+  };
+
+  const save = e => {
     e.preventDefault();
-    const { name, slug, description, isPrivate, channelId } = this.state;
     const input = {
       name,
       slug,
@@ -115,42 +99,33 @@ class ChannelWithData extends React.Component<Props, State> {
       channelId,
     };
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
     // if privacy changed in this edit
-    if (this.props.channel.isPrivate !== isPrivate) {
+    if (channel.isPrivate !== isPrivate) {
     }
 
-    this.props
-      .editChannel(input)
+    editChannel(input)
       .then(({ data }: EditChannelType) => {
         const { editChannel: channel } = data;
 
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
 
         // the mutation returns a channel object. if it exists,
         if (channel !== undefined) {
-          this.props.dispatch(addToastWithTimeout('success', 'Channel saved!'));
+          dispatch(addToastWithTimeout('success', 'Channel saved!'));
         }
         return;
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
 
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+        dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  triggerDeleteChannel = (e, channelId) => {
+  const triggerDeleteChannel = (e, channelId) => {
     e.preventDefault();
-    const { channel } = this.props;
-    const { name, channelData } = this.state;
     const message = (
       <div>
         <p>
@@ -171,7 +146,7 @@ class ChannelWithData extends React.Component<Props, State> {
       </div>
     );
 
-    return this.props.dispatch(
+    return dispatch(
       openModal('DELETE_DOUBLE_CHECK_MODAL', {
         id: channelId,
         entity: 'channel',
@@ -181,142 +156,129 @@ class ChannelWithData extends React.Component<Props, State> {
     );
   };
 
-  render() {
-    const {
-      name,
-      nameError,
-      slug,
-      description,
-      descriptionError,
-      isPrivate,
-      isLoading,
-    } = this.state;
-    const { channel } = this.props;
-
-    if (!channel) {
-      return (
-        <NullCard
-          bg="channel"
-          heading={"This channel doesn't exist yet."}
-          copy={'Want to make it?'}
-        >
-          {/* TODO: wire up button */}
-          <PrimaryOutlineButton>Create</PrimaryOutlineButton>
-        </NullCard>
-      );
-    } else {
-      return (
-        <SectionCard>
-          <Location>
-            <Link to={`/${channel.community.slug}/${channel.slug}`}>
-              View Channel
-            </Link>
-          </Location>
-          <SectionTitle>Channel Settings</SectionTitle>
-          <Form onSubmit={this.save}>
-            <Input
-              defaultValue={name}
-              id="name"
-              onChange={this.handleChange}
-              dataCy="channel-name-input"
+  if (!channel) {
+    return (
+      <NullCard
+        bg="channel"
+        heading={"This channel doesn't exist yet."}
+        copy={'Want to make it?'}
+      >
+        {/* TODO: wire up button */}
+        <PrimaryOutlineButton>Create</PrimaryOutlineButton>
+      </NullCard>
+    );
+  } else {
+    return (
+      <SectionCard>
+        <Location>
+          <Link to={`/${channel.community.slug}/${channel.slug}`}>
+            View Channel
+          </Link>
+        </Location>
+        <SectionTitle>Channel Settings</SectionTitle>
+        <Form onSubmit={save}>
+          <Input
+            defaultValue={name}
+            id="name"
+            onChange={handleChange}
+            dataCy="channel-name-input"
+          >
+            Name
+          </Input>
+          {nameError && (
+            <Error>Channel name can`t have invalid characters.</Error>
+          )}
+          <UnderlineInput defaultValue={slug} disabled>
+            {`URL: /${channel.community.slug}/`}
+          </UnderlineInput>
+          <TextArea
+            id="description"
+            defaultValue={description}
+            onChange={handleChange}
+            dataCy="channel-description-input"
+          >
+            Description
+          </TextArea>
+          {descriptionError && (
+            <Error>
+              Oops, there may be some invalid characters - try fixing that up.
+            </Error>
+          )}
+          {/* {slug !== 'general' &&
+            <Checkbox
+              id="isPrivate"
+              checked={isPrivate}
+              onChange={handleChange}
             >
-              Name
-            </Input>
-            {nameError && (
-              <Error>Channel name can`t have invalid characters.</Error>
-            )}
-            <UnderlineInput defaultValue={slug} disabled>
-              {`URL: /${channel.community.slug}/`}
-            </UnderlineInput>
-            <TextArea
-              id="description"
-              defaultValue={description}
-              onChange={this.handleChange}
-              dataCy="channel-description-input"
+              Private channel
+            </Checkbox>} */}
+          {isPrivate ? (
+            <Description>
+              Only channel members can see the threads, messages, and members
+              in this channel. You can manually approve users who request to
+              join this channel.
+            </Description>
+          ) : channel.community.isPrivate ? (
+            <Description>
+              Members in your private community will be able to join this
+              channel, post threads and messages, and will be able to see
+              other members.
+            </Description>
+          ) : (
+            <Description>
+              Anyone on Spectrum can join this channel, post threads and
+              messages, and will be able to see other members.
+            </Description>
+          )}
+
+          {// if the user is moving from private to public
+          channel.isPrivate && !isPrivate && (
+            <Notice>
+              When a private channel is made public all pending users will be
+              added as members of the channel. Blocked users will remain
+              blocked from viewing all content in this channel but in the
+              future any new person will be able to join.
+            </Notice>
+          )}
+
+          <Actions>
+            <PrimaryOutlineButton
+              onClick={save}
+              disabled={nameError || descriptionError}
+              loading={isLoading}
+              data-cy="save-button"
             >
-              Description
-            </TextArea>
-            {descriptionError && (
-              <Error>
-                Oops, there may be some invalid characters - try fixing that up.
-              </Error>
-            )}
-            {/* {slug !== 'general' &&
-              <Checkbox
-                id="isPrivate"
-                checked={isPrivate}
-                onChange={this.handleChange}
-              >
-                Private channel
-              </Checkbox>} */}
-            {isPrivate ? (
-              <Description>
-                Only channel members can see the threads, messages, and members
-                in this channel. You can manually approve users who request to
-                join this channel.
-              </Description>
-            ) : channel.community.isPrivate ? (
-              <Description>
-                Members in your private community will be able to join this
-                channel, post threads and messages, and will be able to see
-                other members.
-              </Description>
-            ) : (
-              <Description>
-                Anyone on Spectrum can join this channel, post threads and
-                messages, and will be able to see other members.
-              </Description>
-            )}
-
-            {// if the user is moving from private to public
-            this.props.channel.isPrivate && !isPrivate && (
-              <Notice>
-                When a private channel is made public all pending users will be
-                added as members of the channel. Blocked users will remain
-                blocked from viewing all content in this channel but in the
-                future any new person will be able to join.
-              </Notice>
-            )}
-
-            <Actions>
-              <PrimaryOutlineButton
-                onClick={this.save}
-                disabled={nameError || descriptionError}
-                loading={isLoading}
-                data-cy="save-button"
-              >
-                {isLoading ? 'Saving...' : 'Save'}
-              </PrimaryOutlineButton>
-              {slug !== 'general' && (
-                <TertiaryActionContainer>
-                  <Tooltip content={`Delete ${name}`}>
-                    <span>
-                      <Icon
-                        glyph="delete"
-                        color="text.placeholder"
-                        hoverColor="warn.alt"
-                        onClick={e => this.triggerDeleteChannel(e, channel.id)}
-                        data-cy="delete-channel-button"
-                      />
+              {isLoading ? 'Saving...' : 'Save'}
+            </PrimaryOutlineButton>
+            {slug !== 'general' && (
+              <TertiaryActionContainer>
+                <Tooltip content={`Delete ${name}`}>
+                  <span>
+                    <Icon
+                      glyph="delete"
+                      color="text.placeholder"
+                      hoverColor="warn.alt"
+                      onClick={e => triggerDeleteChannel(e, channel.id)}
+                      data-cy="delete-channel-button"
+                    />
                     </span>
                   </Tooltip>
                 </TertiaryActionContainer>
               )}
             </Actions>
 
-            {slug === 'general' && (
-              <GeneralNotice>
-                The General channel is the default channel for your community.
-                It can’t be deleted or private, but you can still change the
-                name and description.
-              </GeneralNotice>
-            )}
-          </Form>
-        </SectionCard>
-      );
-    }
+          {slug === 'general' && (
+            <GeneralNotice>
+              The General channel is the default channel for your community.
+              It can't be deleted or private, but you can still change the
+              name and description.
+            </GeneralNotice>
+          )}
+        </Form>
+      </SectionCard>
+    );
   }
-}
+};
 
 const Channel = compose(
   deleteChannelMutation,

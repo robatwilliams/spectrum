@@ -77,37 +77,8 @@ export const DISCARD_DRAFT_MESSAGE =
 
 // We persist the body and title to localStorage
 // so in case the app crashes users don't loose content
-class ComposerWithData extends React.Component<Props, State> {
-  bodyEditor: any;
-
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      title: '',
-      body: '',
-      isLoading: false,
-      postWasPublished: false,
-      preview: false,
-      selectedChannelId: '',
-      selectedCommunityId: '',
-    };
-
-    this.persistBodyToLocalStorageWithDebounce = debounce(
-      this.persistBodyToLocalStorageWithDebounce,
-      500
-    );
-    this.persistTitleToLocalStorageWithDebounce = debounce(
-      this.persistTitleToLocalStorageWithDebounce,
-      500
-    );
-  }
-
-  removeStorage = async () => {
-    await clearDraftThread();
-  };
-
-  getTitleAndBody = () => {
+const ComposerWithData = (props: Props) => {
+  const getTitleAndBody = () => {
     const { body: storedBody, title: storedTitle } = getDraftThread();
     return {
       storedBody,
@@ -115,40 +86,106 @@ class ComposerWithData extends React.Component<Props, State> {
     };
   };
 
-  componentWillMount() {
-    let { storedBody, storedTitle } = this.getTitleAndBody();
-    this.setState({
-      title: this.state.title || storedTitle || '',
-      body: this.state.body || storedBody || '',
-    });
-  }
+  const { storedBody, storedTitle } = getTitleAndBody();
+  
+  const [title, setTitle] = React.useState(storedTitle || '');
+  const [body, setBody] = React.useState(storedBody || '');
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [postWasPublished, setPostWasPublished] = React.useState(false);
+  const [preview, setPreview] = React.useState(false);
+  const [selectedChannelId, setSelectedChannelId] = React.useState('');
+  const [selectedCommunityId, setSelectedCommunityId] = React.useState('');
 
-  componentDidMount() {
-    const { dispatch } = this.props;
-    dispatch(
-      setTitlebarProps({
-        title: 'New post',
+  const bodyEditor = React.useRef<any>(null);
+
+  const removeStorage = async () => {
+    await clearDraftThread();
+  };
+
+  const handleTitleBodyChange = (key: 'title' | 'body', value: string) => {
+    storeDraftThread({
+      [key]: value,
+    });
+  };
+
+  const persistBodyToLocalStorageWithDebounce = React.useMemo(
+    () =>
+      debounce(() => {
+        if (!localStorage) return;
+        handleTitleBodyChange('body', body);
+      }, 500),
+    [body]
+  );
+
+  const persistTitleToLocalStorageWithDebounce = React.useMemo(
+    () =>
+      debounce(() => {
+        if (!localStorage) return;
+        handleTitleBodyChange('title', title);
+      }, 500),
+    [title]
+  );
+
+  const persistTitleToLocalStorage = () => {
+    if (!localStorage) return;
+    handleTitleBodyChange('title', title);
+  };
+
+  const persistBodyToLocalStorage = () => {
+    if (!localStorage) return;
+    handleTitleBodyChange('body', body);
+  };
+
+  const composerHasContent = () => {
+    return title !== '' || body !== '';
+  };
+
+  const clearEditorStateAfterPublish = () => {
+    try {
+      removeStorage();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const closeComposer = (clear?: any) => {
+    persistBodyToLocalStorage();
+    persistTitleToLocalStorage();
+
+    // we will clear the composer if it unmounts as a result of a post
+    // being published or draft discarded, that way the next composer open will start fresh
+    if (clear) {
+      clearEditorStateAfterPublish();
+      setTitle('');
+      setBody('');
+      setPreview(false);
+    }
+
+    if (props.previousLocation)
+      return props.history.push({
+        ...props.previousLocation,
+        state: { modal: false },
+      });
+
+    return props.history.goBack({ state: { modal: false } });
+  };
+
+  const discardDraft = () => {
+    const hasContent = composerHasContent();
+
+    if (!hasContent) {
+      return closeComposer();
+    }
+
+    props.dispatch(
+      openModal('CLOSE_COMPOSER_CONFIRMATION_MODAL', {
+        message: DISCARD_DRAFT_MESSAGE,
+        closeComposer: () => closeComposer('clear'),
       })
     );
+  };
 
-    // $FlowIssue
-    document.addEventListener('keydown', this.handleGlobalKeyPress, false);
-  }
-
-  componentWillUnmount() {
-    // $FlowIssue
-    document.removeEventListener('keydown', this.handleGlobalKeyPress, false);
-    const { postWasPublished } = this.state;
-
-    // if a post was published, in this session, clear redux so that the next
-    // composer open will start fresh
-    if (postWasPublished) return;
-
-    // otherwise, clear the composer normally and save the state
-    return;
-  }
-
-  handleGlobalKeyPress = e => {
+  const handleGlobalKeyPress = (e: any) => {
     const esc = e && e.keyCode === ESC;
     const enter = e.keyCode === ENTER;
     const cmdEnter = e.keyCode === ENTER && e.metaKey;
@@ -161,168 +198,84 @@ class ComposerWithData extends React.Component<Props, State> {
 
     if (esc && modalIsOpen) {
       e.stopPropagation();
-      this.props.dispatch(closeModal());
+      props.dispatch(closeModal());
       return;
     }
 
     if (enter && modalIsOpen) {
       e.stopPropagation();
-      this.discardDraft();
+      discardDraft();
       return;
     }
 
-    const composerHasContent = this.composerHasContent();
+    const hasContent = composerHasContent();
 
-    if (esc && composerHasContent) {
-      this.discardDraft();
+    if (esc && hasContent) {
+      discardDraft();
       return;
     }
 
-    if (esc && !composerHasContent) {
-      return this.closeComposer();
+    if (esc && !hasContent) {
+      return closeComposer();
     }
 
-    if (cmdEnter && !modalIsOpen) return this.publishThread();
+    if (cmdEnter && !modalIsOpen) return publishThreadHandler();
   };
 
-  composerHasContent = () => {
-    const { title, body } = this.state;
-    return title !== '' || body !== '';
-  };
-
-  changeTitle = e => {
-    const title = e.target.value;
-    this.persistTitleToLocalStorageWithDebounce();
-    if (/\n$/g.test(title)) {
-      this.bodyEditor.focus && this.bodyEditor.focus();
+  const changeTitle = (e: any) => {
+    const newTitle = e.target.value;
+    persistTitleToLocalStorageWithDebounce();
+    if (/\n$/g.test(newTitle)) {
+      bodyEditor.current && bodyEditor.current.focus && bodyEditor.current.focus();
       return;
     }
-    this.setState({
-      title,
-    });
+    setTitle(newTitle);
   };
 
-  changeBody = evt => {
-    const body = evt.target.value;
-    this.persistBodyToLocalStorageWithDebounce();
-    this.setState({
-      body,
-    });
+  const changeBody = (evt: any) => {
+    const newBody = evt.target.value;
+    persistBodyToLocalStorageWithDebounce();
+    setBody(newBody);
   };
 
-  closeComposer = (clear?: any) => {
-    this.persistBodyToLocalStorage();
-    this.persistTitleToLocalStorage();
-
-    // we will clear the composer if it unmounts as a result of a post
-    // being published or draft discarded, that way the next composer open will start fresh
-    if (clear) {
-      this.clearEditorStateAfterPublish();
-      this.setState({
-        title: '',
-        body: '',
-        preview: false,
-      });
-    }
-
-    if (this.props.previousLocation)
-      return this.props.history.push({
-        ...this.props.previousLocation,
-        state: { modal: false },
-      });
-
-    return this.props.history.goBack({ state: { modal: false } });
+  const onCancelClick = () => {
+    discardDraft();
   };
 
-  discardDraft = () => {
-    const composerHasContent = this.composerHasContent();
-
-    if (!composerHasContent) {
-      return this.closeComposer();
-    }
-
-    this.props.dispatch(
-      openModal('CLOSE_COMPOSER_CONFIRMATION_MODAL', {
-        message: DISCARD_DRAFT_MESSAGE,
-        closeComposer: () => this.closeComposer('clear'),
-      })
-    );
+  const uploadFile = (evt: any) => {
+    uploadFiles(evt.target.files);
   };
 
-  clearEditorStateAfterPublish = () => {
-    try {
-      this.removeStorage();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  onCancelClick = () => {
-    this.discardDraft();
-  };
-
-  handleTitleBodyChange = (key: 'title' | 'body') => {
-    storeDraftThread({
-      [key]: this.state[key],
-    });
-  };
-
-  persistBodyToLocalStorageWithDebounce = () => {
-    if (!localStorage) return;
-    this.handleTitleBodyChange('body');
-  };
-
-  persistTitleToLocalStorageWithDebounce = () => {
-    if (!localStorage) return;
-    this.handleTitleBodyChange('title');
-  };
-
-  persistTitleToLocalStorage = () => {
-    if (!localStorage) return;
-    this.handleTitleBodyChange('title');
-  };
-
-  persistBodyToLocalStorage = () => {
-    if (!localStorage) return;
-    this.handleTitleBodyChange('body');
-  };
-
-  uploadFile = evt => {
-    this.uploadFiles(evt.target.files);
-  };
-
-  uploadFiles = files => {
+  const uploadFiles = (files: any) => {
     const uploading = `![Uploading ${files[0].name}...]()`;
-    let caretPos = this.bodyEditor.selectionStart;
+    let caretPos = bodyEditor.current.selectionStart;
 
-    this.setState(
-      ({ body }) => ({
-        isLoading: true,
-        body:
-          body.substring(0, caretPos) +
-          uploading +
-          body.substring(this.bodyEditor.selectionEnd, this.state.body.length),
-      }),
-      () => {
-        caretPos = caretPos + uploading.length;
-        this.bodyEditor.selectionStart = caretPos;
-        this.bodyEditor.selectionEnd = caretPos;
-        this.bodyEditor.focus();
-      }
-    );
+    const newBody =
+      body.substring(0, caretPos) +
+      uploading +
+      body.substring(bodyEditor.current.selectionEnd, body.length);
 
-    return this.props
+    setIsLoading(true);
+    setBody(newBody);
+
+    // Use setTimeout to ensure DOM updates before setting caret position
+    setTimeout(() => {
+      caretPos = caretPos + uploading.length;
+      bodyEditor.current.selectionStart = caretPos;
+      bodyEditor.current.selectionEnd = caretPos;
+      bodyEditor.current.focus();
+    }, 0);
+
+    return props
       .uploadImage({
         image: files[0],
         type: 'threads',
       })
       .then(({ data }) => {
-        this.setState({
-          isLoading: false,
-        });
-        this.changeBody({
+        setIsLoading(false);
+        changeBody({
           target: {
-            value: this.state.body.replace(
+            value: body.replace(
               uploading,
               `![${files[0].name}](${data.uploadImage})`
             ),
@@ -331,15 +284,13 @@ class ComposerWithData extends React.Component<Props, State> {
       })
       .catch(err => {
         console.error({ err });
-        this.setState({
-          isLoading: false,
-        });
-        this.changeBody({
+        setIsLoading(false);
+        changeBody({
           target: {
-            value: this.state.body.replace(uploading, ''),
+            value: body.replace(uploading, ''),
           },
         });
-        this.props.dispatch(
+        props.dispatch(
           addToastWithTimeout(
             'error',
             `Uploading image failed - ${err.message}`
@@ -348,22 +299,20 @@ class ComposerWithData extends React.Component<Props, State> {
       });
   };
 
-  publishThread = () => {
+  const publishThreadHandler = () => {
     // if no title and no channel is set, don't allow a thread to be published
     if (
-      !this.state.title ||
-      !this.state.selectedCommunityId ||
-      !this.state.selectedChannelId
+      !title ||
+      !selectedCommunityId ||
+      !selectedChannelId
     ) {
       return;
     }
 
     // isLoading will change the publish button to a loading spinner
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
-    const { dispatch, networkOnline, websocketConnection } = this.props;
+    const { dispatch, networkOnline, websocketConnection } = props;
 
     if (!networkOnline) {
       return dispatch(
@@ -388,7 +337,6 @@ class ComposerWithData extends React.Component<Props, State> {
 
     // define new constants in order to construct the proper shape of the
     // input for the publishThread mutation
-    const { selectedChannelId, selectedCommunityId, title, body } = this.state;
     const channelId = selectedChannelId;
     const communityId = selectedCommunityId;
 
@@ -412,158 +360,168 @@ class ComposerWithData extends React.Component<Props, State> {
     };
 
     // one last save to localstorage
-    this.persistBodyToLocalStorage();
-    this.persistTitleToLocalStorage();
+    persistBodyToLocalStorage();
+    persistTitleToLocalStorage();
 
-    this.props
+    props
       .publishThread(thread)
       // after the mutation occurs, it will either return an error or the new
       // thread that was published
       .then(({ data }) => {
-        this.clearEditorStateAfterPublish();
+        clearEditorStateAfterPublish();
 
         // stop the loading spinner on the publish button
-        this.setState({
-          isLoading: false,
-          postWasPublished: true,
-          title: '',
-          body: '',
-        });
+        setIsLoading(false);
+        setPostWasPublished(true);
+        setTitle('');
+        setBody('');
 
         // redirect the user to the thread
         // if they are in the inbox, select it
-        this.props.dispatch(
+        props.dispatch(
           addToastWithTimeout('success', 'Thread published!')
         );
-        if (this.props.location.pathname === '/new/thread') {
-          this.props.history.replace(getThreadLink(data.publishThread));
+        if (props.location.pathname === '/new/thread') {
+          props.history.replace(getThreadLink(data.publishThread));
         } else {
-          this.props.history.push(getThreadLink(data.publishThread));
+          props.history.push(getThreadLink(data.publishThread));
         }
         return;
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+        setIsLoading(false);
+        props.dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  setSelectedCommunity = (id: string) => {
-    return this.setState({ selectedCommunityId: id });
+  const setSelectedCommunity = (id: string) => {
+    return setSelectedCommunityId(id);
   };
 
-  setSelectedChannel = (id: string) => {
-    return this.setState({ selectedChannelId: id });
+  const setSelectedChannel = (id: string) => {
+    return setSelectedChannelId(id);
   };
 
-  render() {
-    const {
-      title,
-      isLoading,
-      selectedChannelId,
-      selectedCommunityId,
-    } = this.state;
+  React.useEffect(() => {
+    const { dispatch } = props;
+    dispatch(
+      setTitlebarProps({
+        title: 'New post',
+      })
+    );
 
-    const {
-      networkOnline,
-      websocketConnection,
-      isEditing,
-      isModal,
-    } = this.props;
+    // $FlowIssue
+    document.addEventListener('keydown', handleGlobalKeyPress, false);
 
-    const networkDisabled =
-      !networkOnline ||
-      (websocketConnection !== 'connected' &&
-        websocketConnection !== 'reconnected');
+    return () => {
+      // $FlowIssue
+      document.removeEventListener('keydown', handleGlobalKeyPress, false);
+      // if a post was published, in this session, clear redux so that the next
+      // composer open will start fresh
+      if (postWasPublished) return;
 
-    return (
-      <Wrapper data-cy="thread-composer-wrapper">
-        <Head title={'New post'} description={'Write a new post'} />
-        <Overlay
-          isModal={isModal}
-          onClick={this.discardDraft}
-          data-cy="overlay"
+      // otherwise, clear the composer normally and save the state
+      return;
+    };
+  }, []);
+
+  const {
+    networkOnline,
+    websocketConnection,
+    isEditing,
+    isModal,
+  } = props;
+
+  const networkDisabled =
+    !networkOnline ||
+    (websocketConnection !== 'connected' &&
+      websocketConnection !== 'reconnected');
+
+  return (
+    <Wrapper data-cy="thread-composer-wrapper">
+      <Head title={'New post'} description={'Write a new post'} />
+      <Overlay
+        isModal={isModal}
+        onClick={discardDraft}
+        data-cy="overlay"
+      />
+
+      <Container data-cy="modal-container" isModal={isModal}>
+        <ComposerLocationSelectors
+          selectedChannelId={selectedChannelId}
+          selectedCommunityId={selectedCommunityId}
+          onCommunitySelectionChanged={setSelectedCommunity}
+          onChannelSelectionChanged={setSelectedChannel}
         />
 
-        <Container data-cy="modal-container" isModal={isModal}>
-          <ComposerLocationSelectors
-            selectedChannelId={selectedChannelId}
-            selectedCommunityId={selectedCommunityId}
-            onCommunitySelectionChanged={this.setSelectedCommunity}
-            onChannelSelectionChanged={this.setSelectedChannel}
-          />
+        <Inputs
+          title={title}
+          body={body}
+          changeBody={changeBody}
+          changeTitle={changeTitle}
+          uploadFiles={uploadFiles}
+          autoFocus={true}
+          bodyRef={ref => (bodyEditor.current = ref)}
+          onKeyDown={handleGlobalKeyPress}
+          isEditing={isEditing}
+        />
 
-          <Inputs
-            title={this.state.title}
-            body={this.state.body}
-            changeBody={this.changeBody}
-            changeTitle={this.changeTitle}
-            uploadFiles={this.uploadFiles}
-            autoFocus={true}
-            bodyRef={ref => (this.bodyEditor = ref)}
-            onKeyDown={this.handleGlobalKeyPress}
-            isEditing={isEditing}
-          />
-
-          {networkDisabled && (
-            <DisabledWarning>
-              Lost connection to the internet or server...
-            </DisabledWarning>
-          )}
-          <Actions>
-            <InputHints>
-              <Tooltip content={'Upload photo'}>
-                <MediaLabel>
-                  <MediaInput
-                    type="file"
-                    accept={'.png, .jpg, .jpeg, .gif, .mp4'}
-                    multiple={false}
-                    onChange={this.uploadFile}
-                  />
-                  <Icon glyph="photo" />
-                </MediaLabel>
-              </Tooltip>
-              <Tooltip content={'Style with Markdown'}>
-                <DesktopLink
-                  target="_blank"
-                  href="https://guides.github.com/features/mastering-markdown/"
-                >
-                  <Icon glyph="markdown" />
-                </DesktopLink>
-              </Tooltip>
-            </InputHints>
-            <ButtonRow>
-              <TextButton
-                data-cy="composer-cancel-button"
-                hoverColor="warn.alt"
-                onClick={this.discardDraft}
+        {networkDisabled && (
+          <DisabledWarning>
+            Lost connection to the internet or server...
+          </DisabledWarning>
+        )}
+        <Actions>
+          <InputHints>
+            <Tooltip content={'Upload photo'}>
+              <MediaLabel>
+                <MediaInput
+                  type="file"
+                  accept={'.png, .jpg, .jpeg, .gif, .mp4'}
+                  multiple={false}
+                  onChange={uploadFile}
+                />
+                <Icon glyph="photo" />
+              </MediaLabel>
+            </Tooltip>
+            <Tooltip content={'Style with Markdown'}>
+              <DesktopLink
+                target="_blank"
+                href="https://guides.github.com/features/mastering-markdown/"
               >
-                Cancel
-              </TextButton>
-              <PrimaryButton
-                data-cy="composer-publish-button"
-                onClick={this.publishThread}
-                loading={isLoading}
-                disabled={
-                  !title ||
-                  title.trim().length === 0 ||
-                  isLoading ||
-                  networkDisabled ||
-                  !selectedChannelId ||
-                  !selectedCommunityId
-                }
-              >
-                {isLoading ? 'Publishing...' : 'Publish'}
-              </PrimaryButton>
-            </ButtonRow>
-          </Actions>
-        </Container>
-      </Wrapper>
-    );
-  }
-}
+                <Icon glyph="markdown" />
+              </DesktopLink>
+            </Tooltip>
+          </InputHints>
+          <ButtonRow>
+            <TextButton
+              data-cy="composer-cancel-button"
+              hoverColor="warn.alt"
+              onClick={discardDraft}
+            >
+              Cancel
+            </TextButton>
+            <PrimaryButton
+              data-cy="composer-publish-button"
+              onClick={publishThreadHandler}
+              loading={isLoading}
+              disabled={
+                !title ||
+                title.trim().length === 0 ||
+                isLoading ||
+                networkDisabled ||
+                !selectedChannelId ||
+                !selectedCommunityId
+              }
+            >
+              {isLoading ? 'Publishing...' : 'Publish'}
+            </PrimaryButton>
+          </ButtonRow>
+        </Actions>
+      </Container>
+    </Wrapper>
+  );
+};
 
 // $FlowIssue
 const mapStateToProps = state => ({

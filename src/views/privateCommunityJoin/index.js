@@ -19,17 +19,36 @@ type Props = {
   dispatch: Function,
 };
 
-type State = {
-  isLoading: boolean,
-};
+const PrivateCommunityJoin = (props: Props) => {
+  const {
+    match,
+    history,
+    addCommunityMemberWithToken,
+    currentUser,
+    dispatch,
+  } = props;
 
-class PrivateCommunityJoin extends React.Component<Props, State> {
-  state = {
-    isLoading: false,
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const handleJoin = () => {
+    const { token, communitySlug } = match.params;
+
+    setIsLoading(true);
+
+    addCommunityMemberWithToken({ communitySlug, token })
+      .then(() => {
+        setIsLoading(false);
+        dispatch(addToastWithTimeout('success', 'Welcome!'));
+        return history.replace(`/${communitySlug}`);
+      })
+      .catch(err => {
+        setIsLoading(false);
+        dispatch(addToastWithTimeout('error', err.message));
+        return history.replace(`/${communitySlug}`);
+      });
   };
 
-  componentDidMount() {
-    const { match, history, currentUser } = this.props;
+  React.useEffect(() => {
     const { token, communitySlug } = match.params;
 
     if (!token) {
@@ -40,60 +59,34 @@ class PrivateCommunityJoin extends React.Component<Props, State> {
       return;
     }
 
-    return this.handleJoin();
-  }
+    return handleJoin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  componentDidUpdate(prevProps) {
-    const curr = this.props;
+  const prevCurrentUserRef = React.useRef(null);
+  React.useEffect(() => {
+    const prevCurrentUser = prevCurrentUserRef.current;
+    prevCurrentUserRef.current = currentUser;
 
-    if (!prevProps.currentUser && curr.currentUser) {
-      return this.handleJoin();
+    if (!prevCurrentUser && currentUser) {
+      return handleJoin();
     }
+  });
+
+  const {
+    params: { communitySlug, token },
+  } = match;
+
+  const redirectPath = `${CLIENT_URL}/${communitySlug}/join/${token}`;
+
+  if (!currentUser || !currentUser.id) {
+    return <CommunityLogin match={match} redirectPath={redirectPath} />;
   }
 
-  handleJoin = () => {
-    const {
-      match,
-      history,
-      addCommunityMemberWithToken,
-      dispatch,
-    } = this.props;
-    const { token, communitySlug } = match.params;
+  if (isLoading) return <LoadingView />;
 
-    this.setState({ isLoading: true });
-
-    addCommunityMemberWithToken({ communitySlug, token })
-      .then(() => {
-        this.setState({ isLoading: false });
-        dispatch(addToastWithTimeout('success', 'Welcome!'));
-        return history.replace(`/${communitySlug}`);
-      })
-      .catch(err => {
-        this.setState({ isLoading: false });
-        dispatch(addToastWithTimeout('error', err.message));
-        return history.replace(`/${communitySlug}`);
-      });
-  };
-
-  render() {
-    const { currentUser, match } = this.props;
-    const { isLoading } = this.state;
-
-    const {
-      params: { communitySlug, token },
-    } = match;
-
-    const redirectPath = `${CLIENT_URL}/${communitySlug}/join/${token}`;
-
-    if (!currentUser || !currentUser.id) {
-      return <CommunityLogin match={match} redirectPath={redirectPath} />;
-    }
-
-    if (isLoading) return <LoadingView />;
-
-    return <ErrorView />;
-  }
-}
+  return <ErrorView />;
+};
 
 export default compose(
   withCurrentUser,

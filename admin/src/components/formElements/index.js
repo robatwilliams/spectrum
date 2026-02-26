@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import Icon from '../icons';
 
@@ -124,24 +124,22 @@ export const TextArea = (props: InputProps) => {
   );
 };
 
-export class UnderlineInput extends Component {
-  render() {
-    return (
-      <StyledPrefixLabel disabled={this.props.disabled}>
-        {this.props.children}
-        <StyledUnderlineInput
-          type="text"
-          id={this.props.id}
-          placeholder={this.props.placeholder}
-          value={this.props.value || this.props.defaultValue}
-          onChange={this.props.onChange}
-          autoFocus={this.props.autoFocus}
-          disabled={this.props.disabled}
-        />
-      </StyledPrefixLabel>
-    );
-  }
-}
+export const UnderlineInput = (props) => {
+  return (
+    <StyledPrefixLabel disabled={props.disabled}>
+      {props.children}
+      <StyledUnderlineInput
+        type="text"
+        id={props.id}
+        placeholder={props.placeholder}
+        value={props.value || props.defaultValue}
+        onChange={props.onChange}
+        autoFocus={props.autoFocus}
+        disabled={props.disabled}
+      />
+    </StyledPrefixLabel>
+  );
+};
 
 export const Error = (props: Object) => {
   return <StyledError>{props.children}</StyledError>;

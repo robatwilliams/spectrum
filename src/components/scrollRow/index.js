@@ -1,56 +1,63 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ScrollableFlexRow } from './style';
 
-class ScrollRow extends Component {
-  state = {
-    scrollPos: null,
-  };
+const ScrollRow = (props) => {
+  const [scrollPos, setScrollPos] = useState(null);
+  const hscroll = useRef(null);
 
-  componentDidMount = () => {
-    const node = this.hscroll;
-    node.scrollLeft = this.state.scrollPos;
+  useEffect(() => {
+    const node = hscroll.current;
+    node.scrollLeft = scrollPos;
 
     let x, left, down;
-    node.addEventListener('mousemove', e => {
+    const handleMouseMove = e => {
       if (down) {
         let newX = e.pageX;
         node.scrollLeft = left - newX + x;
       }
-    });
+    };
 
-    node.addEventListener('mousedown', e => {
+    const handleMouseDown = e => {
       e.preventDefault();
 
       down = true;
       x = e.pageX;
       left = node.scrollLeft;
-    });
+    };
 
-    node.addEventListener('mouseup', e => {
+    const handleMouseUp = e => {
       down = false;
 
       if (e.target.id) {
-        this.setState({
-          scrollPos: left - e.pageX + x,
-        });
+        setScrollPos(left - e.pageX + x);
       }
-    });
+    };
 
-    node.addEventListener('mouseleave', e => {
+    const handleMouseLeave = e => {
       down = false;
-    });
-  };
+    };
 
-  render() {
-    return (
-      <ScrollableFlexRow
-        className={this.props.className}
-        ref={comp => (this.hscroll = comp)}
-      >
-        {this.props.children}
-      </ScrollableFlexRow>
-    );
-  }
-}
+    node.addEventListener('mousemove', handleMouseMove);
+    node.addEventListener('mousedown', handleMouseDown);
+    node.addEventListener('mouseup', handleMouseUp);
+    node.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      node.removeEventListener('mousemove', handleMouseMove);
+      node.removeEventListener('mousedown', handleMouseDown);
+      node.removeEventListener('mouseup', handleMouseUp);
+      node.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [scrollPos]);
+
+  return (
+    <ScrollableFlexRow
+      className={props.className}
+      ref={hscroll}
+    >
+      {props.children}
+    </ScrollableFlexRow>
+  );
+};
 
 export default ScrollRow;

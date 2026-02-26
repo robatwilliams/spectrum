@@ -21,75 +21,71 @@ type Props = {
   dispatch: Dispatch<Object>,
 };
 
-class NewUserOnboarding extends React.Component<Props> {
-  componentDidMount() {
-    const { dispatch } = this.props;
+const NewUserOnboarding = (props: Props) => {
+  const { currentUser, history, location, dispatch } = props;
+
+  React.useEffect(() => {
     dispatch(
       setTitlebarProps({
         title: 'Create username',
       })
     );
-  }
+  }, []);
 
-  saveUsername = () => {
-    const { history, location } = this.props;
+  const saveUsername = () => {
     const { state } = location;
     if (state && state.redirect) return history.replace(state.redirect);
     return history.replace('/');
   };
 
-  render() {
-    const { currentUser } = this.props;
-
-    let r;
-    if (this.props.location) {
-      const searchObj = queryString.parse(this.props.location.search);
-      r = searchObj.r;
-    }
-
-    const redirectPath =
-      r !== undefined
-        ? // $FlowFixMe
-          `${r}`
-        : `${CLIENT_URL}/home`;
-
-    if (!currentUser) {
-      return <Login githubOnly redirectPath={redirectPath} />;
-    }
-
-    if (currentUser && currentUser.username) {
-      this.saveUsername();
-      return null;
-    }
-
-    const heading = 'Create a username';
-    const subheading = 'You can change this at any time, so no pressure!';
-    const emoji = '👋';
-    return (
-      <ViewGrid data-cy="new-user-onboarding">
-        <CenteredGrid>
-          <Card>
-            <Emoji role="img" aria-label="Oops">
-              {emoji}
-            </Emoji>
-            <Heading>{heading}</Heading>
-            <Description>{subheading}</Description>
-
-            <SetUsername user={currentUser} save={this.saveUsername} />
-
-            <LogOutButton
-              data-cy="new-user-onboarding-logout"
-              target="_self"
-              href={`${SERVER_URL}/auth/logout`}
-            >
-              Log out
-            </LogOutButton>
-          </Card>
-        </CenteredGrid>
-      </ViewGrid>
-    );
+  let r;
+  if (location) {
+    const searchObj = queryString.parse(location.search);
+    r = searchObj.r;
   }
-}
+
+  const redirectPath =
+    r !== undefined
+      ? // $FlowFixMe
+        `${r}`
+      : `${CLIENT_URL}/home`;
+
+  if (!currentUser) {
+    return <Login githubOnly redirectPath={redirectPath} />;
+  }
+
+  if (currentUser && currentUser.username) {
+    saveUsername();
+    return null;
+  }
+
+  const heading = 'Create a username';
+  const subheading = 'You can change this at any time, so no pressure!';
+  const emoji = '👋';
+  return (
+    <ViewGrid data-cy="new-user-onboarding">
+      <CenteredGrid>
+        <Card>
+          <Emoji role="img" aria-label="Oops">
+            {emoji}
+          </Emoji>
+          <Heading>{heading}</Heading>
+          <Description>{subheading}</Description>
+
+          <SetUsername user={currentUser} save={saveUsername} />
+
+          <LogOutButton
+            data-cy="new-user-onboarding-logout"
+            target="_self"
+            href={`${SERVER_URL}/auth/logout`}
+          >
+            Log out
+          </LogOutButton>
+        </Card>
+      </CenteredGrid>
+    </ViewGrid>
+  );
+};
 
 export default compose(
   withRouter,

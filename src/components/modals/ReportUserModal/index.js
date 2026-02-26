@@ -15,12 +15,6 @@ import { TextArea, Error } from '../../formElements';
 import { Form, Actions } from './style';
 import { withCurrentUser } from 'src/components/withCurrentUser';
 
-type State = {
-  reason: ?string,
-  reasonError: boolean,
-  isLoading: boolean,
-};
-
 type Props = {
   dispatch: Dispatch<Object>,
   isOpen: boolean,
@@ -29,51 +23,43 @@ type Props = {
   reportUser: Function,
 };
 
-class ReportUserModal extends React.Component<Props, State> {
-  state = {
-    reason: '',
-    reasonError: false,
-    isLoading: false,
+const ReportUserModal = (props: Props) => {
+  const [reason, setReason] = React.useState('');
+  const [reasonError, setReasonError] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const close = () => {
+    props.dispatch(closeModal());
   };
 
-  close = () => {
-    this.props.dispatch(closeModal());
-  };
-
-  changeReason = e => {
+  const changeReason = e => {
     const reason = e.target.value;
 
-    this.setState({
-      reason,
-      reasonError: false,
-    });
+    setReason(reason);
+    setReasonError(false);
   };
 
-  submit = e => {
+  const submit = e => {
     e.preventDefault();
-    const { reason } = this.state;
-    const { user, dispatch } = this.props;
 
     if (!reason || reason.length === 0) {
-      return this.setState({ reasonError: false });
+      return setReasonError(false);
     }
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
     // create the mutation input
     const input = {
-      userId: user.id,
+      userId: props.user.id,
       reason,
     };
 
-    this.props
+    props
       .reportUser(input)
       .then(() => {
-        this.setState({ isLoading: false });
-        this.close();
-        return dispatch(
+        setIsLoading(false);
+        close();
+        return props.dispatch(
           addToastWithTimeout(
             'success',
             'Your report has been sent to the Spectrum team. Thank you!'
@@ -81,65 +67,62 @@ class ReportUserModal extends React.Component<Props, State> {
         );
       })
       .catch(err => {
-        this.setState({ isLoading: false });
-        return dispatch(addToastWithTimeout('error', err.toString()));
+        setIsLoading(false);
+        return props.dispatch(addToastWithTimeout('error', err.toString()));
       });
   };
 
-  render() {
-    const { isOpen, user } = this.props;
-    const { reason, reasonError, isLoading } = this.state;
+  const { isOpen, user } = props;
 
-    const styles = modalStyles(420);
+  const styles = modalStyles(420);
 
-    return (
-      <Modal
-        /* TODO(@mxstbr): Fix this */
-        ariaHideApp={false}
-        isOpen={isOpen}
-        contentLabel={`Report ${user.name}`}
-        onRequestClose={this.close}
-        shouldCloseOnOverlayClick={true}
-        style={styles}
-        closeTimeoutMS={330}
-      >
-        {/*
-          We pass the closeModal dispatch into the container to attach
-          the action to the 'close' icon in the top right corner of all modals
-        */}
-        <ModalContainer title={`Report ${user.name}`} closeModal={this.close}>
-          <Form>
-            <TextArea
-              id="slug"
-              defaultValue={reason}
-              onChange={this.changeReason}
-              placeholder={'Add a reason for reporting this user...'}
+  return (
+    <Modal
+      /* TODO(@mxstbr): Fix this */
+      ariaHideApp={false}
+      isOpen={isOpen}
+      contentLabel={`Report ${user.name}`}
+      onRequestClose={close}
+      shouldCloseOnOverlayClick={true}
+      style={styles}
+      closeTimeoutMS={330}
+    >
+      {/*
+        We pass the closeModal dispatch into the container to attach
+        the action to the 'close' icon in the top right corner of all modals
+      */}
+      <ModalContainer title={`Report ${user.name}`} closeModal={close}>
+        <Form>
+          <TextArea
+            id="slug"
+            defaultValue={reason}
+            onChange={changeReason}
+            placeholder={'Add a reason for reporting this user...'}
+          >
+            Reason:
+          </TextArea>
+
+          {reasonError && (
+            <Error>
+              Please be sure to add a reason for reporting this user so the
+              Spectrum team can take appropriate action.
+            </Error>
+          )}
+
+          <Actions>
+            <TextButton onClick={close}>Cancel</TextButton>
+            <PrimaryOutlineButton
+              disabled={!reason || reason.length === 0}
+              loading={isLoading}
+              onClick={submit}
             >
-              Reason:
-            </TextArea>
-
-            {reasonError && (
-              <Error>
-                Please be sure to add a reason for reporting this user so the
-                Spectrum team can take appropriate action.
-              </Error>
-            )}
-
-            <Actions>
-              <TextButton onClick={this.close}>Cancel</TextButton>
-              <PrimaryOutlineButton
-                disabled={!reason || reason.length === 0}
-                loading={isLoading}
-                onClick={this.submit}
-              >
-                {isLoading ? 'Sending...' : 'Send report'}
-              </PrimaryOutlineButton>
-            </Actions>
-          </Form>
-        </ModalContainer>
-      </Modal>
-    );
-  }
+              {isLoading ? 'Sending...' : 'Send report'}
+            </PrimaryOutlineButton>
+          </Actions>
+        </Form>
+      </ModalContainer>
+    </Modal>
+  );
 }
 
 const map = state => ({

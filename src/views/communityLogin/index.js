@@ -1,5 +1,6 @@
 // @flow
 import * as React from 'react';
+import { useState, useEffect } from 'react';
 import compose from 'recompose/compose';
 import FullscreenView from 'src/components/fullscreenView';
 import LoginButtonSet from 'src/components/loginButtonSet';
@@ -34,103 +35,84 @@ type Props = {
   redirectPath: ?string,
 };
 
-type State = {
-  redirectPath: ?string,
-};
+export const Login = (props: Props) => {
+  const { data, isLoading, match, history, location, redirectPath: propsRedirectPath } = props;
+  const { community } = data;
+  const [redirectPath, setRedirectPath] = useState(propsRedirectPath);
 
-export class Login extends React.Component<Props, State> {
-  constructor(props: Props) {
-    super(props);
-
-    this.state = {
-      redirectPath: props.redirectPath,
-    };
-  }
-
-  escape = () => {
-    this.props.history.push(`/${this.props.match.params.communitySlug}`);
+  const escape = () => {
+    history.push(`/${match.params.communitySlug}`);
   };
 
-  componentDidMount() {
-    const { location, redirectPath } = this.props;
-
-    if (redirectPath) {
-      this.setState({ redirectPath });
+  useEffect(() => {
+    if (propsRedirectPath) {
+      setRedirectPath(propsRedirectPath);
     }
 
-    if (location && !redirectPath) {
-      const searchObj = queryString.parse(this.props.location.search);
-      this.setState({ redirectPath: searchObj.r });
+    if (location && !propsRedirectPath) {
+      const searchObj = queryString.parse(location.search);
+      setRedirectPath(searchObj.r);
     }
-  }
+  }, []);
 
-  render() {
-    const {
-      data: { community },
-      isLoading,
-      match,
-    } = this.props;
-    const { redirectPath } = this.state;
+  if (community && community.id) {
+    const { brandedLogin } = community;
 
-    if (community && community.id) {
-      const { brandedLogin } = community;
-
-      return (
-        <FullscreenView closePath={`${CLIENT_URL}`}>
-          <FullscreenContent
-            data-cy="community-login-page"
-            style={{ justifyContent: 'center' }}
-          >
-            <LoginImageContainer>
-              <CommunityAvatar
-                community={community}
-                showHoverProfile={false}
-                size={88}
-              />
-            </LoginImageContainer>
-            <Title>Sign up to join the {community.name} community</Title>
-            <Subtitle>
-              {brandedLogin.message && brandedLogin.message.length > 0
-                ? brandedLogin.message
-                : 'Spectrum is a place where communities can share, discuss, and grow together. Sign in below to get in on the conversation.'}
-            </Subtitle>
-
-            <LoginButtonSet
-              redirectPath={
-                redirectPath || `${CLIENT_URL}/${match.params.communitySlug}`
-              }
-              signinType={'signin'}
-              githubOnly
+    return (
+      <FullscreenView closePath={`${CLIENT_URL}`}>
+        <FullscreenContent
+          data-cy="community-login-page"
+          style={{ justifyContent: 'center' }}
+        >
+          <LoginImageContainer>
+            <CommunityAvatar
+              community={community}
+              showHoverProfile={false}
+              size={88}
             />
+          </LoginImageContainer>
+          <Title>Sign up to join the {community.name} community</Title>
+          <Subtitle>
+            {brandedLogin.message && brandedLogin.message.length > 0
+              ? brandedLogin.message
+              : 'Spectrum is a place where communities can share, discuss, and grow together. Sign in below to get in on the conversation.'}
+          </Subtitle>
 
-            <OutlineButton
-              css={{ width: '100%' }}
-              to={`/login?r=${redirectPath ||
-                `${CLIENT_URL}/${match.params.communitySlug}`}`}
+          <LoginButtonSet
+            redirectPath={
+              redirectPath || `${CLIENT_URL}/${match.params.communitySlug}`
+            }
+            signinType={'signin'}
+            githubOnly
+          />
+
+          <OutlineButton
+            css={{ width: '100%' }}
+            to={`/login?r=${redirectPath ||
+              `${CLIENT_URL}/${match.params.communitySlug}`}`}
+          >
+            Existing user? Click here to log in
+          </OutlineButton>
+
+          <CodeOfConduct>
+            By using Spectrum, you agree to our{' '}
+            <a
+              href="https://github.com/withspectrum/code-of-conduct"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              Existing user? Click here to log in
-            </OutlineButton>
-
-            <CodeOfConduct>
-              By using Spectrum, you agree to our{' '}
-              <a
-                href="https://github.com/withspectrum/code-of-conduct"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Code of Conduct
-              </a>
-            </CodeOfConduct>
-          </FullscreenContent>
-        </FullscreenView>
-      );
-    }
-
-    if (isLoading) return <LoadingView />;
-
-    return <ErrorView />;
+              Code of Conduct
+            </a>
+          </CodeOfConduct>
+        </FullscreenContent>
+      </FullscreenView>
+    );
   }
-}
+
+  if (isLoading) return <LoadingView />;
+
+  return <ErrorView />;
+};
 
 export default compose(
   getCommunityByMatch,

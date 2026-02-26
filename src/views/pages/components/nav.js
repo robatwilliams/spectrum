@@ -1,5 +1,6 @@
 // @flow
 import * as React from 'react';
+import { useState } from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import { PrimaryButton } from 'src/components/button';
@@ -36,157 +37,152 @@ type Props = {
   dark?: boolean,
 };
 
-type State = {
-  menuIsOpen: boolean,
-};
+const Nav = (props: Props) => {
+  const { currentUser, location, dark } = props;
+  const [menuIsOpen, setMenuIsOpen] = useState(false);
 
-class Nav extends React.Component<Props, State> {
-  state = { menuIsOpen: false };
+  const toggleMenu = () => {
+    setMenuIsOpen(!menuIsOpen);
+  };
 
-  toggleMenu() {
-    this.setState({ menuIsOpen: !this.state.menuIsOpen });
-  }
-
-  render() {
-    return (
-      <NavContainer data-cy="navigation-splash">
-        <Head
-          title={'Spectrum'}
-          description={'The community platform for the future.'}
+  return (
+    <NavContainer data-cy="navigation-splash">
+      <Head
+        title={'Spectrum'}
+        description={'The community platform for the future.'}
+      >
+        <link
+          rel="shortcut icon"
+          id="dynamic-favicon"
+          // $FlowIssue
+          href={`${process.env.PUBLIC_URL}/img/favicon.ico`}
+        />
+      </Head>
+      <Tabs>
+        <LogoTab
+          dark={dark}
+          to="/about"
+          data-cy="navigation-splash-about"
         >
-          <link
-            rel="shortcut icon"
-            id="dynamic-favicon"
-            // $FlowIssue
-            href={`${process.env.PUBLIC_URL}/img/favicon.ico`}
-          />
-        </Head>
-        <Tabs>
-          <LogoTab
-            dark={this.props.dark}
-            to="/about"
-            data-cy="navigation-splash-about"
-          >
-            <Logo />
-            <Icon glyph={'logo'} />
-          </LogoTab>
-          <FeaturesTab
-            dark={this.props.dark}
-            selected={this.props.location === 'features'}
-            to="/features"
-            data-cy="navigation-splash-features"
-          >
-            Features
-          </FeaturesTab>
-          <AppsTab
-            dark={this.props.dark}
-            selected={this.props.location === 'apps'}
-            to="/apps"
-            data-cy="navigation-splash-apps"
-          >
-            Apps
-          </AppsTab>
-          <SupportTab
-            dark={this.props.dark}
-            selected={this.props.location === 'support'}
-            to="/support"
-            data-cy="navigation-splash-support"
-          >
-            Support
-          </SupportTab>
-          {this.props.currentUser ? (
-            <AuthTab dark={this.props.dark}>
-              <Link to={'/'}>
-                <UserAvatar
-                  user={this.props.currentUser}
-                  dataCy="navigation-splash-profile"
-                  clickable={false}
-                  showOnlineStatus={false}
-                  showHoverProfile={false}
-                />
+          <Logo />
+          <Icon glyph={'logo'} />
+        </LogoTab>
+        <FeaturesTab
+          dark={dark}
+          selected={location === 'features'}
+          to="/features"
+          data-cy="navigation-splash-features"
+        >
+          Features
+        </FeaturesTab>
+        <AppsTab
+          dark={dark}
+          selected={location === 'apps'}
+          to="/apps"
+          data-cy="navigation-splash-apps"
+        >
+          Apps
+        </AppsTab>
+        <SupportTab
+          dark={dark}
+          selected={location === 'support'}
+          to="/support"
+          data-cy="navigation-splash-support"
+        >
+          Support
+        </SupportTab>
+        {currentUser ? (
+          <AuthTab dark={dark}>
+            <Link to={'/'}>
+              <UserAvatar
+                user={currentUser}
+                dataCy="navigation-splash-profile"
+                clickable={false}
+                showOnlineStatus={false}
+                showHoverProfile={false}
+              />
+            </Link>
+          </AuthTab>
+        ) : (
+          <React.Fragment>
+            <LoginTab
+              dark={dark}
+              selected={location === 'login'}
+              to="/login"
+              data-cy="navigation-splash-login"
+            >
+              Log in
+            </LoginTab>
+            <AuthTab dark={dark}>
+              <Link to="/new/user">
+                <PrimaryButton
+                  data-cy="navigation-splash-signin"
+                  style={{
+                    fontWeight: '700',
+                    fontSize: '16px',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  Sign up
+                </PrimaryButton>
               </Link>
             </AuthTab>
-          ) : (
-            <React.Fragment>
-              <LoginTab
-                dark={this.props.dark}
-                selected={this.props.location === 'login'}
-                to="/login"
-                data-cy="navigation-splash-login"
-              >
-                Log in
-              </LoginTab>
-              <AuthTab dark={this.props.dark}>
-                <Link to="/new/user">
-                  <PrimaryButton
-                    data-cy="navigation-splash-signin"
-                    style={{
-                      fontWeight: '700',
-                      fontSize: '16px',
-                      letterSpacing: '0.5px',
-                    }}
-                  >
-                    Sign up
-                  </PrimaryButton>
-                </Link>
-              </AuthTab>
-            </React.Fragment>
-          )}
-          <MenuTab dark={this.props.dark} open={this.state.menuIsOpen}>
-            <Icon
-              glyph={this.state.menuIsOpen ? 'view-close' : 'menu'}
-              onClick={() => this.toggleMenu()}
-            />
-            <MenuContainer open={this.state.menuIsOpen}>
-              <LogoLink to="/">
-                <Logo />
-              </LogoLink>
-              <FeaturesLink
-                to="/features"
-                selected={this.props.location === 'features'}
-              >
-                Features
-              </FeaturesLink>
-              <AppsLink to="/apps" selected={this.props.location === 'apps'}>
-                Apps
-              </AppsLink>
-              <SupportLink
-                to="/support"
-                selected={this.props.location === 'support'}
-              >
-                Support
-              </SupportLink>
-              <ExploreLink
-                to="/explore"
-                selected={this.props.location === 'explore'}
-              >
-                Explore
-              </ExploreLink>
-              {this.props.currentUser ? (
-                <AuthLink to={'/'}>
-                  <span>Return home</span>
+          </React.Fragment>
+        )}
+        <MenuTab dark={dark} open={menuIsOpen}>
+          <Icon
+            glyph={menuIsOpen ? 'view-close' : 'menu'}
+            onClick={() => toggleMenu()}
+          />
+          <MenuContainer open={menuIsOpen}>
+            <LogoLink to="/">
+              <Logo />
+            </LogoLink>
+            <FeaturesLink
+              to="/features"
+              selected={location === 'features'}
+            >
+              Features
+            </FeaturesLink>
+            <AppsLink to="/apps" selected={location === 'apps'}>
+              Apps
+            </AppsLink>
+            <SupportLink
+              to="/support"
+              selected={location === 'support'}
+            >
+              Support
+            </SupportLink>
+            <ExploreLink
+              to="/explore"
+              selected={location === 'explore'}
+            >
+              Explore
+            </ExploreLink>
+            {currentUser ? (
+              <AuthLink to={'/'}>
+                <span>Return home</span>
+              </AuthLink>
+            ) : (
+              <React.Fragment>
+                <LoginLink to={'/login'}>
+                  <span>Log in</span>
+                </LoginLink>
+                <AuthLink to={'/new/user'}>
+                  <span>Sign up</span>
                 </AuthLink>
-              ) : (
-                <React.Fragment>
-                  <LoginLink to={'/login'}>
-                    <span>Log in</span>
-                  </LoginLink>
-                  <AuthLink to={'/new/user'}>
-                    <span>Sign up</span>
-                  </AuthLink>
-                </React.Fragment>
-              )}
-            </MenuContainer>
-            <MenuOverlay
-              onClick={() => this.toggleMenu()}
-              open={this.state.menuIsOpen}
-            />
-          </MenuTab>
-        </Tabs>
-      </NavContainer>
-    );
-  }
-}
+              </React.Fragment>
+            )}
+          </MenuContainer>
+          <MenuOverlay
+            onClick={() => toggleMenu()}
+            open={menuIsOpen}
+          />
+        </MenuTab>
+      </Tabs>
+    </NavContainer>
+  );
+};
 
 export default compose(
   withCurrentUser,

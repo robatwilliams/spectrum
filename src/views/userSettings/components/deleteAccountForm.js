@@ -26,12 +26,6 @@ import { Link } from 'react-router-dom';
 import { Loading } from 'src/components/loading';
 import type { Dispatch } from 'redux';
 
-type State = {
-  isLoading: boolean,
-  deleteInited: boolean,
-  ownsCommunities: boolean,
-};
-
 type Props = {
   isLoading: boolean,
   deleteCurrentUser: Function,
@@ -41,123 +35,119 @@ type Props = {
   },
 };
 
-class DeleteAccountForm extends React.Component<Props, State> {
-  state = {
-    isLoading: false,
-    deleteInited: false,
-    ownsCommunities: false,
-  };
+const DeleteAccountForm = (props: Props) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [deleteInited, setDeleteInited] = React.useState(false);
+  const [ownsCommunities, setOwnsCommunities] = React.useState(false);
+  const prevUserRef = React.useRef();
 
-  componentDidUpdate(prevProps) {
-    const curr = this.props;
-    if (!prevProps.data.user && curr.data.user && curr.data.user.id) {
-      if (curr.data.user && curr.data.user.communityConnection) {
-        return this.setState({
-          ownsCommunities: curr.data.user.communityConnection.edges.some(
+  React.useEffect(() => {
+    const prevUser = prevUserRef.current;
+    const currUser = props.data.user;
+    if (!prevUser && currUser && currUser.id) {
+      if (currUser && currUser.communityConnection) {
+        setOwnsCommunities(
+          currUser.communityConnection.edges.some(
             c => c && c.node.communityPermissions.isOwner
-          ),
-        });
+          )
+        );
       }
     }
-  }
+    prevUserRef.current = currUser;
+  }, [props.data.user]);
 
-  initDelete = () => {
-    this.setState({ deleteInited: true });
+  const initDelete = () => {
+    setDeleteInited(true);
   };
 
-  cancelDelete = () => this.setState({ deleteInited: false });
+  const cancelDelete = () => setDeleteInited(false);
 
-  confirmDelete = () => {
-    this.setState({
-      isLoading: true,
-    });
+  const confirmDelete = () => {
+    setIsLoading(true);
 
-    this.props
+    props
       .deleteCurrentUser()
       .then(() =>
-        this.props.dispatch(addToastWithTimeout('success', 'Account deleted'))
+        props.dispatch(addToastWithTimeout('success', 'Account deleted'))
       )
       .then(() => (window.location.href = `${SERVER_URL}/auth/logout`))
       .catch(err =>
-        this.props.dispatch(addToastWithTimeout('error', err.message))
+        props.dispatch(addToastWithTimeout('error', err.message))
       );
   };
 
-  render() {
-    const { isLoading, ownsCommunities, deleteInited } = this.state;
-    const {
-      data: { user },
-    } = this.props;
+  const {
+    data: { user },
+  } = props;
 
-    if (user) {
-      return (
-        <SectionCard data-cy="delete-account-container">
-          <SectionTitle>Delete my account</SectionTitle>
-          <SectionSubtitle>
-            You can delete your account at any time.{' '}
-            <Link to={'/faq'}>Read more about how we delete accounts</Link>.
-          </SectionSubtitle>
+  if (user) {
+    return (
+      <SectionCard data-cy="delete-account-container">
+        <SectionTitle>Delete my account</SectionTitle>
+        <SectionSubtitle>
+          You can delete your account at any time.{' '}
+          <Link to={'/faq'}>Read more about how we delete accounts</Link>.
+        </SectionSubtitle>
 
-          {ownsCommunities && (
-            <Notice data-cy="owns-communities-notice">
-              You currently own communities on Spectrum. When your account is
-              deleted these communities will not be deleted. Spectrum reserves
-              the right to manage your communities after your account is
-              deleted.
-            </Notice>
-          )}
+        {ownsCommunities && (
+          <Notice data-cy="owns-communities-notice">
+            You currently own communities on Spectrum. When your account is
+            deleted these communities will not be deleted. Spectrum reserves
+            the right to manage your communities after your account is
+            deleted.
+          </Notice>
+        )}
 
-          <SectionCardFooter>
-            {deleteInited ? (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                }}
-              >
-                {!isLoading && (
-                  <OutlineButton
-                    data-cy="delete-account-cancel-button"
-                    onClick={this.cancelDelete}
-                    style={{ marginBottom: '16px', alignSelf: 'stretch' }}
-                  >
-                    Cancel
-                  </OutlineButton>
-                )}
-                <WarnButton
-                  data-cy="delete-account-confirm-button"
-                  loading={isLoading}
-                  onClick={this.confirmDelete}
+        <SectionCardFooter>
+          {deleteInited ? (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+              }}
+            >
+              {!isLoading && (
+                <OutlineButton
+                  data-cy="delete-account-cancel-button"
+                  onClick={cancelDelete}
+                  style={{ marginBottom: '16px', alignSelf: 'stretch' }}
                 >
-                  {isLoading ? 'Deleting...' : 'Confirm and delete my account'}
-                </WarnButton>
-              </div>
-            ) : (
-              <HoverWarnOutlineButton
-                data-cy="delete-account-init-button"
-                color={'warn.default'}
-                onClick={this.initDelete}
+                  Cancel
+                </OutlineButton>
+              )}
+              <WarnButton
+                data-cy="delete-account-confirm-button"
+                loading={isLoading}
+                onClick={confirmDelete}
               >
-                Delete my account
-              </HoverWarnOutlineButton>
-            )}
-          </SectionCardFooter>
-        </SectionCard>
-      );
-    }
-
-    if (this.props.isLoading) {
-      return (
-        <SectionCard>
-          <Loading />
-        </SectionCard>
-      );
-    }
-
-    return null;
+                {isLoading ? 'Deleting...' : 'Confirm and delete my account'}
+              </WarnButton>
+            </div>
+          ) : (
+            <HoverWarnOutlineButton
+              data-cy="delete-account-init-button"
+              color={'warn.default'}
+              onClick={initDelete}
+            >
+              Delete my account
+            </HoverWarnOutlineButton>
+          )}
+        </SectionCardFooter>
+      </SectionCard>
+    );
   }
-}
+
+  if (props.isLoading) {
+    return (
+      <SectionCard>
+        <Loading />
+      </SectionCard>
+    );
+  }
+
+  return null;
+};
 
 export default compose(
   connect(),

@@ -19,16 +19,19 @@ type Props = {
   },
 };
 
-class AuthViewHandler extends React.Component<Props> {
-  componentDidUpdate(prev: Props) {
-    const {
-      data: { user },
-      editUser,
-      history,
-      location,
-    } = this.props;
+const AuthViewHandler = (props: Props) => {
+  const {
+    children,
+    data: { user, loading },
+    editUser,
+    history,
+    location,
+  } = props;
 
-    if (!prev.data.user && user) {
+  const prevUserRef = React.useRef();
+
+  React.useEffect(() => {
+    if (!prevUserRef.current && user) {
       if (!user.timezone) {
         const timezone = new Date().getTimezoneOffset() * -1;
         try {
@@ -38,20 +41,15 @@ class AuthViewHandler extends React.Component<Props> {
 
       if (location.pathname === '/home') history.replace('/');
     }
-  }
 
-  render() {
-    const {
-      children,
-      data: { user, loading },
-    } = this.props;
+    prevUserRef.current = user;
+  }, [user, editUser, history, location]);
 
-    if (user && !user.username) return <NewUserOnboarding />;
-    if (user && user.id) return children(true);
-    if (loading) return null;
-    return children(false);
-  }
-}
+  if (user && !user.username) return <NewUserOnboarding />;
+  if (user && user.id) return children(true);
+  if (loading) return null;
+  return children(false);
+};
 
 export default compose(
   getCurrentUser,

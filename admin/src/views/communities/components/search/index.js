@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { findDOMNode } from 'react-dom';
 import compose from 'recompose/compose';
 import pure from 'recompose/pure';
@@ -23,74 +23,54 @@ import {
   SearchResultImage,
 } from './style';
 
-class Search extends Component {
-  state: {
-    searchString: string,
-    searchResults: Array<any>,
-    searchIsLoading: boolean,
-    focusedSearchResult: string,
-  };
+const Search = (props) => {
+  const [searchString, setSearchString] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchIsLoading, setSearchIsLoading] = useState(false);
+  const [focusedSearchResult, setFocusedSearchResult] = useState('');
+  const inputRef = useRef(null);
 
-  constructor(props) {
-    super(props);
+  const search = useRef(
+    throttle((string: string) => {
+      const { client } = props;
 
-    this.state = {
-      searchString: '',
-      searchResults: [],
-      searchIsLoading: false,
-      focusedSearchResult: '',
-    };
+      setSearchIsLoading(true);
 
-    // only kick off search query every 200ms
-    this.search = throttle(this.search, 200);
-  }
+      client
+        .query({
+          query: SEARCH_COMMUNITIES_QUERY,
+          variables: {
+            queryString: string,
+            type: 'COMMUNITIES',
+          },
+        })
+        .then(({ data: { search } }) => {
+          const hasSearchResults =
+            search &&
+            search.searchResultsConnection &&
+            search.searchResultsConnection.edges.length > 0;
+          if (!hasSearchResults) {
+            setSearchResults([]);
+            setSearchIsLoading(false);
+            setFocusedSearchResult('');
+            return;
+          }
 
-  search = (string: string) => {
-    const { client } = this.props;
+          const searchResults = search.searchResultsConnection.edges.map(
+            e => e.node
+          );
 
-    this.setState({
-      searchIsLoading: true,
-    });
-
-    client
-      .query({
-        query: SEARCH_COMMUNITIES_QUERY,
-        variables: {
-          queryString: string,
-          type: 'COMMUNITIES',
-        },
-      })
-      .then(({ data: { search } }) => {
-        const hasSearchResults =
-          search &&
-          search.searchResultsConnection &&
-          search.searchResultsConnection.edges.length > 0;
-        if (!hasSearchResults) {
-          return this.setState({
-            searchResults: [],
-            searchIsLoading: false,
-            focusedSearchResult: '',
-          });
-        }
-
-        const searchResults = search.searchResultsConnection.edges.map(
-          e => e.node
-        );
-
-        return this.setState({
-          searchResults: searchResults,
-          searchIsLoading: false,
-          focusedSearchResult: searchResults[0],
+          setSearchResults(searchResults);
+          setSearchIsLoading(false);
+          setFocusedSearchResult(searchResults[0]);
         });
-      });
-  };
+    }, 200)
+  ).current;
 
-  handleKeyPress = (e: any) => {
-    const { searchString, searchResults, focusedSearchResult } = this.state;
-
+  const handleKeyPress = (e: any) => {
     // create a reference to the input - we will use this to call .focus()
     // after certain events (like pressing backspace or enter)
-    const input = findDOMNode(this.refs.input);
+    const input = findDOMNode(inputRef.current);
 
     // create temporary arrays of IDs from the searchResults and selectedUsers
     // to more easily manipulate the ids
@@ -102,10 +82,8 @@ class Search extends Component {
 
     // if person presses esc, clear all results, stop loading
     if (e.keyCode === ESC) {
-      this.setState({
-        searchResults: [],
-        searchIsLoading: false,
-      });
+      setSearchResults([]);
+      setSearchIsLoading(false);
 
       return;
     }
@@ -116,10 +94,8 @@ class Search extends Component {
     }
 
     if (e.keyCode === ESC) {
-      this.setState({
-        searchResults: [],
-        searchIsLoading: false,
-      });
+      setSearchResults([]);
+      setSearchIsLoading(false);
 
       return input && input.focus();
     }
@@ -129,9 +105,7 @@ class Search extends Component {
       if (searchResults.length === 1) return;
 
       // 2
-      this.setState({
-        focusedSearchResult: searchResults[indexOfFocusedSearchResult + 1].id,
-      });
+      setFocusedSearchResult(searchResults[indexOfFocusedSearchResult + 1].id);
 
       return;
     }
@@ -142,120 +116,105 @@ class Search extends Component {
       if (searchResults.length === 1) return;
 
       // 2
-      this.setState({
-        focusedSearchResult: searchResults[indexOfFocusedSearchResult - 1].id,
-      });
+      setFocusedSearchResult(searchResults[indexOfFocusedSearchResult - 1].id);
 
       return;
     }
 
     if (e.keyCode === ENTER) {
       if (!searchResults[indexOfFocusedSearchResult]) return;
-      return this.goToCommunity(searchResults[indexOfFocusedSearchResult].slug);
+      return goToCommunity(searchResults[indexOfFocusedSearchResult].slug);
     }
   };
 
-  goToCommunity = slug => {
-    const { history } = this.props;
-    this.setState({
-      searchResults: [],
-      searchIsLoading: false,
-      focusedSearchResult: '',
-      searchString: '',
-    });
+  const goToCommunity = slug => {
+    const { history } = props;
+    setSearchResults([]);
+    setSearchIsLoading(false);
+    setFocusedSearchResult('');
+    setSearchString('');
     return history.push(`/communities/${slug}`);
   };
 
-  handleChange = (e: any) => {
+  const handleChange = (e: any) => {
     const string = e.target.value.toLowerCase().trim();
 
-    this.setState({
-      searchString: e.target.value,
-    });
+    setSearchString(e.target.value);
 
-    this.search(string);
+    search(string);
   };
 
-  componentWillMount() {
-    document.removeEventListener('keydown', this.handleKeyPress, false);
-  }
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyPress, false);
 
-  componentDidMount() {
-    document.addEventListener('keydown', this.handleKeyPress, false);
-  }
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress, false);
+    };
+  }, [searchString, searchResults, focusedSearchResult]);
 
-  render() {
-    const {
-      searchString,
-      searchIsLoading,
-      searchResults,
-      focusedSearchResult,
-    } = this.state;
+  return (
+    <ComposerInputWrapper>
+      {searchIsLoading && (
+        <SearchSpinnerContainer>
+          <Spinner size={16} color={'brand.default'} />
+        </SearchSpinnerContainer>
+      )}
 
-    return (
-      <ComposerInputWrapper>
-        {searchIsLoading && (
-          <SearchSpinnerContainer>
-            <Spinner size={16} color={'brand.default'} />
-          </SearchSpinnerContainer>
-        )}
+      <ComposerInput
+        ref={inputRef}
+        type="text"
+        value={searchString}
+        placeholder="Search for communities..."
+        onChange={handleChange}
+        autoFocus={true}
+      />
 
-        <ComposerInput
-          ref="input"
-          type="text"
-          value={searchString}
-          placeholder="Search for communities..."
-          onChange={this.handleChange}
-          autoFocus={true}
-        />
+      {// user has typed in a search string
+      searchString && (
+        //if there are selected users already, we manually shift
+        // the search results position down
+        <SearchResultsDropdown>
+          {searchResults.length > 0 &&
+            searchResults.map(community => {
+              return (
+                <SearchResult
+                  focused={focusedSearchResult === community.id}
+                  key={community.id}
+                  onClick={() => goToCommunity(community.slug)}
+                >
+                  <SearchResultImage
+                    isOnline={community.isOnline}
+                    size={32}
+                    radius={8}
+                    src={community.profilePhoto}
+                  />
+                  <SearchResultTextContainer>
+                    <SearchResultDisplayName>
+                      {community.name}
+                    </SearchResultDisplayName>
+                    {community.metaData && (
+                      <SearchResultUsername>
+                        {community.metaData.members} members
+                      </SearchResultUsername>
+                    )}
+                  </SearchResultTextContainer>
+                </SearchResult>
+              );
+            })}
 
-        {// user has typed in a search string
-        searchString && (
-          //if there are selected users already, we manually shift
-          // the search results position down
-          <SearchResultsDropdown>
-            {searchResults.length > 0 &&
-              searchResults.map(community => {
-                return (
-                  <SearchResult
-                    focused={focusedSearchResult === community.id}
-                    key={community.id}
-                    onClick={() => this.goToCommunity(community.slug)}
-                  >
-                    <SearchResultImage
-                      isOnline={community.isOnline}
-                      size={32}
-                      radius={8}
-                      src={community.profilePhoto}
-                    />
-                    <SearchResultTextContainer>
-                      <SearchResultDisplayName>
-                        {community.name}
-                      </SearchResultDisplayName>
-                      {community.metaData && (
-                        <SearchResultUsername>
-                          {community.metaData.members} members
-                        </SearchResultUsername>
-                      )}
-                    </SearchResultTextContainer>
-                  </SearchResult>
-                );
-              })}
-
-            {searchResults.length === 0 && (
-              <SearchResult>
-                <SearchResultTextContainer>
-                  <SearchResultNull>
-                    No communities found matching "{searchString}"
-                  </SearchResultNull>
-                </SearchResultTextContainer>
-              </SearchResult>
-            )}
-          </SearchResultsDropdown>
-        )}
-      </ComposerInputWrapper>
-    );
-  }
-}
+          {searchResults.length === 0 && (
+            <SearchResult>
+              <SearchResultTextContainer>
+                <SearchResultNull>
+                  No communities found matching "{searchString}"
+                </SearchResultNull>
+              </SearchResultTextContainer>
+            </SearchResult>
+          )}
+        </SearchResultsDropdown>
+      )}
+    </ComposerInputWrapper>
+  );
+};
 
 export default compose(withApollo, withRouter, connect(), pure)(Search);

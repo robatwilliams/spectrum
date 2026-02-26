@@ -18,40 +18,30 @@ type Props = {
   render: Function,
 };
 
-type State = { isLoading: boolean };
+const ToggleChannelNotifications = (props: Props) => {
+  const [isLoading, setIsLoading] = React.useState(false);
 
-class ToggleChannelNotifications extends React.Component<Props, State> {
-  state = { isLoading: false };
-
-  init = e => {
+  const init = e => {
     e && e.preventDefault() && e.stopPropogation();
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
-    return this.toggleNotifications();
+    return toggleNotifications();
   };
 
-  terminate = () => {
-    this.setState({
-      isLoading: false,
-    });
+  const terminate = () => {
+    setIsLoading(false);
   };
 
-  toggleNotifications = () => {
-    const { channel } = this.props;
+  const toggleNotifications = () => {
+    const { channel } = props;
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
-    this.props
+    props
       .toggleChannelNotifications(channel.id)
       .then(({ data }: ToggleChannelNotificationsType) => {
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
 
         const { toggleChannelNotifications } = data;
 
@@ -61,36 +51,32 @@ class ToggleChannelNotifications extends React.Component<Props, State> {
         const str = value
           ? 'Channel notifications enabled!'
           : 'Channel notifications disabled.';
-        this.props.dispatch(addToastWithTimeout(type, str));
+        props.dispatch(addToastWithTimeout(type, str));
         return;
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+        setIsLoading(false);
+        props.dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  render() {
-    const { channel } = this.props;
-    const { channelPermissions } = channel;
-    const { receiveNotifications } = channelPermissions;
+  const { channel } = props;
+  const { channelPermissions } = channel;
+  const { receiveNotifications } = channelPermissions;
 
-    return (
-      <div
-        data-cy={
-          receiveNotifications
-            ? 'channel-notifications-enabled'
-            : 'channel-notifications-muted'
-        }
-        onClick={this.init}
-      >
-        {this.props.render(this.state)}
-      </div>
-    );
-  }
-}
+  return (
+    <div
+      data-cy={
+        receiveNotifications
+          ? 'channel-notifications-enabled'
+          : 'channel-notifications-muted'
+      }
+      onClick={init}
+    >
+      {props.render({ isLoading })}
+    </div>
+  );
+};
 
 export default compose(
   connect(),

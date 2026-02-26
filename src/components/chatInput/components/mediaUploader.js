@@ -16,14 +16,13 @@ type Props = {
   isSendingMediaMessage: boolean,
 };
 
-class MediaUploader extends React.Component<Props> {
-  form: any;
+const MediaUploader = (props: Props) => {
+  const { currentUser, onError, onValidated, isSendingMediaMessage } = props;
+  const formRef = React.useRef(null);
 
-  validate = (validity: Object, file: ?Object) => {
-    const { currentUser } = this.props;
-
+  const validate = (validity: Object, file: ?Object) => {
     if (!currentUser) return 'You must be signed in to upload images';
-    if (!file) return this.props.onError('');
+    if (!file) return onError('');
     if (!validity.valid)
       return "We couldn't validate this upload, please try uploading another file";
 
@@ -35,19 +34,25 @@ class MediaUploader extends React.Component<Props> {
     return null;
   };
 
-  validatePreview = (validity: Object, file: ?Object) => {
-    const validationResult = this.validate(validity, file);
-    if (validationResult !== null) {
-      return this.props.onError(validationResult);
+  const clearForm = () => {
+    if (formRef.current) {
+      formRef.current.reset();
     }
-    this.props.onError('');
-    // clear the form so that another image can be uploaded
-    this.clearForm();
-    // send back the validated file
-    return this.props.onValidated(file);
   };
 
-  onChange = (e: any) => {
+  const validatePreview = (validity: Object, file: ?Object) => {
+    const validationResult = validate(validity, file);
+    if (validationResult !== null) {
+      return onError(validationResult);
+    }
+    onError('');
+    // clear the form so that another image can be uploaded
+    clearForm();
+    // send back the validated file
+    return onValidated(file);
+  };
+
+  const onChange = (e: any) => {
     const {
       target: {
         validity,
@@ -57,28 +62,12 @@ class MediaUploader extends React.Component<Props> {
 
     if (!file) return;
 
-    return this.validatePreview(validity, file);
+    return validatePreview(validity, file);
   };
 
-  clearForm = () => {
-    if (this.form) {
-      this.form.reset();
-    }
-  };
-
-  componentDidMount() {
-    document.addEventListener('paste', this.onPaste, true);
-    return this.clearForm();
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('paste', this.onPaste);
-    return this.clearForm();
-  }
-
-  onPaste = (event: any) => {
+  const onPaste = (event: any) => {
     // Ensure that the image is only pasted if user focuses input
-    if (!event || !this.props.inputFocused) {
+    if (!event || !props.inputFocused) {
       return;
     }
     const items = (event.clipboardData || event.originalEvent.clipboardData)
@@ -88,43 +77,48 @@ class MediaUploader extends React.Component<Props> {
     }
     for (let item of items) {
       if (item.kind === 'file' && item.type.includes('image/')) {
-        this.validatePreview({ valid: true }, item.getAsFile());
+        validatePreview({ valid: true }, item.getAsFile());
         break;
       }
     }
   };
 
-  render() {
-    const { isSendingMediaMessage } = this.props;
+  React.useEffect(() => {
+    document.addEventListener('paste', onPaste, true);
+    clearForm();
+    return () => {
+      document.removeEventListener('paste', onPaste);
+      clearForm();
+    };
+  }, []);
 
-    if (isSendingMediaMessage) {
-      return (
-        <MediaLabel>
-          <Loading />
-        </MediaLabel>
-      );
-    }
-
+  if (isSendingMediaMessage) {
     return (
-      <Form
-        onSubmit={e => e.preventDefault()}
-        ref={c => (this.form = c)}
-        data-cy="chat-input-media-uploader"
-      >
-        <Tooltip content={'Upload photo'}>
-          <MediaLabel>
-            <MediaInput
-              type="file"
-              accept={'.png, .jpg, .jpeg, .gif, .mp4'}
-              multiple={false}
-              onChange={this.onChange}
-            />
-            <Icon glyph="photo" />
-          </MediaLabel>
-        </Tooltip>
-      </Form>
+      <MediaLabel>
+        <Loading />
+      </MediaLabel>
     );
   }
-}
+
+  return (
+    <Form
+      onSubmit={e => e.preventDefault()}
+      ref={formRef}
+      data-cy="chat-input-media-uploader"
+    >
+      <Tooltip content={'Upload photo'}>
+        <MediaLabel>
+          <MediaInput
+            type="file"
+            accept={'.png, .jpg, .jpeg, .gif, .mp4'}
+            multiple={false}
+            onChange={onChange}
+          />
+          <Icon glyph="photo" />
+        </MediaLabel>
+      </Tooltip>
+    </Form>
+  );
+};
 
 export default MediaUploader;

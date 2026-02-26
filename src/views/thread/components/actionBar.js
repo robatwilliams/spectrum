@@ -42,127 +42,125 @@ type Props = {
   uploadFiles: Function,
 };
 
-class ActionBar extends React.Component<Props> {
-  uploadFiles = evt => {
-    this.props.uploadFiles(evt.target.files);
+const ActionBar = (props: Props) => {
+  const { thread, isEditing, isSavingEdit, title, toggleEdit, saveEdit, dispatch, threadLock, isLockingThread, isPinningThread, uploadFiles } = props;
+
+  const handleUploadFiles = evt => {
+    uploadFiles(evt.target.files);
   };
 
-  render() {
-    const { thread, isEditing, isSavingEdit, title } = this.props;
+  if (isEditing) {
+    return (
+      <FixedBottomActionBarContainer>
+        <div style={{ display: 'flex' }}>
+          <InputHints>
+            <MediaLabel>
+              <MediaInput
+                type="file"
+                accept={'.png, .jpg, .jpeg, .gif, .mp4'}
+                multiple={false}
+                onChange={handleUploadFiles}
+              />
+              <Icon glyph="photo" />
+            </MediaLabel>
+            <DesktopLink
+              target="_blank"
+              href="https://guides.github.com/features/mastering-markdown/"
+            >
+              <Icon glyph="markdown" />
+            </DesktopLink>
+          </InputHints>
+        </div>
+        <div style={{ display: 'flex' }}>
+          <EditDone data-cy="cancel-thread-edit-button">
+            <TextButton onClick={toggleEdit}>Cancel</TextButton>
+          </EditDone>
+          <EditDone>
+            <PrimaryOutlineButton
+              loading={isSavingEdit}
+              disabled={title.trim().length === 0 || isSavingEdit}
+              onClick={saveEdit}
+              data-cy="save-thread-edit-button"
+            >
+              {isSavingEdit ? 'Saving...' : 'Save'}
+            </PrimaryOutlineButton>
+          </EditDone>
+        </div>
+      </FixedBottomActionBarContainer>
+    );
+  } else {
+    return (
+      <ActionBarContainer>
+        <div style={{ display: 'flex' }}>
+          <LikeButton thread={thread} />
 
-    if (isEditing) {
-      return (
-        <FixedBottomActionBarContainer>
-          <div style={{ display: 'flex' }}>
-            <InputHints>
-              <MediaLabel>
-                <MediaInput
-                  type="file"
-                  accept={'.png, .jpg, .jpeg, .gif, .mp4'}
-                  multiple={false}
-                  onChange={this.uploadFiles}
-                />
-                <Icon glyph="photo" />
-              </MediaLabel>
-              <DesktopLink
-                target="_blank"
-                href="https://guides.github.com/features/mastering-markdown/"
-              >
-                <Icon glyph="markdown" />
-              </DesktopLink>
-            </InputHints>
-          </div>
-          <div style={{ display: 'flex' }}>
-            <EditDone data-cy="cancel-thread-edit-button">
-              <TextButton onClick={this.props.toggleEdit}>Cancel</TextButton>
-            </EditDone>
-            <EditDone>
-              <PrimaryOutlineButton
-                loading={isSavingEdit}
-                disabled={title.trim().length === 0 || isSavingEdit}
-                onClick={this.props.saveEdit}
-                data-cy="save-thread-edit-button"
-              >
-                {isSavingEdit ? 'Saving...' : 'Save'}
-              </PrimaryOutlineButton>
-            </EditDone>
-          </div>
-        </FixedBottomActionBarContainer>
-      );
-    } else {
-      return (
-        <ActionBarContainer>
-          <div style={{ display: 'flex' }}>
-            <LikeButton thread={thread} />
-
-            <ShareButtons>
-              {!thread.channel.isPrivate && (
-                <React.Fragment>
-                  <Tooltip content={'Share on Facebook'}>
-                    <ShareButton facebook data-cy="thread-facebook-button">
-                      <a
-                        href={`https://www.facebook.com/sharer/sharer.php?t=${encodeURIComponent(
-                          thread.content.title
-                        )}&u=https://spectrum.chat${getThreadLink(thread)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Icon glyph={'facebook'} size={24} />
-                      </a>
-                    </ShareButton>
-                  </Tooltip>
-
-                  <Tooltip content={'Tweet'}>
-                    <ShareButton twitter data-cy="thread-tweet-button">
-                      <a
-                        href={`https://twitter.com/share?url=https://spectrum.chat${getThreadLink(
-                          thread
-                        )}&text=${encodeURIComponent(
-                          thread.content.title
-                        )} on @withspectrum`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Icon glyph={'twitter'} size={24} />
-                      </a>
-                    </ShareButton>
-                  </Tooltip>
-                </React.Fragment>
-              )}
-
-              <Clipboard
-                style={{ background: 'none' }}
-                data-clipboard-text={`${CLIENT_URL}${getThreadLink(thread)}`}
-                onSuccess={() =>
-                  this.props.dispatch(
-                    addToastWithTimeout('success', 'Copied to clipboard')
-                  )
-                }
-              >
-                <Tooltip content={'Copy link'}>
-                  <ShareButton data-cy="thread-copy-link-button">
-                    <a>
-                      <Icon glyph={'link'} size={24} />
+          <ShareButtons>
+            {!thread.channel.isPrivate && (
+              <React.Fragment>
+                <Tooltip content={'Share on Facebook'}>
+                  <ShareButton facebook data-cy="thread-facebook-button">
+                    <a
+                      href={`https://www.facebook.com/sharer/sharer.php?t=${encodeURIComponent(
+                        thread.content.title
+                      )}&u=https://spectrum.chat${getThreadLink(thread)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Icon glyph={'facebook'} size={24} />
                     </a>
                   </ShareButton>
                 </Tooltip>
-              </Clipboard>
-            </ShareButtons>
-          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <ActionsDropdown
-              thread={thread}
-              toggleEdit={this.props.toggleEdit}
-              lockThread={this.props.threadLock}
-              isLockingThread={this.props.isLockingThread}
-              isPinningThread={this.props.isPinningThread}
-            />
-          </div>
-        </ActionBarContainer>
-      );
-    }
+                <Tooltip content={'Tweet'}>
+                  <ShareButton twitter data-cy="thread-tweet-button">
+                    <a
+                      href={`https://twitter.com/share?url=https://spectrum.chat${getThreadLink(
+                        thread
+                      )}&text=${encodeURIComponent(
+                        thread.content.title
+                      )} on @withspectrum`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Icon glyph={'twitter'} size={24} />
+                    </a>
+                  </ShareButton>
+                </Tooltip>
+              </React.Fragment>
+            )}
+
+            <Clipboard
+              style={{ background: 'none' }}
+              data-clipboard-text={`${CLIENT_URL}${getThreadLink(thread)}`}
+              onSuccess={() =>
+                dispatch(
+                  addToastWithTimeout('success', 'Copied to clipboard')
+                )
+              }
+            >
+              <Tooltip content={'Copy link'}>
+                <ShareButton data-cy="thread-copy-link-button">
+                  <a>
+                    <Icon glyph={'link'} size={24} />
+                  </a>
+                </ShareButton>
+              </Tooltip>
+            </Clipboard>
+          </ShareButtons>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <ActionsDropdown
+            thread={thread}
+            toggleEdit={toggleEdit}
+            lockThread={threadLock}
+            isLockingThread={isLockingThread}
+            isPinningThread={isPinningThread}
+          />
+        </div>
+      </ActionBarContainer>
+    );
   }
-}
+};
 
 export default compose(connect())(ActionBar);

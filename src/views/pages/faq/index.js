@@ -12,16 +12,13 @@ import {
 import { PrivacyTermsList } from '../terms/style';
 import Head from 'src/components/head';
 
-class FAQ extends React.Component<{}> {
-  componentDidMount() {}
-
-  render() {
-    return (
-      <Wrapper data-cy="faq-page">
-        <Head
-          title={'Spectrum · FAQ'}
-          description={'Frequently asked questions about Spectrum'}
-        />
+const FAQ = () => {
+  return (
+    <Wrapper data-cy="faq-page">
+      <Head
+        title={'Spectrum · FAQ'}
+        description={'Frequently asked questions about Spectrum'}
+      />
 
         <ContentContainer>
           <Heading>Frequently Asked Questions</Heading>
@@ -90,7 +87,6 @@ class FAQ extends React.Component<{}> {
         </ContentContainer>
         <PageFooter />
       </Wrapper>
-    );
-  }
-}
+  );
+};
 export default FAQ;

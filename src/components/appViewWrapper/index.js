@@ -1,5 +1,5 @@
 // @flow
-import React from 'react';
+import React, { useRef, useLayoutEffect } from 'react';
 import compose from 'recompose/compose';
 import { withRouter, type History } from 'react-router';
 import type { UserInfoType } from 'shared/graphql/fragments/user/userInfo';
@@ -14,66 +14,63 @@ type Props = {
   location: Object,
 };
 
-class AppViewWrapper extends React.Component<Props> {
-  ref: ?HTMLElement;
-  prevScrollOffset: number;
+const AppViewWrapper = (props: Props) => {
+  const ref = useRef(null);
+  const prevScrollOffset = useRef(0);
+  const prevIsModal = useRef(props.isModal);
+  const snapshotRef = useRef(null);
 
-  constructor(props: Props) {
-    super(props);
-    this.ref = null;
-    this.prevScrollOffset = 0;
-  }
-
-  getSnapshotBeforeUpdate(prevProps) {
-    const { isModal: currModal } = this.props;
-    const { isModal: prevModal } = prevProps;
+  // getSnapshotBeforeUpdate equivalent - capture values before DOM updates
+  useLayoutEffect(() => {
+    const { isModal: currModal } = props;
+    const prevModal = prevIsModal.current;
 
     /*
       If the user is going to open a modal, grab the current scroll
       offset of the main view the user is on and save it for now; we'll use
       the value to restore the scroll position after the user closes the modal
     */
-    if (!prevModal && currModal && this.ref) {
-      const offset = this.ref.scrollTop;
-      this.prevScrollOffset = offset;
-      return null;
-    }
-
-    if (prevModal && !currModal) {
+    if (!prevModal && currModal && ref.current) {
+      const offset = ref.current.scrollTop;
+      prevScrollOffset.current = offset;
+      // return 0 so that the modal starts out scrolled to the top by default
+      snapshotRef.current = 0;
+    } else if (prevModal && !currModal) {
       // the user is closing the modal, return the previous view's scroll offset
-      return this.prevScrollOffset;
+      snapshotRef.current = prevScrollOffset.current;
+    } else {
+      snapshotRef.current = null;
     }
+  });
 
-    return null;
-  }
-
-  componentDidUpdate(prevProps, prevState, snapshot) {
+  // componentDidUpdate equivalent - apply updates after render
+  useLayoutEffect(() => {
     /*
       If we have a snapshot value, the user has closed a modal and we need
       to return the user to where they were previously scrolled in the primary
       view
     */
-    if (snapshot !== null && this.ref) {
-      this.ref.scrollTop = snapshot;
+    if (snapshotRef.current !== null && ref.current) {
+      ref.current.scrollTop = snapshotRef.current;
     }
-  }
 
-  render() {
-    const { currentUser, history, location } = this.props;
+    prevIsModal.current = props.isModal;
+  });
 
-    const isMarketingPage = isViewingMarketingPage(history, currentUser);
-    const isViewingExplore = location && location.pathname === '/explore';
-    const isTwoColumn = isViewingExplore || !isMarketingPage;
+  const { currentUser, history, location } = props;
 
-    return (
-      <StyledAppViewWrapper
-        ref={el => (this.ref = el)}
-        isTwoColumn={isTwoColumn}
-        {...this.props}
-      />
-    );
-  }
-}
+  const isMarketingPage = isViewingMarketingPage(history, currentUser);
+  const isViewingExplore = location && location.pathname === '/explore';
+  const isTwoColumn = isViewingExplore || !isMarketingPage;
+
+  return (
+    <StyledAppViewWrapper
+      ref={ref}
+      isTwoColumn={isTwoColumn}
+      {...props}
+    />
+  );
+};
 
 export default compose(
   withRouter,

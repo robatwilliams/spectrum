@@ -1,5 +1,5 @@
 // @flow
-import React, { Component } from 'react';
+import React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
@@ -34,74 +34,72 @@ type ProfileProps = {
   style: CSSStyleDeclaration,
 };
 
-class HoverProfile extends Component<ProfileProps> {
-  render() {
-    const { user, currentUser, ref, style } = this.props;
-    const me = currentUser && currentUser.id === user.id;
+const HoverProfile = (props: ProfileProps) => {
+  const { user, currentUser, ref, style } = props;
+  const me = currentUser && currentUser.id === user.id;
 
-    return (
-      <HoverWrapper popperStyle={style} ref={ref}>
-        <ProfileCard>
+  return (
+    <HoverWrapper popperStyle={style} ref={ref}>
+      <ProfileCard>
+        <ConditionalWrap
+          condition={!!user.username}
+          wrap={children => (
+            <Link to={`/users/${user.username}`}>{children}</Link>
+          )}
+        >
+          <CoverContainer>
+            <CoverPhoto src={user.coverPhoto ? user.coverPhoto : null} />
+            <ProfilePhotoContainer>
+              <AvatarImage
+                src={user.profilePhoto}
+                alt={user.name}
+                type={'user'}
+                size={40}
+              />
+            </ProfilePhotoContainer>
+          </CoverContainer>
+        </ConditionalWrap>
+
+        <Content>
           <ConditionalWrap
             condition={!!user.username}
             wrap={children => (
               <Link to={`/users/${user.username}`}>{children}</Link>
             )}
           >
-            <CoverContainer>
-              <CoverPhoto src={user.coverPhoto ? user.coverPhoto : null} />
-              <ProfilePhotoContainer>
-                <AvatarImage
-                  src={user.profilePhoto}
-                  alt={user.name}
-                  type={'user'}
-                  size={40}
-                />
-              </ProfilePhotoContainer>
-            </CoverContainer>
+            <Title>{user.name}</Title>
+            <Username>@{user.username}</Username>
           </ConditionalWrap>
 
-          <Content>
-            <ConditionalWrap
-              condition={!!user.username}
-              wrap={children => (
-                <Link to={`/users/${user.username}`}>{children}</Link>
-              )}
-            >
-              <Title>{user.name}</Title>
-              <Username>@{user.username}</Username>
-            </ConditionalWrap>
+          {user.betaSupporter && (
+            <span style={{ display: 'inline-block', marginBottom: '4px' }}>
+              <Badge type="beta-supporter" />
+            </span>
+          )}
 
-            {user.betaSupporter && (
-              <span style={{ display: 'inline-block', marginBottom: '4px' }}>
-                <Badge type="beta-supporter" />
-              </span>
-            )}
+          {user.description && (
+            <Description>{renderTextWithLinks(user.description)}</Description>
+          )}
+        </Content>
 
-            {user.description && (
-              <Description>{renderTextWithLinks(user.description)}</Description>
-            )}
-          </Content>
+        <Actions>
+          {!me && (
+            <InitDirectMessageWrapper
+              user={user}
+              render={
+                <PrimaryOutlineButton icon={'message-simple-new'}>
+                  Message
+                </PrimaryOutlineButton>
+              }
+            />
+          )}
 
-          <Actions>
-            {!me && (
-              <InitDirectMessageWrapper
-                user={user}
-                render={
-                  <PrimaryOutlineButton icon={'message-simple-new'}>
-                    Message
-                  </PrimaryOutlineButton>
-                }
-              />
-            )}
-
-            {me && <OutlineButton to={'/me'}>My profile</OutlineButton>}
-          </Actions>
-        </ProfileCard>
-      </HoverWrapper>
-    );
-  }
-}
+          {me && <OutlineButton to={'/me'}>My profile</OutlineButton>}
+        </Actions>
+      </ProfileCard>
+    </HoverWrapper>
+  );
+};
 
 export default compose(
   withCurrentUser,

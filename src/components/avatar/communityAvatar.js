@@ -14,51 +14,47 @@ type Props = {
   isClickable?: boolean,
 };
 
-class Avatar extends React.Component<Props> {
-  render() {
-    const {
-      community,
-      size = 32,
-      isClickable = true,
-      mobilesize,
-      style,
-    } = this.props;
+const Avatar = (props: Props) => {
+  const {
+    community,
+    size = 32,
+    isClickable = true,
+    mobilesize,
+    style,
+  } = props;
 
-    const src = community.profilePhoto;
+  const src = community.profilePhoto;
 
-    const communityFallback = '/img/default_community.svg';
-    const source = [src, communityFallback];
+  const communityFallback = '/img/default_community.svg';
+  const source = [src, communityFallback];
 
-    return (
-      <Container
-        size={size}
-        mobilesize={mobilesize}
-        style={style}
-        type={'community'}
+  return (
+    <Container
+      size={size}
+      mobilesize={mobilesize}
+      style={style}
+      type={'community'}
+    >
+      <ConditionalWrap
+        condition={isClickable}
+        wrap={children => (
+          <AvatarLink to={`/${community.slug}`}>{children}</AvatarLink>
+        )}
       >
-        <ConditionalWrap
-          condition={isClickable}
-          wrap={children => (
-            <AvatarLink to={`/${community.slug}`}>{children}</AvatarLink>
-          )}
-        >
-          <AvatarImage
-            src={source}
-            size={size}
-            mobilesize={mobilesize}
-            type={'community'}
-            alt={community.name}
-          />
-        </ConditionalWrap>
-      </Container>
-    );
-  }
+        <AvatarImage
+          src={source}
+          size={size}
+          mobilesize={mobilesize}
+          type={'community'}
+          alt={community.name}
+        />
+      </ConditionalWrap>
+    </Container>
+  );
 }
 
-class AvatarHandler extends React.Component<Props> {
-  render() {
-    return <Avatar {...this.props} />;
-  }
+const AvatarHandler = (props: Props) => {
+  return <Avatar {...props} />;
 }
 
 export default AvatarHandler;

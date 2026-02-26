@@ -30,80 +30,78 @@ type Props = {
   communitySlug: string,
 };
 
-class ChannelList extends React.Component<Props> {
-  render() {
-    const {
-      data: { community },
-      isLoading,
-      dispatch,
-    } = this.props;
+const ChannelList = (props: Props) => {
+  const {
+    data: { community },
+    isLoading,
+    dispatch,
+  } = props;
 
-    if (community) {
-      const channels = community.channelConnection.edges.map(c => c && c.node);
-
-      return (
-        <SectionCard data-cy="channel-list">
-          <SectionTitle>Channels</SectionTitle>
-
-          <ListContainer style={{ padding: '0 16px' }}>
-            {channels.length > 0 &&
-              channels.map(channel => {
-                if (!channel) return null;
-                return (
-                  <ChannelListItem key={channel.id} channel={channel}>
-                    <Link
-                      to={`/${channel.community.slug}/${channel.slug}/settings`}
-                    >
-                      <Tooltip content={'Manage channel'}>
-                        <span>
-                          <Icon glyph="settings" />
-                        </span>
-                      </Tooltip>
-                    </Link>
-                  </ChannelListItem>
-                );
-              })}
-          </ListContainer>
-
-          <SectionCardFooter>
-            <OutlineButton
-              style={{ alignSelf: 'flex-start' }}
-              icon={'plus'}
-              onClick={() =>
-                dispatch(
-                  openModal('CREATE_CHANNEL_MODAL', {
-                    community,
-                    id: community.id,
-                  })
-                )
-              }
-              data-cy="create-channel-button"
-            >
-              Create Channel
-            </OutlineButton>
-          </SectionCardFooter>
-        </SectionCard>
-      );
-    }
-
-    if (isLoading) {
-      return (
-        <SectionCard>
-          <Loading />
-        </SectionCard>
-      );
-    }
+  if (community) {
+    const channels = community.channelConnection.edges.map(c => c && c.node);
 
     return (
-      <SectionCard>
-        <ViewError
-          refresh
-          small
-          heading={'We couldn’t load the channels for this community.'}
-        />
+      <SectionCard data-cy="channel-list">
+        <SectionTitle>Channels</SectionTitle>
+
+        <ListContainer style={{ padding: '0 16px' }}>
+          {channels.length > 0 &&
+            channels.map(channel => {
+              if (!channel) return null;
+              return (
+                <ChannelListItem key={channel.id} channel={channel}>
+                  <Link
+                    to={`/${channel.community.slug}/${channel.slug}/settings`}
+                  >
+                    <Tooltip content={'Manage channel'}>
+                      <span>
+                        <Icon glyph="settings" />
+                      </span>
+                    </Tooltip>
+                  </Link>
+                </ChannelListItem>
+              );
+            })}
+        </ListContainer>
+
+        <SectionCardFooter>
+          <OutlineButton
+            style={{ alignSelf: 'flex-start' }}
+            icon={'plus'}
+            onClick={() =>
+              dispatch(
+                openModal('CREATE_CHANNEL_MODAL', {
+                  community,
+                  id: community.id,
+                })
+              )
+            }
+            data-cy="create-channel-button"
+          >
+            Create Channel
+          </OutlineButton>
+        </SectionCardFooter>
       </SectionCard>
     );
   }
+
+  if (isLoading) {
+    return (
+      <SectionCard>
+        <Loading />
+      </SectionCard>
+    );
+  }
+
+  return (
+    <SectionCard>
+      <ViewError
+        refresh
+        small
+        heading={"We couldn't load the channels for this community."}
+      />
+    </SectionCard>
+  );
 }
 
 export default compose(

@@ -38,11 +38,10 @@ type Props = {
   currentUser: ?Object,
 };
 
-class BlockedUsers extends React.Component<Props> {
-  render() {
-    const { data, isLoading, currentUser, unblock } = this.props;
+const BlockedUsers = (props: Props) => {
+  const { data, isLoading, currentUser, unblock } = props;
 
-    if (data && data.channel) {
+  if (data && data.channel) {
       const { blockedUsers } = data.channel;
 
       return (
@@ -155,8 +154,7 @@ class BlockedUsers extends React.Component<Props> {
         <ViewError />
       </SectionCard>
     );
-  }
-}
+};
 
 export default compose(
   getBlockedUsersQuery,

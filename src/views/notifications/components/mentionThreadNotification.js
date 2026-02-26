@@ -47,21 +47,12 @@ const ThreadCreated = compose(
   However, because this notification fetches thread data, we will get community info back from the response! I use a slightly hacky component state + props to bubble the community name up from the ThreadCreated component whenever the data fetches, then use that to set local component state to show the community name in the notification.
 */
 
-export class MentionThreadNotification extends React.Component<Props, State> {
-  constructor() {
-    super();
-
-    this.state = {
-      communityName: '',
-    };
-  }
-
-  render() {
-    const {
-      notification,
-      currentUser,
-      markSingleNotificationSeen,
-    } = this.props;
+export const MentionThreadNotification = (props: Props) => {
+  const {
+    notification,
+    currentUser,
+    markSingleNotificationSeen,
+  } = props;
 
     const actors = parseActors(notification.actors, currentUser, false);
     const date = parseNotificationDate(notification.modifiedAt);
@@ -88,5 +79,4 @@ export class MentionThreadNotification extends React.Component<Props, State> {
         </ContentWash>
       </SegmentedNotificationCard>
     );
-  }
-}
+};

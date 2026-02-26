@@ -10,32 +10,24 @@ type Props = {
   render: Function,
 };
 
-type State = { isOpen: boolean };
+const EditDropdown = (props: Props) => {
+  const [isOpen, setIsOpen] = React.useState(false);
 
-class EditDropdown extends React.Component<Props, State> {
-  initialState = { isOpen: false };
+  const toggleOpen = () => setIsOpen(true);
 
-  state = this.initialState;
+  const close = () => setIsOpen(false);
 
-  toggleOpen = () => this.setState({ isOpen: true });
+  return (
+    <EditDropdownContainer>
+      <Icon onClick={toggleOpen} isOpen={isOpen} glyph={'settings'} />
 
-  close = () => this.setState({ isOpen: false });
-
-  render() {
-    const { isOpen } = this.state;
-
-    return (
-      <EditDropdownContainer>
-        <Icon onClick={this.toggleOpen} isOpen={isOpen} glyph={'settings'} />
-
-        {isOpen && (
-          <OutsideClickHandler onOutsideClick={this.close}>
-            {this.props.render()}
-          </OutsideClickHandler>
-        )}
-      </EditDropdownContainer>
-    );
-  }
-}
+      {isOpen && (
+        <OutsideClickHandler onOutsideClick={close}>
+          {props.render()}
+        </OutsideClickHandler>
+      )}
+    </EditDropdownContainer>
+  );
+};
 
 export default compose(connect())(EditDropdown);

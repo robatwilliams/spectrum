@@ -52,9 +52,9 @@ type Props = {
   goopHeight: number,
 };
 
-class Goop extends React.Component<Props> {
-  returnGoop() {
-    switch (this.props.goop) {
+const Goop = (props: Props) => {
+  const returnGoop = () => {
+    switch (props.goop) {
       default:
       case 0:
         return null;
@@ -105,31 +105,29 @@ class Goop extends React.Component<Props> {
           </g>
         );
     }
-  }
+  };
 
-  render() {
-    const { color = 'bg.default', goopHeight, goop } = this.props;
-    return (
-      <SvgWrapper
-        className={'goop'}
-        goopHeight={goopHeight}
-        goop={goop}
-        color={color}
+  const { color = 'bg.default', goopHeight, goop } = props;
+  return (
+    <SvgWrapper
+      className={'goop'}
+      goopHeight={goopHeight}
+      goop={goop}
+      color={color}
+    >
+      <InlineSvg
+        fillRule="evenodd"
+        clipRule="evenodd"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-labelledby="title"
+        viewBox="0 0 1920 240"
+        id={'goop'}
       >
-        <InlineSvg
-          fillRule="evenodd"
-          clipRule="evenodd"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-labelledby="title"
-          viewBox="0 0 1920 240"
-          id={'goop'}
-        >
-          <title id="title">goop</title>
-          {this.returnGoop()}
-        </InlineSvg>
-      </SvgWrapper>
-    );
-  }
-}
+        <title id="title">goop</title>
+        {returnGoop()}
+      </InlineSvg>
+    </SvgWrapper>
+  );
+};
 
 export default Goop;

@@ -24,14 +24,13 @@ type Props = {
   currentUser: ?Object,
 };
 
-class ConversationGrowth extends React.Component<Props> {
-  render() {
-    const {
-      data: { community },
-      isLoading,
-      currentUser,
-    } = this.props;
-    const title = 'Top members this week';
+const ConversationGrowth = (props: Props) => {
+  const {
+    data: { community },
+    isLoading,
+    currentUser,
+  } = props;
+  const title = 'Top members this week';
 
     if (community) {
       const sortedTopMembers = community.topMembers.slice().sort((a, b) => {
@@ -96,8 +95,7 @@ class ConversationGrowth extends React.Component<Props> {
     }
 
     return null;
-  }
-}
+};
 
 export default compose(
   withRouter,

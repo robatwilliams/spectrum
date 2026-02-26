@@ -1,5 +1,6 @@
 // @flow
 import * as React from 'react';
+import { useState, useRef } from 'react';
 import { btoa } from 'b2a';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
@@ -62,77 +63,47 @@ type Props = {|
   deleteMessage: Function,
 |};
 
-type State = {
-  isEditing: boolean,
-};
+const Message = (props: Props) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const wrapperRef = useRef(null);
 
-class Message extends React.Component<Props, State> {
-  wrapperRef: React$Node;
-
-  state = { isEditing: false };
-
-  setWrapperRef = (node: React$Node) => {
-    this.wrapperRef = node;
-  };
-
-  shouldComponentUpdate(nextProps, nextState) {
-    const isEditing = this.state.isEditing !== nextState.isEditing;
-    const newMessage = nextProps.message.id !== this.props.message.id;
-    const updatedReactionCount =
-      nextProps.message.reactions.count !== this.props.message.reactions.count;
-    const updatedReactionState =
-      nextProps.message.reactions.hasReacted !==
-      this.props.message.reactions.hasReacted;
-
-    if (
-      newMessage ||
-      updatedReactionCount ||
-      updatedReactionState ||
-      isEditing
-    ) {
-      return true;
-    }
-
-    return false;
-  }
-
-  toggleOpenGallery = (e: any, selectedMessageId: string) => {
+  const toggleOpenGallery = (e: any, selectedMessageId: string) => {
     e.stopPropagation();
 
-    const { thread } = this.props;
-    this.props.dispatch(openGallery(thread.id, selectedMessageId));
+    const { thread } = props;
+    props.dispatch(openGallery(thread.id, selectedMessageId));
   };
 
-  deleteMessage = (e: any) => {
+  const handleDeleteMessage = (e: any) => {
     e.stopPropagation();
 
     if (e.shiftKey) {
       // If Shift key is pressed, we assume confirmation
       return deleteMessageWithToast(
-        this.props.dispatch,
-        this.props.deleteMessage,
-        this.props.message.id
+        props.dispatch,
+        props.deleteMessage,
+        props.message.id
       );
     }
 
     const message = 'Are you sure you want to delete this message?';
 
-    return this.props.dispatch(
+    return props.dispatch(
       openModal('DELETE_DOUBLE_CHECK_MODAL', {
-        id: this.props.message.id,
+        id: props.message.id,
         entity: 'message',
         message,
-        threadType: this.props.threadType,
-        threadId: this.props.thread.id,
+        threadType: props.threadType,
+        threadId: props.thread.id,
       })
     );
   };
 
-  replyToMessage = (e: any) => {
+  const handleReplyToMessage = (e: any) => {
     e.stopPropagation();
 
-    const { thread, message } = this.props;
-    return this.props.dispatch(
+    const { thread, message } = props;
+    return props.dispatch(
       replyToMessage({
         threadId: thread.id,
         messageId: message.id,
@@ -141,260 +112,257 @@ class Message extends React.Component<Props, State> {
   };
 
   // prettier-ignore
-  handleSelectMessage = (e: any, selectMessage: Function,	messageId: string) => {
+  const handleSelectMessage = (e: any, selectMessage: Function,	messageId: string) => {
     // $FlowFixMe
-    if (window && window.innerWidth < 768 && this.wrapperRef && this.wrapperRef.contains(e.target)) {
+    if (window && window.innerWidth < 768 && wrapperRef.current && wrapperRef.current.contains(e.target)) {
       e.stopPropagation();
       return selectMessage(messageId);
     }
   };
 
-  initEditMessage = () => this.setState({ isEditing: true });
-  cancelEdit = () => this.setState({ isEditing: false });
-  clearSelectedMessage = () => {
-    const { history, location } = this.props;
+  const initEditMessage = () => setIsEditing(true);
+  const cancelEdit = () => setIsEditing(false);
+  const clearSelectedMessage = () => {
+    const { history, location } = props;
     const { pathname } = location;
     history.push({ pathname });
   };
 
-  render() {
-    const {
-      showAuthorContext,
-      me,
-      currentUser,
-      dispatch,
-      message,
-      canModerateMessage,
-      toggleReaction,
-      thread,
-      threadType,
-      location,
-    } = this.props;
-    const { isEditing } = this.state;
+  const {
+    showAuthorContext,
+    me,
+    currentUser,
+    dispatch,
+    message,
+    canModerateMessage,
+    toggleReaction,
+    thread,
+    threadType,
+    location,
+  } = props;
 
-    const canEditMessage = me && message.messageType !== 'media';
-    const selectedMessageId = btoa(new Date(message.timestamp).getTime() - 1);
-    const messageUrl =
-      threadType === 'story' && thread
-        ? `${getThreadLink(thread)}?m=${selectedMessageId}`
-        : threadType === 'directMessageThread'
-        ? `/messages/${thread.id}?m=${selectedMessageId}`
-        : `/thread/${thread.id}?m=${selectedMessageId}`;
+  const canEditMessage = me && message.messageType !== 'media';
+  const selectedMessageId = btoa(new Date(message.timestamp).getTime() - 1);
+  const messageUrl =
+    threadType === 'story' && thread
+      ? `${getThreadLink(thread)}?m=${selectedMessageId}`
+      : threadType === 'directMessageThread'
+      ? `/messages/${thread.id}?m=${selectedMessageId}`
+      : `/thread/${thread.id}?m=${selectedMessageId}`;
 
-    const searchObj = queryString.parse(location.search);
-    const { m = null } = searchObj;
-    const isSelected = m && m === selectedMessageId;
-    const isOptimistic =
-      message && typeof message.id === 'number' && message.id < 0;
-    return (
-      <ConditionalWrap
-        condition={!!isSelected}
-        wrap={children => (
-          <OutsideClickHandler
-            onOutsideClick={this.clearSelectedMessage}
-            style={{ width: '100%' }}
-          >
-            {children}
-          </OutsideClickHandler>
-        )}
-      >
-        <OuterMessageContainer
-          data-cy={isSelected ? 'message-selected' : 'message'}
-          selected={isSelected}
-          ref={this.setWrapperRef}
-          tabIndex={0}
+  const searchObj = queryString.parse(location.search);
+  const { m = null } = searchObj;
+  const isSelected = m && m === selectedMessageId;
+  const isOptimistic =
+    message && typeof message.id === 'number' && message.id < 0;
+  return (
+    <ConditionalWrap
+      condition={!!isSelected}
+      wrap={children => (
+        <OutsideClickHandler
+          onOutsideClick={clearSelectedMessage}
+          style={{ width: '100%' }}
         >
-          <GutterContainer>
-            {showAuthorContext ? (
-              <AuthorAvatarContainer onClick={e => e.stopPropagation()}>
-                <UserAvatar user={message.author.user} size={40} />
-              </AuthorAvatarContainer>
-            ) : (
-              <GutterTimestamp to={messageUrl}>
-                {convertTimestampToTime(new Date(message.timestamp))}
-              </GutterTimestamp>
-            )}
-          </GutterContainer>
+          {children}
+        </OutsideClickHandler>
+      )}
+    >
+      <OuterMessageContainer
+        data-cy={isSelected ? 'message-selected' : 'message'}
+        selected={isSelected}
+        ref={wrapperRef}
+        tabIndex={0}
+      >
+        <GutterContainer>
+          {showAuthorContext ? (
+            <AuthorAvatarContainer onClick={e => e.stopPropagation()}>
+              <UserAvatar user={message.author.user} size={40} />
+            </AuthorAvatarContainer>
+          ) : (
+            <GutterTimestamp to={messageUrl}>
+              {convertTimestampToTime(new Date(message.timestamp))}
+            </GutterTimestamp>
+          )}
+        </GutterContainer>
 
-          <InnerMessageContainer>
-            {showAuthorContext && (
-              <AuthorByline
-                timestamp={message.timestamp}
-                user={message.author.user}
-                roles={message.author.roles}
-                bot={message.bot}
-                messageUrl={messageUrl}
-              />
-            )}
+        <InnerMessageContainer>
+          {showAuthorContext && (
+            <AuthorByline
+              timestamp={message.timestamp}
+              user={message.author.user}
+              roles={message.author.roles}
+              bot={message.bot}
+              messageUrl={messageUrl}
+            />
+          )}
 
-            {!isEditing ? (
-              <Body
-                me={me}
-                openGallery={e => this.toggleOpenGallery(e, message.id)}
-                message={message}
-              />
-            ) : (
-              <EditingBody message={message} cancelEdit={this.cancelEdit} />
-            )}
+          {!isEditing ? (
+            <Body
+              me={me}
+              openGallery={e => toggleOpenGallery(e, message.id)}
+              message={message}
+            />
+          ) : (
+            <EditingBody message={message} cancelEdit={cancelEdit} />
+          )}
 
-            {message.modifiedAt && !isEditing && (
-              <Tooltip
-                content={`Edited ${convertTimestampToDate(
-                  new Date(message.modifiedAt)
-                )}`}
-              >
-                <EditedIndicator data-cy="edited-message-indicator">
-                  Edited
-                </EditedIndicator>
-              </Tooltip>
-            )}
+          {message.modifiedAt && !isEditing && (
+            <Tooltip
+              content={`Edited ${convertTimestampToDate(
+                new Date(message.modifiedAt)
+              )}`}
+            >
+              <EditedIndicator data-cy="edited-message-indicator">
+                Edited
+              </EditedIndicator>
+            </Tooltip>
+          )}
 
-            {message.reactions.count > 0 && (
-              <Reaction
-                message={message}
-                toggleReaction={toggleReaction}
-                me={me}
-                currentUser={currentUser}
-                dispatch={dispatch}
-                render={({ me, count, hasReacted, mutation }) => (
-                  <Tooltip
-                    content={me ? 'Likes' : hasReacted ? 'Unlike' : 'Like'}
+          {message.reactions.count > 0 && (
+            <Reaction
+              message={message}
+              toggleReaction={toggleReaction}
+              me={me}
+              currentUser={currentUser}
+              dispatch={dispatch}
+              render={({ me, count, hasReacted, mutation }) => (
+                <Tooltip
+                  content={me ? 'Likes' : hasReacted ? 'Unlike' : 'Like'}
+                >
+                  <ReactionWrapper
+                    hasCount={count}
+                    hasReacted={hasReacted}
+                    me={me}
+                    onClick={
+                      me
+                        ? (e: any) => {
+                            e.stopPropagation();
+                          }
+                        : (e: any) => {
+                            e.stopPropagation();
+                            mutation();
+                          }
+                    }
                   >
-                    <ReactionWrapper
-                      hasCount={count}
-                      hasReacted={hasReacted}
-                      me={me}
-                      onClick={
-                        me
-                          ? (e: any) => {
-                              e.stopPropagation();
-                            }
-                          : (e: any) => {
-                              e.stopPropagation();
-                              mutation();
-                            }
+                    <Icon
+                      data-cy={
+                        hasReacted
+                          ? 'inline-unlike-action'
+                          : 'inline-like-action'
                       }
-                    >
-                      <Icon
-                        data-cy={
-                          hasReacted
-                            ? 'inline-unlike-action'
-                            : 'inline-like-action'
-                        }
-                        glyph="like-fill"
-                        size={16}
-                        color={'text.reverse'}
-                      />
-                      <span>{count}</span>
-                    </ReactionWrapper>
+                      glyph="like-fill"
+                      size={16}
+                      color={'text.reverse'}
+                    />
+                    <span>{count}</span>
+                  </ReactionWrapper>
+                </Tooltip>
+              )}
+            />
+          )}
+
+          {!isEditing && !isOptimistic && (
+            <ActionsContainer>
+              <Actions>
+                {canEditMessage && (
+                  <Tooltip content={'Edit'}>
+                    <Action onClick={initEditMessage}>
+                      <Icon data-cy="edit-message" glyph="edit" size={20} />
+                    </Action>
                   </Tooltip>
                 )}
-              />
-            )}
 
-            {!isEditing && !isOptimistic && (
-              <ActionsContainer>
-                <Actions>
-                  {canEditMessage && (
-                    <Tooltip content={'Edit'}>
-                      <Action onClick={this.initEditMessage}>
-                        <Icon data-cy="edit-message" glyph="edit" size={20} />
-                      </Action>
-                    </Tooltip>
-                  )}
-
-                  {canModerateMessage && (
-                    <Tooltip content={'Delete'}>
-                      <Action onClick={this.deleteMessage}>
-                        <Icon
-                          data-cy="delete-message"
-                          glyph="delete"
-                          size={20}
-                        />
-                      </Action>
-                    </Tooltip>
-                  )}
-
-                  <Tooltip content={'Reply'}>
-                    <Action onClick={this.replyToMessage}>
+                {canModerateMessage && (
+                  <Tooltip content={'Delete'}>
+                    <Action onClick={handleDeleteMessage}>
                       <Icon
-                        data-cy="reply-to-message"
-                        glyph="reply"
+                        data-cy="delete-message"
+                        glyph="delete"
                         size={20}
                       />
                     </Action>
                   </Tooltip>
+                )}
 
-                  {!me && (
-                    <Reaction
-                      message={message}
-                      toggleReaction={toggleReaction}
-                      me={me}
-                      currentUser={currentUser}
-                      dispatch={dispatch}
-                      render={({ hasReacted, mutation }) => (
-                        <Tooltip content={hasReacted ? 'Unlike' : 'Like'}>
-                          <LikeAction
-                            hasReacted={hasReacted}
-                            onClick={e => {
-                              e.stopPropagation();
-                              mutation();
-                            }}
-                          >
-                            <Icon
-                              data-cy={
-                                hasReacted ? 'unlike-action' : 'like-action'
-                              }
-                              glyph={hasReacted ? 'like-fill' : 'like'}
-                              size={20}
-                            />
-                          </LikeAction>
-                        </Tooltip>
-                      )}
+                <Tooltip content={'Reply'}>
+                  <Action onClick={handleReplyToMessage}>
+                    <Icon
+                      data-cy="reply-to-message"
+                      glyph="reply"
+                      size={20}
                     />
-                  )}
+                  </Action>
+                </Tooltip>
 
-                  {threadType === 'story' && (
-                    <Clipboard
-                      style={{
-                        background: 'none',
-                        borderLeft: '1px solid #DFE7EF',
-                      }}
-                      data-clipboard-text={
-                        thread
-                          ? `${CLIENT_URL}${getThreadLink(
-                              thread
-                            )}?m=${selectedMessageId}`
-                          : `${CLIENT_URL}/thread/${
-                              thread.id
-                            }?m=${selectedMessageId}`
-                      }
-                      onSuccess={() =>
-                        this.props.dispatch(
-                          addToastWithTimeout('success', 'Copied to clipboard')
-                        )
-                      }
-                    >
-                      <Tooltip content={'Link to message'}>
-                        <Action>
+                {!me && (
+                  <Reaction
+                    message={message}
+                    toggleReaction={toggleReaction}
+                    me={me}
+                    currentUser={currentUser}
+                    dispatch={dispatch}
+                    render={({ hasReacted, mutation }) => (
+                      <Tooltip content={hasReacted ? 'Unlike' : 'Like'}>
+                        <LikeAction
+                          hasReacted={hasReacted}
+                          onClick={e => {
+                            e.stopPropagation();
+                            mutation();
+                          }}
+                        >
                           <Icon
-                            data-cy="link-to-message"
-                            glyph="link"
+                            data-cy={
+                              hasReacted ? 'unlike-action' : 'like-action'
+                            }
+                            glyph={hasReacted ? 'like-fill' : 'like'}
                             size={20}
                           />
-                        </Action>
+                        </LikeAction>
                       </Tooltip>
-                    </Clipboard>
-                  )}
-                </Actions>
-              </ActionsContainer>
-            )}
-          </InnerMessageContainer>
-        </OuterMessageContainer>
-      </ConditionalWrap>
-    );
-  }
-}
+                    )}
+                  />
+                )}
+
+                {threadType === 'story' && (
+                  <Clipboard
+                    style={{
+                      background: 'none',
+                      borderLeft: '1px solid #DFE7EF',
+                    }}
+                    data-clipboard-text={
+                      thread
+                        ? `${CLIENT_URL}${getThreadLink(
+                            thread
+                          )}?m=${selectedMessageId}`
+                        : `${CLIENT_URL}/thread/${
+                            thread.id
+                          }?m=${selectedMessageId}`
+                    }
+                    onSuccess={() =>
+                      props.dispatch(
+                        addToastWithTimeout('success', 'Copied to clipboard')
+                      )
+                    }
+                  >
+                    <Tooltip content={'Link to message'}>
+                      <Action>
+                        <Icon
+                          data-cy="link-to-message"
+                          glyph="link"
+                          size={20}
+                        />
+                      </Action>
+                    </Tooltip>
+                  </Clipboard>
+                )}
+              </Actions>
+            </ActionsContainer>
+          )}
+        </InnerMessageContainer>
+      </OuterMessageContainer>
+    </ConditionalWrap>
+  );
+};
 
 export default compose(
   deleteMessage,

@@ -20,38 +20,18 @@ type Props = {
   toggleChannelSubscription: Function,
 };
 
-type State = { isLoading: boolean };
+const ToggleChannelMembership = (props: Props) => {
+  const [isLoading, setIsLoading] = React.useState(false);
 
-class ToggleChannelMembership extends React.Component<Props, State> {
-  state = { isLoading: false };
+  const toggleSubscription = () => {
+    const { channel } = props;
 
-  init = () => {
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
-    return this.toggleSubscription();
-  };
-
-  terminate = () => {
-    this.setState({
-      isLoading: false,
-    });
-  };
-
-  toggleSubscription = () => {
-    const { channel } = this.props;
-
-    this.setState({
-      isLoading: true,
-    });
-
-    this.props
+    props
       .toggleChannelSubscription({ channelId: channel.id })
       .then(({ data }: ToggleChannelSubscriptionType) => {
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
 
         const { toggleChannelSubscription } = data;
 
@@ -78,21 +58,27 @@ class ToggleChannelMembership extends React.Component<Props, State> {
         }
 
         const type = isMember || isPending ? 'success' : 'neutral';
-        this.props.dispatch(addToastWithTimeout(type, str));
+        props.dispatch(addToastWithTimeout(type, str));
         return;
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+        setIsLoading(false);
+        props.dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  render() {
-    return <div onClick={this.init}>{this.props.render(this.state)}</div>;
-  }
-}
+  const init = () => {
+    setIsLoading(true);
+
+    return toggleSubscription();
+  };
+
+  const terminate = () => {
+    setIsLoading(false);
+  };
+
+  return <div onClick={init}>{props.render({ isLoading })}</div>;
+};
 
 export default compose(
   connect(),

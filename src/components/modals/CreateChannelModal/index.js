@@ -1,5 +1,6 @@
 // @flow
 import * as React from 'react';
+import { useState, useRef } from 'react';
 import { connect } from 'react-redux';
 import Modal from 'react-modal';
 import compose from 'recompose/compose';
@@ -54,177 +55,136 @@ type Props = {
   createChannel: Function,
 };
 
-class CreateChannelModal extends React.Component<Props, State> {
-  constructor() {
-    super();
+const CreateChannelModal = (props: Props) => {
+  const { client, dispatch, isOpen, community, createChannel } = props;
 
-    this.state = {
-      name: '',
-      slug: '',
-      description: '',
-      isPrivate: false,
-      slugTaken: false,
-      slugError: false,
-      descriptionError: false,
-      nameError: false,
-      createError: false,
-      loading: false,
-    };
+  const [name, setName] = useState('');
+  const [slug, setSlug] = useState('');
+  const [description, setDescription] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [slugTaken, setSlugTaken] = useState(false);
+  const [slugError, setSlugError] = useState(false);
+  const [descriptionError, setDescriptionError] = useState(false);
+  const [nameError, setNameError] = useState(false);
+  const [createError, setCreateError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-    this.checkSlug = throttle(this.checkSlug, 500);
+  const checkSlugRef = useRef(null);
+
+  if (!checkSlugRef.current) {
+    checkSlugRef.current = throttle((slug: string) => {
+      const communitySlug = community.slug;
+
+      if (CHANNEL_SLUG_DENY_LIST.indexOf(slug) > -1) {
+        setSlug(slug);
+        setSlugTaken(true);
+      } else {
+        // check the db to see if this channel slug exists
+        client
+          .query({
+            query: getChannelBySlugAndCommunitySlugQuery,
+            variables: {
+              channelSlug: slug,
+              communitySlug,
+            },
+          })
+          .then(({ data }: { data: { channel: GetChannelType } }) => {
+            if (CHANNEL_SLUG_DENY_LIST.indexOf(slug) > -1) {
+              setSlugTaken(true);
+            } else if (!data.loading && data && data.channel && data.channel.id) {
+              setSlugTaken(true);
+            } else {
+              setSlugTaken(false);
+            }
+          })
+          .catch(() => {
+            // do nothing
+          });
+      }
+    }, 500);
   }
 
-  close = () => {
-    this.props.dispatch(closeModal());
+  const close = () => {
+    dispatch(closeModal());
   };
 
-  changeName = e => {
-    const name = e.target.value;
-    let lowercaseName = name.toLowerCase().trim();
-    let slug = slugg(lowercaseName);
+  const changeName = e => {
+    const nameValue = e.target.value;
+    let lowercaseName = nameValue.toLowerCase().trim();
+    let slugValue = slugg(lowercaseName);
 
-    let hasInvalidChars = name.search(whiteSpaceRegex) >= 0;
-    let hasOddHyphens = name.search(oddHyphenRegex) >= 0;
-    if (hasInvalidChars || hasOddHyphens || name.length > 20) {
-      this.setState({
-        nameError: true,
-      });
+    let hasInvalidChars = nameValue.search(whiteSpaceRegex) >= 0;
+    let hasOddHyphens = nameValue.search(oddHyphenRegex) >= 0;
+    if (hasInvalidChars || hasOddHyphens || nameValue.length > 20) {
+      setNameError(true);
 
       return;
     }
 
-    this.setState({
-      name,
-      slug,
-      nameError: false,
-    });
+    setName(nameValue);
+    setSlug(slugValue);
+    setNameError(false);
 
     // $FlowIssue
-    this.checkSlug(slug);
+    checkSlugRef.current(slugValue);
   };
 
-  changeSlug = e => {
-    let slug = e.target.value;
-    let lowercaseSlug = slug.toLowerCase().trim();
-    slug = slugg(lowercaseSlug);
+  const changeSlug = e => {
+    let slugValue = e.target.value;
+    let lowercaseSlug = slugValue.toLowerCase().trim();
+    slugValue = slugg(lowercaseSlug);
 
-    if (slug.length >= 24) {
-      return this.setState({
-        slugError: true,
-      });
-    }
-
-    if (CHANNEL_SLUG_DENY_LIST.indexOf(slug) > -1) {
-      return this.setState({
-        slug,
-        slugTaken: true,
-      });
-    }
-
-    this.setState({
-      slug,
-      slugError: false,
-    });
-
-    // $FlowIssue
-    this.checkSlug(slug);
-  };
-
-  checkSlug = (slug: string) => {
-    const communitySlug = this.props.community.slug;
-
-    if (CHANNEL_SLUG_DENY_LIST.indexOf(slug) > -1) {
-      return this.setState({
-        slug,
-        slugTaken: true,
-      });
-    } else {
-      // check the db to see if this channel slug exists
-      this.props.client
-        .query({
-          query: getChannelBySlugAndCommunitySlugQuery,
-          variables: {
-            channelSlug: slug,
-            communitySlug,
-          },
-        })
-        .then(({ data }: { data: { channel: GetChannelType } }) => {
-          if (CHANNEL_SLUG_DENY_LIST.indexOf(this.state.slug) > -1) {
-            return this.setState({
-              slugTaken: true,
-            });
-          }
-
-          if (!data.loading && data && data.channel && data.channel.id) {
-            return this.setState({
-              slugTaken: true,
-            });
-          } else {
-            return this.setState({
-              slugTaken: false,
-            });
-          }
-        })
-        .catch(() => {
-          // do nothing
-        });
-    }
-  };
-
-  changeDescription = e => {
-    const description = e.target.value;
-
-    let hasInvalidChars = description.search(whiteSpaceRegex) >= 0;
-    let hasOddHyphens = description.search(oddHyphenRegex) >= 0;
-    if (hasInvalidChars || hasOddHyphens || description.length >= 140) {
-      this.setState({
-        descriptionError: true,
-      });
+    if (slugValue.length >= 24) {
+      setSlugError(true);
       return;
     }
 
-    this.setState({
-      description,
-      descriptionError: false,
-    });
+    if (CHANNEL_SLUG_DENY_LIST.indexOf(slugValue) > -1) {
+      setSlug(slugValue);
+      setSlugTaken(true);
+      return;
+    }
+
+    setSlug(slugValue);
+    setSlugError(false);
+
+    // $FlowIssue
+    checkSlugRef.current(slugValue);
   };
 
-  changePrivate = e => {
+  const changeDescription = e => {
+    const descriptionValue = e.target.value;
+
+    let hasInvalidChars = descriptionValue.search(whiteSpaceRegex) >= 0;
+    let hasOddHyphens = descriptionValue.search(oddHyphenRegex) >= 0;
+    if (hasInvalidChars || hasOddHyphens || descriptionValue.length >= 140) {
+      setDescriptionError(true);
+      return;
+    }
+
+    setDescription(descriptionValue);
+    setDescriptionError(false);
+  };
+
+  const changePrivate = e => {
     const value = e.target.checked;
 
-    this.setState({
-      isPrivate: value,
-    });
+    setIsPrivate(value);
   };
 
-  create = e => {
+  const create = e => {
     e.preventDefault();
-    const {
-      name,
-      slug,
-      description,
-      isPrivate,
-      slugTaken,
-      slugError,
-      nameError,
-      descriptionError,
-    } = this.state;
-    const { community } = this.props;
 
     // if an error is present, ensure the client cant submit the form
     if (slugTaken || nameError || descriptionError || slugError) {
-      this.setState({
-        createError: true,
-      });
+      setCreateError(true);
 
       return;
     }
 
     // clientside checks have passed
-    this.setState({
-      createError: false,
-      loading: true,
-    });
+    setCreateError(false);
+    setLoading(true);
 
     // all non-private channels should be set to default for now
     const isDefault = !isPrivate;
@@ -239,65 +199,46 @@ class CreateChannelModal extends React.Component<Props, State> {
       isDefault,
     };
 
-    this.props
-      .createChannel(input)
+    createChannel(input)
       .then(() => {
-        this.close();
-        this.props.dispatch(
+        close();
+        dispatch(
           addToastWithTimeout('success', 'Channel successfully created!')
         );
         return;
       })
       .catch(err => {
-        this.setState({
-          loading: false,
-        });
+        setLoading(false);
 
-        this.props.dispatch(addToastWithTimeout('error', err.toString()));
+        dispatch(addToastWithTimeout('error', err.toString()));
       });
   };
 
-  render() {
-    const { isOpen, community } = this.props;
+  const styles = modalStyles(420);
 
-    const {
-      name,
-      slug,
-      description,
-      isPrivate,
-      slugTaken,
-      slugError,
-      nameError,
-      descriptionError,
-      createError,
-      loading,
-    } = this.state;
-
-    const styles = modalStyles(420);
-
-    return (
-      <Modal
-        /* TODO(@mxstbr): Fix this */
-        ariaHideApp={false}
-        isOpen={isOpen}
-        contentLabel={'Create a Channel'}
-        onRequestClose={this.close}
-        shouldCloseOnOverlayClick={true}
-        style={styles}
-        closeTimeoutMS={330}
-      >
-        {/*
-          We pass the closeModal dispatch into the container to attach
-          the action to the 'close' icon in the top right corner of all modals
-        */}
-        <ModalContainer title={'Create a Channel'} closeModal={this.close}>
-          <Form>
-            <Input
-              id="name"
-              defaultValue={name}
-              onChange={this.changeName}
-              autoFocus={true}
-            >
+  return (
+    <Modal
+      /* TODO(@mxstbr): Fix this */
+      ariaHideApp={false}
+      isOpen={isOpen}
+      contentLabel={'Create a Channel'}
+      onRequestClose={close}
+      shouldCloseOnOverlayClick={true}
+      style={styles}
+      closeTimeoutMS={330}
+    >
+      {/*
+        We pass the closeModal dispatch into the container to attach
+        the action to the 'close' icon in the top right corner of all modals
+      */}
+      <ModalContainer title={'Create a Channel'} closeModal={close}>
+        <Form>
+          <Input
+            id="name"
+            defaultValue={name}
+            onChange={changeName}
+            autoFocus={true}
+          >
               Channel Name
             </Input>
 
@@ -308,7 +249,7 @@ class CreateChannelModal extends React.Component<Props, State> {
               </Error>
             )}
 
-            <UnderlineInput defaultValue={slug} onChange={this.changeSlug}>
+            <UnderlineInput defaultValue={slug} onChange={changeSlug}>
               {`/${community.slug}/`}
             </UnderlineInput>
 
@@ -324,7 +265,7 @@ class CreateChannelModal extends React.Component<Props, State> {
             <TextArea
               id="slug"
               defaultValue={description}
-              onChange={this.changeDescription}
+              onChange={changeDescription}
             >
               Describe it in 140 characters or less
             </TextArea>
@@ -339,7 +280,7 @@ class CreateChannelModal extends React.Component<Props, State> {
             <Checkbox
               id="isPrivate"
               checked={isPrivate}
-              onChange={this.changePrivate}
+              onChange={changePrivate}
               dataCy="create-channel-modal-toggle-private-checkbox"
             >
               Private channel
@@ -351,11 +292,11 @@ class CreateChannelModal extends React.Component<Props, State> {
             </UpsellDescription>
 
             <Actions>
-              <TextButton onClick={this.close}>Cancel</TextButton>
+              <TextButton onClick={close}>Cancel</TextButton>
               <PrimaryOutlineButton
                 disabled={!name || !slug || slugTaken}
                 loading={loading}
-                onClick={this.create}
+                onClick={create}
               >
                 {loading ? 'Creating...' : 'Create Channel'}
               </PrimaryOutlineButton>
@@ -370,8 +311,7 @@ class CreateChannelModal extends React.Component<Props, State> {
         </ModalContainer>
       </Modal>
     );
-  }
-}
+};
 
 const map = state => ({
   isOpen: state.modals.isOpen,

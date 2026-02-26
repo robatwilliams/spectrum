@@ -1,5 +1,5 @@
 // @flow
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import compose from 'recompose/compose';
 import { withRouter, type Location, type History } from 'react-router';
 import querystring from 'querystring';
@@ -13,38 +13,15 @@ type Props = {
   dispatch: Dispatch<Object>,
 };
 
-class QueryParamToastDispatcher extends React.Component<Props> {
-  getParams = (props: Props) => {
-    return querystring.parse(props.location.search.replace('?', ''));
+const QueryParamToastDispatcher = (props: Props) => {
+  const { location, history, dispatch } = props;
+  const prevToastMessageRef = useRef(null);
+
+  const getParams = () => {
+    return querystring.parse(location.search.replace('?', ''));
   };
 
-  componentDidMount() {
-    const params = this.filterToastParams(this.getParams(this.props));
-    if (this.hasValidToastParams(params)) {
-      this.props.dispatch(
-        addToastWithTimeout(params.toastType, params.toastMessage)
-      );
-      return this.cleanLocation();
-    }
-  }
-
-  componentDidUpdate(prevProps: Props) {
-    const currProps = this.props;
-    const prevParams = this.filterToastParams(this.getParams(prevProps));
-    const currParams = this.filterToastParams(this.getParams(currProps));
-
-    const currValid = this.hasValidToastParams(currParams);
-    if (!currValid) return;
-
-    if (prevParams.toastMessage !== currParams.toastMessage) {
-      currProps.dispatch(
-        addToastWithTimeout(currParams.toastType, currParams.toastMessage)
-      );
-      return this.cleanLocation();
-    }
-  }
-
-  hasValidToastParams = (params: Object) => {
+  const hasValidToastParams = (params: Object) => {
     const validToastTypes = ['success', 'error', 'neutral'];
     return (
       params.toastType &&
@@ -59,13 +36,13 @@ class QueryParamToastDispatcher extends React.Component<Props> {
     so we can filter down to an object with only what we need and use that to
     determine whether we need to dispatch a new toast or not
   */
-  filterToastParams = (params: Object) => ({
+  const filterToastParams = (params: Object) => ({
     toastMessage: params['toastMessage'],
     toastType: params['toastType'],
   });
 
-  cleanLocation = () => {
-    const params = this.getParams(this.props);
+  const cleanLocation = () => {
+    const params = getParams();
     const clean = {};
     Object.keys(params).map(key => {
       if (!key || key === 'toastMessage' || key === 'toastType') return null;
@@ -79,13 +56,33 @@ class QueryParamToastDispatcher extends React.Component<Props> {
       has two equals signs at the end. If we don't decode the cleanParams it will become
       spectrum/general/another-thread~thread-2?m=MTQ4MzIyNTIwMDAwMg%3D%3D
     */
-    return this.props.history.push({ search: decodeURIComponent(cleanParams) });
+    return history.push({ search: decodeURIComponent(cleanParams) });
   };
 
-  render() {
-    return null;
-  }
-}
+  useEffect(() => {
+    const params = filterToastParams(getParams());
+    if (hasValidToastParams(params)) {
+      dispatch(addToastWithTimeout(params.toastType, params.toastMessage));
+      cleanLocation();
+    }
+  }, []);
+
+  useEffect(() => {
+    const currParams = filterToastParams(getParams());
+    const currValid = hasValidToastParams(currParams);
+    
+    if (!currValid) return;
+
+    if (prevToastMessageRef.current !== currParams.toastMessage) {
+      dispatch(addToastWithTimeout(currParams.toastType, currParams.toastMessage));
+      cleanLocation();
+    }
+
+    prevToastMessageRef.current = currParams.toastMessage;
+  }, [location.search]);
+
+  return null;
+};
 
 export default compose(
   withRouter,

@@ -12,135 +12,151 @@ type Props = {
   onLocationChange: Function,
 };
 
-class ScrollManager extends React.Component<Props> {
-  static defaultProps = {
-    scrollCaptureDebounce: 50,
-    scrollSyncDebounce: 100,
-    scrollSyncAttemptLimit: 5,
+const ScrollManager = (props: Props) => {
+  const {
+    scrollCaptureDebounce = 50,
+    scrollSyncDebounce = 100,
+    scrollSyncAttemptLimit = 5,
+    children,
+    history,
+    location,
+    onLocationChange,
+  } = props;
+
+  const scrollSyncDataRef = React.useRef({
+    x: 0,
+    y: 0,
+    attemptsRemaining: scrollSyncAttemptLimit,
+  });
+
+  const scrollSyncPendingRef = React.useRef(false);
+
+  const scrollCapture = () => {
+    requestAnimationFrame(() => {
+      const { pageXOffset, pageYOffset } = window;
+      const { pathname } = location;
+
+      // use browser history instead of router history
+      // to avoid infinite history.replace loop
+      const historyState = window.history.state || {};
+      const { state = {} } = historyState;
+      if (
+        !state.scroll ||
+        state.scroll.x !== pageXOffset ||
+        state.scroll.y !== pageYOffset
+      ) {
+        window.history.replaceState(
+          {
+            ...historyState,
+            state: { ...state, scroll: { x: pageXOffset, y: pageYOffset } },
+          },
+          null,
+          pathname
+        );
+      }
+    });
   };
 
-  constructor(props) {
-    super(props);
+  const _scrollSync = () => {
+    requestAnimationFrame(() => {
+      const { x, y, attemptsRemaining } = scrollSyncDataRef.current;
 
-    this.scrollSyncData = {
-      x: 0,
-      y: 0,
-      attemptsRemaining: props.scrollSyncAttemptLimit,
+      if (attemptsRemaining < 1) {
+        return;
+      }
+
+      const { pageXOffset, pageYOffset } = window;
+      if (
+        y < window.document.body.scrollHeight &&
+        (x !== pageXOffset || y !== pageYOffset)
+      ) {
+        window.scrollTo(x, y);
+        scrollSyncDataRef.current.attemptsRemaining = attemptsRemaining - 1;
+        _scrollSync();
+      }
+    });
+  };
+
+  const scrollSync = (x = 0, y = 0) => {
+    scrollSyncDataRef.current = {
+      x,
+      y,
+      attemptsRemaining: scrollSyncAttemptLimit,
     };
+    _scrollSync();
+  };
 
-    const scrollCapture = () => {
-      requestAnimationFrame(() => {
-        const { pageXOffset, pageYOffset } = window;
-        const { pathname } = this.props.location;
+  const debouncedScrollRef = React.useRef(null);
+  const debouncedScrollSyncRef = React.useRef(null);
 
-        // use browser history instead of router history
-        // to avoid infinite history.replace loop
-        const historyState = window.history.state || {};
-        const { state = {} } = historyState;
-        if (
-          !state.scroll ||
-          state.scroll.x !== pageXOffset ||
-          state.scroll.y !== pageYOffset
-        ) {
-          window.history.replaceState(
-            {
-              ...historyState,
-              state: { ...state, scroll: { x: pageXOffset, y: pageYOffset } },
-            },
-            null,
-            pathname
-          );
-        }
-      });
-    };
-
-    const _scrollSync = () => {
-      requestAnimationFrame(() => {
-        const { x, y, attemptsRemaining } = this.scrollSyncData;
-
-        if (attemptsRemaining < 1) {
-          return;
-        }
-
-        const { pageXOffset, pageYOffset } = window;
-        if (
-          y < window.document.body.scrollHeight &&
-          (x !== pageXOffset || y !== pageYOffset)
-        ) {
-          window.scrollTo(x, y);
-          this.scrollSyncData.attemptsRemaining = attemptsRemaining - 1;
-          _scrollSync();
-        }
-      });
-    };
-
-    const scrollSync = (x = 0, y = 0) => {
-      this.scrollSyncData = {
-        x,
-        y,
-        attemptsRemaining: this.props.scrollSyncAttemptLimit,
-      };
-      _scrollSync();
-    };
-
-    this.debouncedScroll = debounceFn(
+  if (!debouncedScrollRef.current) {
+    debouncedScrollRef.current = debounceFn(
       scrollCapture,
-      props.scrollCaptureDebounce
+      scrollCaptureDebounce
     );
-    this.debouncedScrollSync = debounceFn(scrollSync, props.scrollSyncDebounce);
   }
 
-  componentWillMount() {
-    const { location, onLocationChange } = this.props;
+  if (!debouncedScrollSyncRef.current) {
+    debouncedScrollSyncRef.current = debounceFn(scrollSync, scrollSyncDebounce);
+  }
+
+  const debouncedScroll = debouncedScrollRef.current;
+  const debouncedScrollSync = debouncedScrollSyncRef.current;
+
+  const onPush = () => {
+    debouncedScrollSync(0, 0);
+  };
+
+  const onPop = ({ location: { state = {} } }) => {
+    // attempt location restore
+    const { x = 0, y = 0 } = state.scroll || {};
+    debouncedScrollSync(x, y);
+  };
+
+  const prevPropsRef = React.useRef();
+
+  React.useEffect(() => {
     if (onLocationChange) {
       onLocationChange(location);
     }
-  }
+  }, []);
 
-  componentDidMount() {
-    this.onPop(this.props);
-    window.addEventListener('scroll', this.debouncedScroll, { passive: true });
-  }
+  React.useEffect(() => {
+    onPop(props);
+    window.addEventListener('scroll', debouncedScroll, { passive: true });
 
-  componentWillUnmount() {
-    this.scrollSyncPending = false;
-    window.removeEventListener('scroll', this.debouncedScroll, {
-      passive: true,
-    });
-  }
+    return () => {
+      scrollSyncPendingRef.current = false;
+      window.removeEventListener('scroll', debouncedScroll, {
+        passive: true,
+      });
+    };
+  }, []);
 
-  componentWillReceiveProps(nextProps) {
-    switch (nextProps.history.action) {
-      case 'PUSH':
-      case 'REPLACE':
-        this.onPush();
-        break;
-      case 'POP':
-        this.onPop(nextProps);
-        break;
-      default:
-        console.warn(
-          `Unrecognized location change action! "${nextProps.history.action}"`
-        );
+  React.useEffect(() => {
+    const prevProps = prevPropsRef.current;
+    if (prevProps) {
+      switch (history.action) {
+        case 'PUSH':
+        case 'REPLACE':
+          onPush();
+          break;
+        case 'POP':
+          onPop(props);
+          break;
+        default:
+          console.warn(
+            `Unrecognized location change action! "${history.action}"`
+          );
+      }
+      if (onLocationChange) {
+        onLocationChange(location);
+      }
     }
-    if (nextProps.onLocationChange) {
-      nextProps.onLocationChange(nextProps.location);
-    }
-  }
+    prevPropsRef.current = props;
+  });
 
-  onPush() {
-    this.debouncedScrollSync(0, 0);
-  }
-
-  onPop({ location: { state = {} } }) {
-    // attempt location restore
-    const { x = 0, y = 0 } = state.scroll || {};
-    this.debouncedScrollSync(x, y);
-  }
-
-  render() {
-    return this.props.children;
-  }
-}
+  return children;
+};
 
 export default withRouter(ScrollManager);

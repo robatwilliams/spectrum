@@ -14,18 +14,13 @@ type Props = {
   ...$Exact<ContextRouter>,
 };
 
-type State = {
-  ownsCommunities: boolean,
-};
-
-class Features extends React.Component<Props, State> {
-  render() {
-    return (
-      <PageWrapper data-cy="apps-page">
-        <Head
-          title={'Spectrum · Apps'}
-          description={'Download Spectrum for Mac and Windows'}
-        />
+const Features = (props: Props) => {
+  return (
+    <PageWrapper data-cy="apps-page">
+      <Head
+        title={'Spectrum · Apps'}
+        description={'Download Spectrum for Mac and Windows'}
+      />
         <Section goop={6} color="bg.reverse">
           <Intro>
             <TextContent>
@@ -46,7 +41,6 @@ class Features extends React.Component<Props, State> {
         </Section>
         <PageFooter />
       </PageWrapper>
-    );
-  }
-}
+  );
+};
 export default Features;

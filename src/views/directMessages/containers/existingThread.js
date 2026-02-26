@@ -1,5 +1,6 @@
 // @flow
 import * as React from 'react';
+import { useEffect, useRef } from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import type { Dispatch } from 'redux';
@@ -42,92 +43,47 @@ type Props = {
   dispatch: Dispatch<Object>,
 };
 
-class ExistingThread extends React.Component<Props> {
-  chatInput: ?ChatInput;
+const ExistingThread = (props: Props) => {
+  const { 
+    setLastSeen,
+    match,
+    dispatch,
+    currentUser,
+    data,
+    isLoading,
+    threadSliderIsOpen,
+    networkOnline,
+    websocketConnection,
+  } = props;
 
-  componentDidMount() {
-    const { threadId } = this.props.match.params;
+  const chatInputRef = useRef(null);
+  const prevPropsRef = useRef(null);
+
+  useEffect(() => {
+    const { threadId } = match.params;
 
     // escape to prevent this from running on mobile
     if (!threadId) return;
 
-    this.props.setLastSeen(threadId);
+    setLastSeen(threadId);
     // autofocus on desktop
-    if (window && window.innerWidth > 768 && this.chatInput) {
-      this.chatInput.focus();
+    if (window && window.innerWidth > 768 && chatInputRef.current) {
+      chatInputRef.current.focus();
     }
-  }
+  }, []);
 
-  componentDidUpdate(prev) {
-    const curr = this.props;
-    const { dispatch, currentUser } = curr;
+  useEffect(() => {
+    const curr = props;
+    const prev = prevPropsRef.current;
 
-    const didReconnect = useConnectionRestored({ curr, prev });
-    if (didReconnect && curr.data.refetch) {
-      curr.data.refetch();
-    }
-
-    if (curr.data.directMessageThread) {
-      const thread = curr.data.directMessageThread;
-      const trimmedUsers = thread.participants.filter(
-        user => user.userId !== currentUser.id
-      );
-      const titleIcon =
-        trimmedUsers.length === 1 ? (
-          <UserAvatar user={trimmedUsers[0]} size={24} />
-        ) : null;
-      const rightAction =
-        trimmedUsers.length === 1 ? (
-          <Link to={`/users/${trimmedUsers[0].username}`}>
-            <Icon glyph={'info'} />
-          </Link>
-        ) : null;
-      const names = trimmedUsers.map(user => user.name).join(', ');
-      dispatch(
-        setTitlebarProps({
-          title: names,
-          titleIcon,
-          rightAction,
-          leftAction: 'view-back',
-        })
-      );
-    }
-
-    // if the thread slider is open, dont be focusing shit up in heyuhr
-    if (curr.threadSliderIsOpen) return;
-    // if the thread slider is closed and we're viewing DMs, refocus the chat input
-    if (prev.threadSliderIsOpen && !curr.threadSliderIsOpen && this.chatInput) {
-      this.chatInput.focus();
-    }
-    // as soon as the direct message thread is loaded, refocus the chat input
-    if (
-      curr.data.directMessageThread &&
-      !prev.data.directMessageThread &&
-      this.chatInput
-    ) {
-      this.chatInput.focus();
-    }
-    if (prev.match.params.threadId !== curr.match.params.threadId) {
-      const threadId = curr.match.params.threadId;
-
-      // prevent unnecessary behavior on mobile
-      if (!threadId) return;
-
-      curr.setLastSeen(threadId);
-      // autofocus on desktop
-      if (window && window.innerWidth > 768 && this.chatInput) {
-        this.chatInput.focus();
+    if (prev) {
+      const didReconnect = useConnectionRestored({ curr, prev });
+      if (didReconnect && curr.data.refetch) {
+        curr.data.refetch();
       }
-    }
-  }
 
-  render() {
-    const id = this.props.match.params.threadId;
-    const { currentUser, data, isLoading } = this.props;
-
-    if (id !== 'new') {
-      if (data.directMessageThread) {
-        const thread = data.directMessageThread;
+      if (curr.data.directMessageThread) {
+        const thread = curr.data.directMessageThread;
         const trimmedUsers = thread.participants.filter(
           user => user.userId !== currentUser.id
         );
@@ -142,63 +98,128 @@ class ExistingThread extends React.Component<Props> {
             </Link>
           ) : null;
         const names = trimmedUsers.map(user => user.name).join(', ');
-        const mentionSuggestions = thread.participants
-          .map(cleanSuggestionUserObject)
-          .filter(user => user && user.username !== currentUser.username);
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <DesktopTitlebar
-              title={names}
-              titleIcon={titleIcon}
-              rightAction={rightAction}
-            />
-            <MessagesContainer>
-              <ViewContent>
-                {!isLoading ? (
-                  <React.Fragment>
-                    <ErrorBoundary>
-                      <Header thread={thread} currentUser={currentUser} />
-                    </ErrorBoundary>
-
-                    <Messages
-                      id={id}
-                      currentUser={currentUser}
-                      thread={thread}
-                    />
-                  </React.Fragment>
-                ) : (
-                  <Loading />
-                )}
-              </ViewContent>
-
-              <ChatInputWrapper>
-                <ChatInput
-                  threadId={id}
-                  currentUser={currentUser}
-                  threadType={'directMessageThread'}
-                  onRef={chatInput => (this.chatInput = chatInput)}
-                  participants={mentionSuggestions}
-                />
-              </ChatInputWrapper>
-            </MessagesContainer>
-          </div>
+        dispatch(
+          setTitlebarProps({
+            title: names,
+            titleIcon,
+            rightAction,
+            leftAction: 'view-back',
+          })
         );
       }
 
-      if (isLoading) {
-        return <LoadingView />;
+      // if the thread slider is open, dont be focusing shit up in heyuhr
+      if (curr.threadSliderIsOpen) {
+        prevPropsRef.current = curr;
+        return;
       }
+      // if the thread slider is closed and we're viewing DMs, refocus the chat input
+      if (prev.threadSliderIsOpen && !curr.threadSliderIsOpen && chatInputRef.current) {
+        chatInputRef.current.focus();
+      }
+      // as soon as the direct message thread is loaded, refocus the chat input
+      if (
+        curr.data.directMessageThread &&
+        !prev.data.directMessageThread &&
+        chatInputRef.current
+      ) {
+        chatInputRef.current.focus();
+      }
+      if (prev.match.params.threadId !== curr.match.params.threadId) {
+        const threadId = curr.match.params.threadId;
 
-      return <ErrorView />;
+        // prevent unnecessary behavior on mobile
+        if (!threadId) {
+          prevPropsRef.current = curr;
+          return;
+        }
+
+        curr.setLastSeen(threadId);
+        // autofocus on desktop
+        if (window && window.innerWidth > 768 && chatInputRef.current) {
+          chatInputRef.current.focus();
+        }
+      }
     }
 
-    /*
-      if we are viewing /new we will handle the messages view in the composer
-      component
-    */
-    return null;
+    prevPropsRef.current = props;
+  });
+
+  const id = match.params.threadId;
+
+  if (id !== 'new') {
+    if (data.directMessageThread) {
+      const thread = data.directMessageThread;
+      const trimmedUsers = thread.participants.filter(
+        user => user.userId !== currentUser.id
+      );
+      const titleIcon =
+        trimmedUsers.length === 1 ? (
+          <UserAvatar user={trimmedUsers[0]} size={24} />
+        ) : null;
+      const rightAction =
+        trimmedUsers.length === 1 ? (
+          <Link to={`/users/${trimmedUsers[0].username}`}>
+            <Icon glyph={'info'} />
+          </Link>
+        ) : null;
+      const names = trimmedUsers.map(user => user.name).join(', ');
+      const mentionSuggestions = thread.participants
+        .map(cleanSuggestionUserObject)
+        .filter(user => user && user.username !== currentUser.username);
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <DesktopTitlebar
+            title={names}
+            titleIcon={titleIcon}
+            rightAction={rightAction}
+          />
+          <MessagesContainer>
+            <ViewContent>
+              {!isLoading ? (
+                <React.Fragment>
+                  <ErrorBoundary>
+                    <Header thread={thread} currentUser={currentUser} />
+                  </ErrorBoundary>
+
+                  <Messages
+                    id={id}
+                    currentUser={currentUser}
+                    thread={thread}
+                  />
+                </React.Fragment>
+              ) : (
+                <Loading />
+              )}
+            </ViewContent>
+
+            <ChatInputWrapper>
+              <ChatInput
+                threadId={id}
+                currentUser={currentUser}
+                threadType={'directMessageThread'}
+                onRef={chatInput => (chatInputRef.current = chatInput)}
+                participants={mentionSuggestions}
+              />
+            </ChatInputWrapper>
+          </MessagesContainer>
+        </div>
+      );
+    }
+
+    if (isLoading) {
+      return <LoadingView />;
+    }
+
+    return <ErrorView />;
   }
-}
+
+  /*
+    if we are viewing /new we will handle the messages view in the composer
+    component
+  */
+  return null;
+};
 
 const map = state => ({
   networkOnline: state.connectionStatus.networkOnline,

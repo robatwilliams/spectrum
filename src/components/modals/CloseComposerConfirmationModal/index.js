@@ -17,107 +17,91 @@ type Props = {
   modalProps: any,
 };
 
-type State = {
-  isLoading: boolean,
-};
+const CloseComposerConfirmation = (props: Props) => {
+  const { dispatch, isOpen, modalProps } = props;
+  const { message, ...callbacks } = modalProps;
 
-class CloseComposerConfirmation extends React.Component<Props, State> {
-  state = {
-    isLoading: false,
-  };
+  const close = React.useCallback(() => {
+    dispatch(closeModal());
+  }, [dispatch]);
 
-  componentDidMount() {
-    // $FlowIssue
-    document.addEventListener('keydown', this.handleKeyPress, false);
-  }
-
-  componentWillUnmount() {
-    // $FlowIssue
-    document.removeEventListener('keydown', this.handleKeyPress, false);
-    return this.close();
-  }
-
-  handleKeyPress = e => {
-    const enter = e.keyCode === ENTER;
-
-    const {
-      modalProps: { message, ...callbacks },
-    } = this.props;
-
-    const functions = Object.keys(callbacks).map(k => callbacks[k]);
-
-    if (enter) {
-      this.closeConfirmed(functions);
-    }
-  };
-
-  close = () => {
-    this.props.dispatch(closeModal());
-  };
-
-  closeConfirmed = functionsArray => {
+  const closeConfirmed = React.useCallback((functionsArray) => {
     // functionArgs contains some of the action you want to execute when
     // confirmation is accepted (yes clicked)
     for (const func of functionsArray) {
       func();
     }
 
-    this.close();
-  };
+    close();
+  }, [close]);
 
-  render() {
-    const {
-      isOpen,
-      modalProps: { message, ...callbacks },
-    } = this.props;
+  const handleKeyPress = React.useCallback((e) => {
+    const enter = e.keyCode === ENTER;
 
     const functions = Object.keys(callbacks).map(k => callbacks[k]);
 
-    const styles = modalStyles();
+    if (enter) {
+      closeConfirmed(functions);
+    }
+  }, [callbacks, closeConfirmed]);
 
-    return (
-      <Modal
-        ariaHideApp={false}
-        isOpen={isOpen}
-        onRequestClose={this.close}
-        shouldCloseOnOverlayClick={true}
-        style={styles}
-        closeTimeoutMS={330}
+  React.useEffect(() => {
+    // $FlowIssue
+    document.addEventListener('keydown', handleKeyPress, false);
+
+    return () => {
+      // $FlowIssue
+      document.removeEventListener('keydown', handleKeyPress, false);
+      close();
+    };
+  }, [handleKeyPress, close]);
+
+  const functions = Object.keys(callbacks).map(k => callbacks[k]);
+
+  const styles = modalStyles();
+
+  return (
+    <Modal
+      ariaHideApp={false}
+      isOpen={isOpen}
+      onRequestClose={close}
+      shouldCloseOnOverlayClick={true}
+      style={styles}
+      closeTimeoutMS={330}
+    >
+      <ModalContainer
+        dataCy="discard-draft-modal"
+        title={'Discard Draft'}
+        closeModal={close}
       >
-        <ModalContainer
-          dataCy="discard-draft-modal"
-          title={'Discard Draft'}
-          closeModal={this.close}
-        >
-          <Message>
-            {message ? message : 'Are you sure you want to discard this draft?'}
-          </Message>
+        <Message>
+          {message ? message : 'Are you sure you want to discard this draft?'}
+        </Message>
 
-          <Actions>
-            <TextButton
-              color={'text.placeholder'}
-              hoverColor={'warn.default'}
-              onClick={this.close}
-              data-cy={'discard-draft-cancel'}
-            >
-              Cancel
-            </TextButton>
+        <Actions>
+          <TextButton
+            color={'text.placeholder'}
+            hoverColor={'warn.default'}
+            onClick={close}
+            data-cy={'discard-draft-cancel'}
+          >
+            Cancel
+          </TextButton>
 
-            <WarnButton
-              gradientTheme={'warn'}
-              color={'warn.default'}
-              hoverColor={'warn.default'}
-              data-cy={'discard-draft-discard'}
-              onClick={() => this.closeConfirmed(functions)}
-            >
-              Discard
-            </WarnButton>
-          </Actions>
-        </ModalContainer>
-      </Modal>
-    );
-  }
-}
+          <WarnButton
+            gradientTheme={'warn'}
+            color={'warn.default'}
+            hoverColor={'warn.default'}
+            data-cy={'discard-draft-discard'}
+            onClick={() => closeConfirmed(functions)}
+          >
+            Discard
+          </WarnButton>
+        </Actions>
+      </ModalContainer>
+    </Modal>
+  );
+};
 
 const mapStateToProps = state => ({
   isOpen: state.modals.isOpen,

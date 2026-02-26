@@ -26,17 +26,7 @@ import getThreadLink from 'src/helpers/get-thread-link';
 import { ENTER } from 'src/helpers/keycodes';
 import type { Dispatch } from 'redux';
 import { ErrorBoundary } from 'src/components/error';
-
-type State = {
-  isEditing?: boolean,
-  body: ?string,
-  title: string,
-  receiveNotifications?: boolean,
-  isSavingEdit?: boolean,
-  flyoutOpen?: ?boolean,
-  error?: ?string,
-  parsedBody: ?Object,
-};
+const { useState, useEffect, useRef, useMemo } = React;
 
 type Props = {
   thread: GetThreadType,
@@ -49,61 +39,37 @@ type Props = {
   ref?: any,
 };
 
-class ThreadDetailPure extends React.Component<Props, State> {
-  state = {
-    isEditing: false,
-    parsedBody: null,
-    body: '',
-    title: '',
-    receiveNotifications: false,
-    isSavingEdit: false,
-    flyoutOpen: false,
-    error: '',
-  };
+const ThreadDetailPure = (props: Props) => {
+  const { currentUser, thread, dispatch, editThread, uploadImage } = props;
 
-  bodyEditor: any;
-  titleTextarea: React$Node;
+  const parsedBody = useMemo(() => {
+    return JSON.parse(thread.content.body);
+  }, [thread.content.body]);
 
-  componentWillMount() {
-    this.setThreadState();
-  }
+  const [isEditing, setIsEditing] = useState(false);
+  const [body, setBody] = useState('');
+  const [title, setTitle] = useState(thread.content.title);
+  const [receiveNotifications, setReceiveNotifications] = useState(thread.receiveNotifications);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [flyoutOpen, setFlyoutOpen] = useState(false);
+  const [error, setError] = useState('');
 
-  setThreadState() {
-    const { thread } = this.props;
+  const bodyEditor = useRef(null);
+  const titleTextarea = useRef(null);
 
-    const parsedBody = JSON.parse(thread.content.body);
+  useEffect(() => {
+    setIsEditing(false);
+    setBody('');
+    setTitle(thread.content.title);
+    setFlyoutOpen(false);
+    setReceiveNotifications(thread.receiveNotifications);
+    setIsSavingEdit(false);
+  }, [thread.id, thread.content.title, thread.receiveNotifications]);
 
-    return this.setState({
-      isEditing: false,
-      body: '',
-      title: thread.content.title,
-      // We store this in the state to avoid having to JSON.parse on every render
-      parsedBody,
-      flyoutOpen: false,
-      receiveNotifications: thread.receiveNotifications,
-      isSavingEdit: false,
-    });
-  }
-
-  componentDidUpdate(prevProps) {
-    if (
-      prevProps.thread &&
-      this.props.thread &&
-      prevProps.thread.id !== this.props.thread.id
-    ) {
-      this.setThreadState();
-    }
-  }
-
-  toggleEdit = () => {
-    const { isEditing } = this.state;
-    const { thread } = this.props;
-
-    this.setState({
-      isEditing: !isEditing,
-      title: thread.content.title,
-      body: null,
-    });
+  const toggleEdit = () => {
+    setIsEditing(!isEditing);
+    setTitle(thread.content.title);
+    setBody(null);
 
     fetch('https://convert.spectrum.chat/to', {
       method: 'POST',
@@ -116,30 +82,24 @@ class ThreadDetailPure extends React.Component<Props, State> {
       })
       .then(res => res.text())
       .then(md => {
-        this.setState({
-          body: md,
-        });
+        setBody(md);
       })
       .catch(err => {
-        this.props.dispatch(addToastWithTimeout('error', err.message));
-        this.setState({
-          isEditing,
-          body: '',
-        });
-        this.props.toggleEdit && this.props.toggleEdit();
+        dispatch(addToastWithTimeout('error', err.message));
+        setIsEditing(isEditing);
+        setBody('');
+        props.toggleEdit && props.toggleEdit();
       });
 
-    this.props.toggleEdit && this.props.toggleEdit();
+    props.toggleEdit && props.toggleEdit();
   };
 
-  handleKeyPress = e => {
+  const handleKeyPress = e => {
     const cmdEnter = e.keyCode === ENTER && e.metaKey;
-    if (cmdEnter) return this.saveEdit();
+    if (cmdEnter) return saveEdit();
   };
 
-  saveEdit = () => {
-    const { dispatch, editThread, thread } = this.props;
-    const { title, body } = this.state;
+  const saveEdit = () => {
     const threadId = thread.id;
 
     if (!title || title.trim().length === 0) {
@@ -149,9 +109,7 @@ class ThreadDetailPure extends React.Component<Props, State> {
       return;
     }
 
-    this.setState({
-      isSavingEdit: true,
-    });
+    setIsSavingEdit(true);
 
     const content = {
       title: title.trim(),
@@ -165,12 +123,10 @@ class ThreadDetailPure extends React.Component<Props, State> {
 
     editThread(input)
       .then(({ data: { editThread } }) => {
-        this.setState({
-          isSavingEdit: false,
-        });
+        setIsSavingEdit(false);
 
         if (editThread && editThread !== null) {
-          this.toggleEdit();
+          toggleEdit();
           return dispatch(addToastWithTimeout('success', 'Thread saved!'));
         } else {
           return dispatch(
@@ -182,65 +138,53 @@ class ThreadDetailPure extends React.Component<Props, State> {
         }
       })
       .catch(err => {
-        this.setState({
-          isSavingEdit: false,
-        });
+        setIsSavingEdit(false);
         dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  changeTitle = e => {
-    const title = e.target.value;
-    if (/\n$/g.test(title)) {
-      this.bodyEditor.focus && this.bodyEditor.focus();
+  const changeTitle = e => {
+    const newTitle = e.target.value;
+    if (/\n$/g.test(newTitle)) {
+      bodyEditor.current && bodyEditor.current.focus && bodyEditor.current.focus();
       return;
     }
-    this.setState({
-      title,
-    });
+    setTitle(newTitle);
   };
 
-  changeBody = evt => {
-    this.setState({
-      body: evt.target.value,
-    });
+  const changeBody = evt => {
+    setBody(evt.target.value);
   };
 
-  uploadFiles = files => {
+  const uploadFiles = files => {
     const uploading = `![Uploading ${files[0].name}...]()`;
-    let caretPos = this.bodyEditor.selectionStart;
-    const { body } = this.state;
+    let caretPos = bodyEditor.current.selectionStart;
     if (!body) return;
 
-    this.setState(
-      {
-        isSavingEdit: true,
-        body:
-          body.substring(0, caretPos) +
-          uploading +
-          body.substring(this.bodyEditor.selectionEnd, body.length),
-      },
-      () => {
-        caretPos = caretPos + uploading.length;
-        this.bodyEditor.selectionStart = caretPos;
-        this.bodyEditor.selectionEnd = caretPos;
-        this.bodyEditor.focus();
-      }
+    setIsSavingEdit(true);
+    setBody(
+      body.substring(0, caretPos) +
+        uploading +
+        body.substring(bodyEditor.current.selectionEnd, body.length)
     );
 
-    return this.props
-      .uploadImage({
-        image: files[0],
-        type: 'threads',
-      })
+    setTimeout(() => {
+      caretPos = caretPos + uploading.length;
+      bodyEditor.current.selectionStart = caretPos;
+      bodyEditor.current.selectionEnd = caretPos;
+      bodyEditor.current.focus();
+    }, 0);
+
+    return uploadImage({
+      image: files[0],
+      type: 'threads',
+    })
       .then(({ data }) => {
-        this.setState({
-          isSavingEdit: false,
-        });
-        if (!this.state.body) return;
-        this.changeBody({
+        setIsSavingEdit(false);
+        if (!body) return;
+        changeBody({
           target: {
-            value: this.state.body.replace(
+            value: body.replace(
               uploading,
               `![${files[0].name}](${data.uploadImage})`
             ),
@@ -249,16 +193,14 @@ class ThreadDetailPure extends React.Component<Props, State> {
       })
       .catch(err => {
         console.error({ err });
-        this.setState({
-          isSavingEdit: false,
-        });
-        if (!this.state.body) return;
-        this.changeBody({
+        setIsSavingEdit(false);
+        if (!body) return;
+        changeBody({
           target: {
-            value: this.state.body.replace(uploading, ''),
+            value: body.replace(uploading, ''),
           },
         });
-        this.props.dispatch(
+        dispatch(
           addToastWithTimeout(
             'error',
             `Uploading image failed - ${err.message}`
@@ -267,124 +209,118 @@ class ThreadDetailPure extends React.Component<Props, State> {
       });
   };
 
-  render() {
-    const { currentUser, thread } = this.props;
+  const createdAt = new Date(thread.createdAt).getTime();
+  const timestamp = convertTimestampToDate(createdAt);
+  const { author } = thread;
 
-    const { isEditing, isSavingEdit } = this.state;
+  const editedTimestamp = thread.modifiedAt
+    ? new Date(thread.modifiedAt).getTime()
+    : null;
 
-    const createdAt = new Date(thread.createdAt).getTime();
-    const timestamp = convertTimestampToDate(createdAt);
-    const { author } = thread;
-
-    const editedTimestamp = thread.modifiedAt
-      ? new Date(thread.modifiedAt).getTime()
-      : null;
-
-    return (
-      <ThreadWrapper isEditing={isEditing} ref={this.props.ref}>
-        <ThreadContent isEditing={isEditing}>
-          {isEditing ? (
-            <ThreadEditInputs
-              uploadFiles={this.uploadFiles}
-              title={this.state.title}
-              body={this.state.body}
-              autoFocus
-              bodyRef={ref => (this.bodyEditor = ref)}
-              changeBody={this.changeBody}
-              changeTitle={this.changeTitle}
-              onKeyDown={this.handleKeyPress}
-              isEditing={isEditing}
-            />
-          ) : (
-            <React.Fragment>
-              <BylineContainer>
-                <UserListItem
-                  userObject={author.user}
-                  name={author.user.name}
-                  username={author.user.username}
-                  profilePhoto={author.user.profilePhoto}
-                  badges={author.roles}
-                  isCurrentUser={
-                    currentUser && author.user.id === currentUser.id
-                  }
-                  isOnline={author.user.isOnline}
-                  avatarSize={40}
-                  showHoverProfile={false}
-                  messageButton={
-                    currentUser && author.user.id !== currentUser.id
-                  }
-                />
-              </BylineContainer>
-
-              {thread.community.website && thread.community.redirect && (
-                <div
-                  style={{
-                    width: 'calc(100% + 32px)',
-                    borderBottom: '1px solid #f6f7f8',
-                    padding: '12px 16px',
-                    background: '#FFE6BF',
-                    marginLeft: '-16px',
-                    marginRight: '-16px',
-                    color: '#7D4A00',
-                  }}
-                >
-                  The {thread.community.name} community has a new home. This
-                  thread is preserved for historical purposes. The content of
-                  this conversation may be innaccurrate or out of date.{' '}
-                  <a
-                    style={{ color: '#D85537', fontWeight: '600' }}
-                    href={thread.community.website}
-                  >
-                    Go to new community home &rarr;
-                  </a>
-                </div>
-              )}
-
-              <div style={{ height: '16px' }} />
-
-              <ThreadHeading>{thread.content.title}</ThreadHeading>
-
-              <ThreadSubtitle>
-                <Link to={getThreadLink(thread)}>
-                  {timestamp}
-                  {thread.modifiedAt && (
-                    <React.Fragment>
-                      {' '}
-                      (Edited{' '}
-                      {timeDifference(
-                        Date.now(),
-                        editedTimestamp
-                      ).toLowerCase()}
-                      {thread.editedBy &&
-                        thread.editedBy.user.id !== thread.author.user.id &&
-                        ` by @${thread.editedBy.user.username}`}
-                      )
-                    </React.Fragment>
-                  )}
-                </Link>
-              </ThreadSubtitle>
-
-              <ThreadRenderer body={JSON.parse(thread.content.body)} />
-            </React.Fragment>
-          )}
-        </ThreadContent>
-
-        <ErrorBoundary>
-          <ActionBar
-            toggleEdit={this.toggleEdit}
-            currentUser={currentUser}
-            thread={thread}
-            saveEdit={this.saveEdit}
-            isSavingEdit={isSavingEdit}
+  return (
+    <ThreadWrapper isEditing={isEditing} ref={props.ref}>
+      <ThreadContent isEditing={isEditing}>
+        {isEditing ? (
+          <ThreadEditInputs
+            uploadFiles={uploadFiles}
+            title={title}
+            body={body}
+            autoFocus
+            bodyRef={ref => (bodyEditor.current = ref)}
+            changeBody={changeBody}
+            changeTitle={changeTitle}
+            onKeyDown={handleKeyPress}
             isEditing={isEditing}
-            title={this.state.title}
-            uploadFiles={this.uploadFiles}
           />
-        </ErrorBoundary>
-      </ThreadWrapper>
-    );
-  }
-}
+        ) : (
+          <React.Fragment>
+            <BylineContainer>
+              <UserListItem
+                userObject={author.user}
+                name={author.user.name}
+                username={author.user.username}
+                profilePhoto={author.user.profilePhoto}
+                badges={author.roles}
+                isCurrentUser={
+                  currentUser && author.user.id === currentUser.id
+                }
+                isOnline={author.user.isOnline}
+                avatarSize={40}
+                showHoverProfile={false}
+                messageButton={
+                  currentUser && author.user.id !== currentUser.id
+                }
+              />
+            </BylineContainer>
+
+            {thread.community.website && thread.community.redirect && (
+              <div
+                style={{
+                  width: 'calc(100% + 32px)',
+                  borderBottom: '1px solid #f6f7f8',
+                  padding: '12px 16px',
+                  background: '#FFE6BF',
+                  marginLeft: '-16px',
+                  marginRight: '-16px',
+                  color: '#7D4A00',
+                }}
+              >
+                The {thread.community.name} community has a new home. This
+                thread is preserved for historical purposes. The content of
+                this conversation may be innaccurrate or out of date.{' '}
+                <a
+                  style={{ color: '#D85537', fontWeight: '600' }}
+                  href={thread.community.website}
+                >
+                  Go to new community home &rarr;
+                </a>
+              </div>
+            )}
+
+            <div style={{ height: '16px' }} />
+
+            <ThreadHeading>{thread.content.title}</ThreadHeading>
+
+            <ThreadSubtitle>
+              <Link to={getThreadLink(thread)}>
+                {timestamp}
+                {thread.modifiedAt && (
+                  <React.Fragment>
+                    {' '}
+                    (Edited{' '}
+                    {timeDifference(
+                      Date.now(),
+                      editedTimestamp
+                    ).toLowerCase()}
+                    {thread.editedBy &&
+                      thread.editedBy.user.id !== thread.author.user.id &&
+                      ` by @${thread.editedBy.user.username}`}
+                    )
+                  </React.Fragment>
+                )}
+              </Link>
+            </ThreadSubtitle>
+
+            <ThreadRenderer body={JSON.parse(thread.content.body)} />
+          </React.Fragment>
+        )}
+      </ThreadContent>
+
+      <ErrorBoundary>
+        <ActionBar
+          toggleEdit={toggleEdit}
+          currentUser={currentUser}
+          thread={thread}
+          saveEdit={saveEdit}
+          isSavingEdit={isSavingEdit}
+          isEditing={isEditing}
+          title={title}
+          uploadFiles={uploadFiles}
+        />
+      </ErrorBoundary>
+    </ThreadWrapper>
+  );
+};
 
 const ThreadDetail = compose(
   editThreadMutation,

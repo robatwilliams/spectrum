@@ -5,36 +5,22 @@ import { Overview, Centralized, CommunitySearch, Chat, Yours } from '../view';
 import PageFooter from '../components/footer';
 import { Wrapper } from '../style';
 
-type State = {
-  preferredSigninMethod: string,
-};
+const Splash = () => {
+  const preferredSigninMethod = getItemFromStorage('preferred_signin_method');
 
-class Splash extends React.Component<{}, State> {
-  constructor() {
-    super();
-
-    const preferredSigninMethod = getItemFromStorage('preferred_signin_method');
-
-    this.state = {
-      preferredSigninMethod,
-    };
-  }
-
-  trackSignin = (type: string, method: string) => {
+  const trackSignin = (type: string, method: string) => {
     storeItem('preferred_signin_method', method);
   };
 
-  render() {
-    return (
-      <Wrapper data-cy="home-page">
-        <Overview />
-        <Centralized />
-        <CommunitySearch />
-        <Chat />
-        <Yours />
-        <PageFooter />
-      </Wrapper>
-    );
-  }
-}
+  return (
+    <Wrapper data-cy="home-page">
+      <Overview />
+      <Centralized />
+      <CommunitySearch />
+      <Chat />
+      <Yours />
+      <PageFooter />
+    </Wrapper>
+  );
+};
 export default Splash;

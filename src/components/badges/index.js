@@ -16,60 +16,58 @@ type Props = {
   dispatch: Dispatch<Object>,
 };
 
-class Badge extends React.Component<Props> {
-  render() {
-    const { type, label, ...rest } = this.props;
-    switch (type) {
-      case 'beta-supporter':
-        return (
-          <Tooltip content={'Beta Supporter'}>
-            <ProBadge type={type} {...rest}>
-              {label || 'Supporter'}
-            </ProBadge>
-          </Tooltip>
-        );
-      case 'blocked':
-        return (
-          <Tooltip content={this.props.tipText}>
-            <BlockedBadge type={type} {...rest}>
-              {label || type}
-            </BlockedBadge>
-          </Tooltip>
-        );
-      case 'pending':
-        return (
-          <Tooltip content={this.props.tipText}>
-            <PendingBadge type={type} {...rest}>
-              {label || type}
-            </PendingBadge>
-          </Tooltip>
-        );
-      case 'moderator':
-      case 'admin':
-        return (
-          <Tooltip
-            content={`${
-              type === 'moderator' ? 'Moderator' : 'Owner'
-            } of this community`}
+const Badge = (props: Props) => {
+  const { type, label, tipText, onClick, ...rest } = props;
+  switch (type) {
+    case 'beta-supporter':
+      return (
+        <Tooltip content={'Beta Supporter'}>
+          <ProBadge type={type} {...rest}>
+            {label || 'Supporter'}
+          </ProBadge>
+        </Tooltip>
+      );
+    case 'blocked':
+      return (
+        <Tooltip content={tipText}>
+          <BlockedBadge type={type} {...rest}>
+            {label || type}
+          </BlockedBadge>
+        </Tooltip>
+      );
+    case 'pending':
+      return (
+        <Tooltip content={tipText}>
+          <PendingBadge type={type} {...rest}>
+            {label || type}
+          </PendingBadge>
+        </Tooltip>
+      );
+    case 'moderator':
+    case 'admin':
+      return (
+        <Tooltip
+          content={`${
+            type === 'moderator' ? 'Moderator' : 'Owner'
+          } of this community`}
+        >
+          <TeamBadge type={type} {...rest}>
+            Team
+          </TeamBadge>
+        </Tooltip>
+      );
+    default:
+      return (
+        <Tooltip content={tipText || label || ''}>
+          <Span
+            type={type}
+            onClick={onClick && onClick}
+            {...rest}
           >
-            <TeamBadge type={type} {...rest}>
-              Team
-            </TeamBadge>
-          </Tooltip>
-        );
-      default:
-        return (
-          <Tooltip content={this.props.tipText || label || ''}>
-            <Span
-              type={type}
-              onClick={this.props.onClick && this.props.onClick}
-              {...rest}
-            >
-              {label || type}
-            </Span>
-          </Tooltip>
-        );
-    }
+            {label || type}
+          </Span>
+        </Tooltip>
+      );
   }
 }
 

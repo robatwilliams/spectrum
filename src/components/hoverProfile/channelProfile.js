@@ -1,5 +1,5 @@
 // @flow
-import React, { Component } from 'react';
+import React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
@@ -30,9 +30,8 @@ type ProfileProps = {
   style: CSSStyleDeclaration,
 };
 
-class HoverProfile extends Component<ProfileProps> {
-  render() {
-    const { channel, ref, style } = this.props;
+const HoverProfile = (props: ProfileProps) => {
+  const { channel, ref, style } = props;
 
     const {
       isOwner: isChannelOwner,
@@ -107,8 +106,7 @@ class HoverProfile extends Component<ProfileProps> {
         </ProfileCard>
       </HoverWrapper>
     );
-  }
-}
+};
 
 export default compose(
   withCurrentUser,

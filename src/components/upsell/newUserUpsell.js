@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import compose from 'recompose/compose';
@@ -20,81 +20,49 @@ import {
   FriendlyError,
 } from './newUserUpsellStyles';
 
-class UpsellNewUser extends Component {
-  state: {
-    joinedCommunities: number,
-    error: string,
-    savedUsername: boolean,
-  };
+const UpsellNewUser = (props) => {
+  const { user, communities, history, graduate } = props;
+  
+  const [joinedCommunities, setJoinedCommunities] = useState(0);
+  const [error, setError] = useState('');
+  const [savedUsername, setSavedUsername] = useState(user.username ? user.username : false);
 
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      joinedCommunities: 0,
-      error: '',
-      savedUsername: props.user.username ? props.user.username : false,
-    };
-  }
-
-  componentDidMount() {}
-
-  graduate = () => {
-    const { joinedCommunities, savedUsername } = this.state;
-    const { communities } = this.props;
-
+  const handleGraduate = () => {
     if ((joinedCommunities > 0 || communities) && savedUsername) {
-      this.props.graduate();
+      graduate();
     } else {
-      let error;
+      let newError;
       if (joinedCommunities === 0 && !communities) {
-        error =
+        newError =
           'To get started, try joining some communities above, or creating your own!';
       } else if (!savedUsername) {
-        error = 'Be sure to save your username!';
+        newError = 'Be sure to save your username!';
       }
 
-      this.setState({
-        error,
-      });
+      setError(newError);
     }
   };
 
-  joined = () => {
-    let { joinedCommunities } = this.state;
-    joinedCommunities += 1;
-
-    this.setState({
-      joinedCommunities,
-      error: '',
-    });
+  const joined = () => {
+    setJoinedCommunities(prevCount => prevCount + 1);
+    setError('');
   };
 
-  left = () => {
-    let { joinedCommunities } = this.state;
-    joinedCommunities -= 1;
-
-    this.setState({
-      joinedCommunities,
-    });
+  const left = () => {
+    setJoinedCommunities(prevCount => prevCount - 1);
   };
 
-  createCommunity = () => {
-    this.props.history.push('/new/community');
+  const createCommunity = () => {
+    history.push('/new/community');
   };
 
-  clickShareLink = () => {};
+  const clickShareLink = () => {};
 
-  savedUsername = () => {
-    this.setState({
-      savedUsername: true,
-    });
+  const onUsernameSaved = () => {
+    setSavedUsername(true);
   };
 
-  render() {
-    const { user } = this.props;
-
-    return (
+  return (
       <NullCard bg="onboarding" repeat={true} noPadding>
         <Section>
           <LargeEmoji>
@@ -120,7 +88,7 @@ class UpsellNewUser extends Component {
             Pick a username so that people can find you on Spectrum!
           </SmallSubtitle>
 
-          <SetUsername user={user} usernameSaved={() => this.savedUsername()} />
+          <SetUsername user={user} usernameSaved={() => onUsernameSaved()} />
         </Section>
 
         <Section noPadding>
@@ -152,7 +120,7 @@ class UpsellNewUser extends Component {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Button onClick={() => this.clickShareLink('facebook')}>
+              <Button onClick={() => clickShareLink('facebook')}>
                 Share on Facebook
               </Button>
             </a>
@@ -161,7 +129,7 @@ class UpsellNewUser extends Component {
               target="_blank"
               rel="noopener noreferrer"
             >
-              <Button onClick={() => this.clickShareLink('twitter')}>
+              <Button onClick={() => clickShareLink('twitter')}>
                 Share on Twitter
               </Button>
             </a>
@@ -180,7 +148,7 @@ class UpsellNewUser extends Component {
             community in less than a minute:
           </SmallSubtitle>
 
-          <OutlineButton onClick={this.createCommunity}>
+          <OutlineButton onClick={createCommunity}>
             Create a community
           </OutlineButton>
         </Section>
@@ -196,16 +164,15 @@ class UpsellNewUser extends Component {
             you’re ready to go!
           </SmallSubtitle>
 
-          {this.state.error && (
-            <FriendlyError>{this.state.error}</FriendlyError>
+          {error && (
+            <FriendlyError>{error}</FriendlyError>
           )}
 
-          <Button onClick={this.graduate}>Cool! Take me home.</Button>
+          <Button onClick={handleGraduate}>Cool! Take me home.</Button>
         </Section>
       </NullCard>
     );
-  }
-}
+};
 
 export default compose(
   withRouter,

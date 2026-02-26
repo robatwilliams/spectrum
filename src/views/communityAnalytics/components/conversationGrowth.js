@@ -19,44 +19,42 @@ type Props = {
   },
 };
 
-class ConversationGrowth extends React.Component<Props> {
-  render() {
+const ConversationGrowth = (props: Props) => {
+  const {
+    data: { community },
+    isLoading,
+  } = props;
+ 
+  if (community) {
     const {
-      data: { community },
-      isLoading,
-    } = this.props;
-
-    if (community) {
-      const {
-        count,
-        weeklyGrowth,
-        monthlyGrowth,
-        quarterlyGrowth,
-      } = community.conversationGrowth;
-      return (
-        <SectionCard>
-          <SectionSubtitle>Your community‘s conversations</SectionSubtitle>
-          <SectionTitle>
-            {count.toLocaleString()} total conversations
-          </SectionTitle>
-          {parseGrowth(weeklyGrowth, 'this week')}
-          {parseGrowth(monthlyGrowth, 'this month')}
-          {parseGrowth(quarterlyGrowth, 'this quarter')}
-        </SectionCard>
-      );
-    }
-
-    if (isLoading) {
-      return (
-        <SectionCard>
-          <Loading />
-        </SectionCard>
-      );
-    }
-
-    return null;
+      count,
+      weeklyGrowth,
+      monthlyGrowth,
+      quarterlyGrowth,
+    } = community.conversationGrowth;
+    return (
+      <SectionCard>
+        <SectionSubtitle>Your community‘s conversations</SectionSubtitle>
+        <SectionTitle>
+          {count.toLocaleString()} total conversations
+        </SectionTitle>
+        {parseGrowth(weeklyGrowth, 'this week')}
+        {parseGrowth(monthlyGrowth, 'this month')}
+        {parseGrowth(quarterlyGrowth, 'this quarter')}
+      </SectionCard>
+    );
   }
-}
+
+  if (isLoading) {
+    return (
+    <SectionCard>
+      <Loading />
+    </SectionCard>
+    );
+  }
+
+  return null;
+};
 
 export default compose(
   getCommunityConversationGrowth,

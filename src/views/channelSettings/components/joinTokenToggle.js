@@ -18,53 +18,51 @@ type Props = {
   dispatch: Dispatch<Object>,
 };
 
-class TokenJoinToggle extends React.Component<Props> {
-  init = () => {
-    return this.props.settings.tokenJoinEnabled
-      ? this.disable()
-      : this.enable();
-  };
+const TokenJoinToggle = (props: Props) => {
+  const { id, settings, enableChannelTokenJoin, disableChannelTokenJoin, dispatch } = props;
 
-  disable = () => {
-    return this.props
-      .disableChannelTokenJoin({ id: this.props.id })
+  const disable = () => {
+    return disableChannelTokenJoin({ id })
       .then(() => {
-        return this.props.dispatch(
+        return dispatch(
           addToastWithTimeout('neutral', 'Link disabled')
         );
       })
       .catch(err => {
-        return this.props.dispatch(addToastWithTimeout('error', err.message));
+        return dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  enable = () => {
-    return this.props
-      .enableChannelTokenJoin({ id: this.props.id })
+  const enable = () => {
+    return enableChannelTokenJoin({ id })
       .then(() => {
-        return this.props.dispatch(
+        return dispatch(
           addToastWithTimeout('success', 'Link enabled')
         );
       })
       .catch(err => {
-        return this.props.dispatch(addToastWithTimeout('error', err.message));
+        return dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  render() {
-    const { tokenJoinEnabled } = this.props.settings;
+  const init = () => {
+    return settings.tokenJoinEnabled
+      ? disable()
+      : enable();
+  };
 
-    return (
-      <Checkbox
-        checked={tokenJoinEnabled}
-        onChange={this.init}
-        dataCy="toggle-token-link-invites"
-      >
-        Enable users to join via link
-      </Checkbox>
-    );
-  }
-}
+  const { tokenJoinEnabled } = settings;
+
+  return (
+    <Checkbox
+      checked={tokenJoinEnabled}
+      onChange={init}
+      dataCy="toggle-token-link-invites"
+    >
+      Enable users to join via link
+    </Checkbox>
+  );
+};
 
 export default compose(
   connect(),

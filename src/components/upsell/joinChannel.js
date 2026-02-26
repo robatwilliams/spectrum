@@ -19,30 +19,20 @@ type Props = {
   currentUser: ?Object,
 };
 
-type State = {
-  isLoading: boolean,
-};
+const JoinChannel = (props: Props) => {
+  const { channel, community, toggleChannelSubscription, dispatch, currentUser } = props;
+  const [isLoading, setIsLoading] = React.useState(false);
 
-class JoinChannel extends React.Component<Props, State> {
-  state = { isLoading: false };
+  const login = () => dispatch(openModal('LOGIN_MODAL'));
 
-  login = () => this.props.dispatch(openModal('LOGIN_MODAL'));
+  const toggleSubscription = () => {
+    setIsLoading(true);
 
-  toggleSubscription = () => {
-    const { channel, dispatch } = this.props;
-
-    this.setState({
-      isLoading: true,
-    });
-
-    this.props
-      .toggleChannelSubscription({ channelId: channel.id })
+    toggleChannelSubscription({ channelId: channel.id })
       .then(({ data }: ToggleChannelSubscriptionType) => {
         const { toggleChannelSubscription } = data;
 
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
 
         const {
           isMember,
@@ -73,42 +63,36 @@ class JoinChannel extends React.Component<Props, State> {
         return;
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
 
         dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  render() {
-    const { isLoading } = this.state;
-    const { channel, community, currentUser } = this.props;
-    const label = !currentUser
-      ? `Join ${community.name} community`
-      : community.communityPermissions.isMember
-      ? `Join ${channel.name} channel`
-      : `Join ${community.name} community`;
+  const label = !currentUser
+    ? `Join ${community.name} community`
+    : community.communityPermissions.isMember
+    ? `Join ${channel.name} channel`
+    : `Join ${community.name} community`;
 
-    return (
-      <JoinChannelContainer>
-        <JoinChannelContent>
-          <Button
-            loading={isLoading}
-            onClick={currentUser ? this.toggleSubscription : this.login}
-            data-cy={
-              currentUser
-                ? 'thread-join-channel-upsell-button'
-                : 'join-channel-login-upsell'
-            }
-          >
-            {isLoading ? 'Joining...' : label}
-          </Button>
-        </JoinChannelContent>
-      </JoinChannelContainer>
-    );
-  }
-}
+  return (
+    <JoinChannelContainer>
+      <JoinChannelContent>
+        <Button
+          loading={isLoading}
+          onClick={currentUser ? toggleSubscription : login}
+          data-cy={
+            currentUser
+              ? 'thread-join-channel-upsell-button'
+              : 'join-channel-login-upsell'
+          }
+        >
+          {isLoading ? 'Joining...' : label}
+        </Button>
+      </JoinChannelContent>
+    </JoinChannelContainer>
+  );
+};
 
 export default compose(
   connect(),

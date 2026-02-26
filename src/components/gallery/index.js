@@ -17,22 +17,20 @@ type Props = {
   activeMessageId: string,
 };
 
-class Gallery extends React.Component<Props> {
-  render() {
-    const { isOpen, threadId, activeMessageId } = this.props;
+const Gallery = (props: Props) => {
+  const { isOpen, threadId, activeMessageId } = props;
 
-    if (isOpen) {
-      return (
-        <GalleryWithMedia
-          threadId={threadId}
-          activeMessageId={activeMessageId}
-        />
-      );
-    } else {
-      return null;
-    }
+  if (isOpen) {
+    return (
+      <GalleryWithMedia
+        threadId={threadId}
+        activeMessageId={activeMessageId}
+      />
+    );
+  } else {
+    return null;
   }
-}
+};
 
 const mapStateToProps = state => ({
   threadId: state.gallery.threadId,

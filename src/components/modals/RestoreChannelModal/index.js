@@ -22,78 +22,67 @@ type Props = {
   restoreChannel: Function,
 };
 
-type State = {
-  isLoading: boolean,
-};
+const RestoreChannelModal = (props: Props) => {
+  const [isLoading, setIsLoading] = React.useState(false);
 
-class RestoreChannelModal extends React.Component<Props, State> {
-  state = { isLoading: false };
-
-  close = () => {
-    this.props.dispatch(closeModal());
+  const close = () => {
+    props.dispatch(closeModal());
   };
 
-  restore = (e: any) => {
+  const restore = (e: any) => {
     e.preventDefault();
-    const { channel, dispatch } = this.props;
+    const { channel, dispatch } = props;
 
-    return this.props
+    return props
       .restoreChannel({ channelId: channel.id })
       .then(() => {
         dispatch(addToastWithTimeout('success', 'Channel restored'));
-        this.setState({
-          isLoading: false,
-        });
-        return this.close();
+        setIsLoading(false);
+        return close();
       })
       .catch(err => {
         dispatch(addToastWithTimeout('error', err.message));
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
       });
   };
 
-  render() {
-    const { isOpen } = this.props;
-    const { isLoading } = this.state;
+  const { isOpen } = props;
 
-    const styles = modalStyles(420);
+  const styles = modalStyles(420);
 
-    return (
-      <Modal
-        /* TODO(@mxstbr): Fix this */
-        ariaHideApp={false}
-        isOpen={isOpen}
-        contentLabel={'Create a Channel'}
-        onRequestClose={this.close}
-        shouldCloseOnOverlayClick={true}
-        style={styles}
-        closeTimeoutMS={330}
-      >
-        {/*
-          We pass the closeModal dispatch into the container to attach
-          the action to the 'close' icon in the top right corner of all modals
-        */}
-        <ModalContainer title={'Restore Channel'} closeModal={this.close}>
-          <Form>
-            <Description>
-              Are you sure you want to restore this channel? Members will be
-              able to start new conversations and join this channel.
-            </Description>
+  return (
+    <Modal
+      /* TODO(@mxstbr): Fix this */
+      ariaHideApp={false}
+      isOpen={isOpen}
+      contentLabel={'Create a Channel'}
+      onRequestClose={close}
+      shouldCloseOnOverlayClick={true}
+      style={styles}
+      closeTimeoutMS={330}
+    >
+      {/*
+        We pass the closeModal dispatch into the container to attach
+        the action to the 'close' icon in the top right corner of all modals
+      */}
+      <ModalContainer title={'Restore Channel'} closeModal={close}>
+        <Form>
+          <Description>
+            Are you sure you want to restore this channel? Members will be
+            able to start new conversations and join this channel.
+          </Description>
 
-            <Actions>
-              <TextButton onClick={this.close}>Cancel</TextButton>
-              <PrimaryOutlineButton loading={isLoading} onClick={this.restore}>
-                {isLoading ? 'Restoring...' : 'Restore Channel'}
-              </PrimaryOutlineButton>
-            </Actions>
-          </Form>
-        </ModalContainer>
-      </Modal>
-    );
-  }
-}
+          <Actions>
+            <TextButton onClick={close}>Cancel</TextButton>
+            <PrimaryOutlineButton loading={isLoading} onClick={restore}>
+              {isLoading ? 'Restoring...' : 'Restore Channel'}
+            </PrimaryOutlineButton>
+          </Actions>
+        </Form>
+      </ModalContainer>
+    </Modal>
+  );
+};
 
 const map = state => ({
   isOpen: state.modals.isOpen,

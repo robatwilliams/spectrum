@@ -41,100 +41,75 @@ type Props = {
   community: Object,
 };
 
-type State = {
-  filter: ?{
-    isMember?: boolean,
-    isModerator?: boolean,
-    isBlocked?: boolean,
-    isOwner?: boolean,
-  },
-  searchIsFocused: boolean,
-  // what the user types in
-  searchString: string,
-  // what gets sent to the server when hits enter
-  queryString: string,
-};
+const CommunityMembers = (props: Props) => {
+  const { id, community, currentUser, location } = props;
 
-class CommunityMembers extends React.Component<Props, State> {
-  initialState = {
-    filter: { isMember: true, isBlocked: false },
-    searchIsFocused: false,
-    searchString: '',
-    queryString: '',
-  };
+  const [filter, setFilter] = React.useState({ isMember: true, isBlocked: false });
+  const [searchIsFocused, setSearchIsFocused] = React.useState(false);
+  const [searchString, setSearchString] = React.useState('');
+  const [queryString, setQueryString] = React.useState('');
 
-  state = this.initialState;
+  const viewMembers = React.useCallback(() => {
+    setFilter({ isMember: true, isBlocked: false });
+    setSearchIsFocused(false);
+  }, []);
 
-  componentDidMount() {
-    const { filter } = queryString.parse(this.props.location.search);
+  const viewPending = React.useCallback(() => {
+    setFilter({ isPending: true });
+    setSearchIsFocused(false);
+  }, []);
+
+  const viewTeam = React.useCallback(() => {
+    setFilter({ isModerator: true, isOwner: true });
+    setSearchIsFocused(false);
+  }, []);
+
+  const viewBlocked = React.useCallback(() => {
+    setFilter({ isBlocked: true });
+    setSearchIsFocused(false);
+  }, []);
+
+  React.useEffect(() => {
+    const { filter } = queryString.parse(location.search);
     if (!filter) return;
 
     if (filter === 'pending') {
-      return this.viewPending();
+      return viewPending();
     }
 
     if (filter === 'team') {
-      return this.viewTeam();
+      return viewTeam();
     }
 
     if (filter === 'blocked') {
-      return this.viewBlocked();
+      return viewBlocked();
     }
-  }
+  }, [location.search, viewPending, viewTeam, viewBlocked]);
 
-  viewMembers = () => {
-    return this.setState({
-      filter: { isMember: true, isBlocked: false },
-      searchIsFocused: false,
-    });
-  };
+  const handleChange = (e: any) => {
+    const searchStringValue = e.target && e.target.value;
 
-  viewPending = () => {
-    return this.setState({
-      filter: { isPending: true },
-      searchIsFocused: false,
-    });
-  };
-
-  viewTeam = () => {
-    return this.setState({
-      filter: { isModerator: true, isOwner: true },
-      searchIsFocused: false,
-    });
-  };
-
-  viewBlocked = () => {
-    return this.setState({
-      filter: { isBlocked: true },
-      searchIsFocused: false,
-    });
-  };
-
-  handleChange = (e: any) => {
-    const searchString = e.target && e.target.value;
-
-    if (!searchString || searchString.length === 0) {
-      return this.setState({
-        searchString: '',
-        queryString: '',
-      });
+    if (!searchStringValue || searchStringValue.length === 0) {
+      setSearchString('');
+      setQueryString('');
+      return;
     }
 
-    return this.setState({
-      searchString: searchString,
-    });
+    setSearchString(searchStringValue);
   };
 
-  initSearch = () => this.setState({ filter: null, searchIsFocused: true });
+  const initSearch = () => {
+    setFilter(null);
+    setSearchIsFocused(true);
+  };
 
-  search = e => {
+  const search = e => {
     e.preventDefault();
-    const { searchString } = this.state;
     if (!searchString || searchString.length === 0) return;
-    return this.setState({ queryString: searchString });
+    setQueryString(searchString);
   };
 
-  generateUserProfile = communityMember => {
+  const generateUserProfile = communityMember => {
     const { user, ...permissions } = communityMember;
     return (
       <React.Fragment>
@@ -146,28 +121,24 @@ class CommunityMembers extends React.Component<Props, State> {
             name={user.name}
             username={user.username}
             description={user.description}
-            isCurrentUser={user.id === this.props.currentUser.id}
+            isCurrentUser={user.id === currentUser.id}
             isOnline={user.isOnline}
             profilePhoto={user.profilePhoto}
             avatarSize={40}
             showHoverProfile={false}
-            messageButton={user.id !== this.props.currentUser.id}
+            messageButton={user.id !== currentUser.id}
           />
-          {user.id !== this.props.currentUser.id && (
+          {user.id !== currentUser.id && (
             <EditDropdown
               user={user}
               permissions={permissions}
-              community={this.props.community}
+              community={community}
             />
           )}
         </Row>
       </React.Fragment>
     );
   };
-
-  render() {
-    const { filter, searchIsFocused, searchString, queryString } = this.state;
-    const { id, community } = this.props;
 
     return (
       <SectionCard>
@@ -177,13 +148,13 @@ class CommunityMembers extends React.Component<Props, State> {
 
         <Filters>
           <Filter
-            onClick={this.viewMembers}
+            onClick={viewMembers}
             active={filter && filter.isMember ? true : false}
           >
             Members
           </Filter>
           <Filter
-            onClick={this.viewTeam}
+            onClick={viewTeam}
             active={
               filter && filter.isModerator && filter.isOwner ? true : false
             }
@@ -191,7 +162,7 @@ class CommunityMembers extends React.Component<Props, State> {
             Team
           </Filter>
           <Filter
-            onClick={this.viewBlocked}
+            onClick={viewBlocked}
             active={filter && filter.isBlocked ? true : false}
           >
             Blocked
@@ -199,18 +170,18 @@ class CommunityMembers extends React.Component<Props, State> {
 
           {community.isPrivate && (
             <Filter
-              onClick={this.viewPending}
+              onClick={viewPending}
               active={filter && filter.isPending ? true : false}
             >
               Pending
             </Filter>
           )}
 
-          <SearchFilter onClick={this.initSearch}>
-            <SearchForm onSubmit={this.search}>
+          <SearchFilter onClick={initSearch}>
+            <SearchForm onSubmit={search}>
               <Icon glyph={'search'} size={28} />
               <SearchInput
-                onChange={this.handleChange}
+                onChange={handleChange}
                 type={'text'}
                 placeholder={'Search'}
               />
@@ -221,7 +192,7 @@ class CommunityMembers extends React.Component<Props, State> {
         {searchIsFocused && queryString && (
           <Search
             queryString={queryString}
-            filter={{ communityId: this.props.id }}
+            filter={{ communityId: id }}
             render={({ searchResults, isLoading }) => {
               if (isLoading) {
                 return <Loading />;
@@ -253,7 +224,7 @@ class CommunityMembers extends React.Component<Props, State> {
                 <ListContainer>
                   {searchResults.map(communityMember => {
                     if (!communityMember) return null;
-                    return this.generateUserProfile(communityMember);
+                    return generateUserProfile(communityMember);
                   })}
                 </ListContainer>
               );
@@ -298,7 +269,7 @@ class CommunityMembers extends React.Component<Props, State> {
 
                     {members.map(communityMember => {
                       if (!communityMember) return null;
-                      return this.generateUserProfile(communityMember);
+                      return generateUserProfile(communityMember);
                     })}
 
                     {community && community.members.pageInfo.hasNextPage && (
@@ -376,8 +347,7 @@ class CommunityMembers extends React.Component<Props, State> {
         )}
       </SectionCard>
     );
-  }
-}
+};
 
 export default compose(
   withApollo,

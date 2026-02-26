@@ -51,93 +51,89 @@ const GetUserByUsername = (props: HandlerProps) => {
   );
 };
 
-class Avatar extends React.Component<AvatarProps> {
-  render() {
-    const {
-      user,
-      dataCy,
-      size = 32,
-      mobilesize,
-      style,
-      showOnlineStatus = true,
-      isClickable = true,
-      onlineBorderColor = null,
-    } = this.props;
+const Avatar = (props: AvatarProps) => {
+  const {
+    user,
+    dataCy,
+    size = 32,
+    mobilesize,
+    style,
+    showOnlineStatus = true,
+    isClickable = true,
+    onlineBorderColor = null,
+  } = props;
 
-    const src = user.profilePhoto;
+  const src = user.profilePhoto;
 
-    const userFallback = '/img/default_avatar.svg';
-    const source = [src, userFallback];
+  const userFallback = '/img/default_avatar.svg';
+  const source = [src, userFallback];
 
-    return (
-      <Container
-        style={style}
-        type={'user'}
-        data-cy={dataCy}
-        size={size}
-        mobileSize={mobilesize}
-      >
-        {showOnlineStatus && user.isOnline && (
-          <OnlineIndicator onlineBorderColor={onlineBorderColor} />
+  return (
+    <Container
+      style={style}
+      type={'user'}
+      data-cy={dataCy}
+      size={size}
+      mobileSize={mobilesize}
+    >
+      {showOnlineStatus && user.isOnline && (
+        <OnlineIndicator onlineBorderColor={onlineBorderColor} />
+      )}
+      <ConditionalWrap
+        condition={!!user.username && isClickable}
+        wrap={() => (
+          <AvatarLink to={`/users/${user.username}`}>
+            <AvatarImage
+              src={source}
+              size={size}
+              mobilesize={mobilesize}
+              type={'user'}
+              alt={user.name || user.username}
+            />
+          </AvatarLink>
         )}
-        <ConditionalWrap
-          condition={!!user.username && isClickable}
-          wrap={() => (
-            <AvatarLink to={`/users/${user.username}`}>
-              <AvatarImage
-                src={source}
-                size={size}
-                mobilesize={mobilesize}
-                type={'user'}
-                alt={user.name || user.username}
-              />
-            </AvatarLink>
-          )}
-        >
-          <AvatarImage
-            src={source}
-            size={size}
-            mobilesize={mobilesize}
-            type={'user'}
-            alt={user.name || user.username}
-          />
-        </ConditionalWrap>
-      </Container>
-    );
-  }
+      >
+        <AvatarImage
+          src={source}
+          size={size}
+          mobilesize={mobilesize}
+          type={'user'}
+          alt={user.name || user.username}
+        />
+      </ConditionalWrap>
+    </Container>
+  );
 }
 
-class AvatarHandler extends React.Component<HandlerProps> {
-  render() {
-    const { showHoverProfile = true, isClickable } = this.props;
+const AvatarHandler = (props: HandlerProps) => {
+  const { showHoverProfile = true, isClickable } = props;
 
-    if (this.props.user) {
-      const user = this.props.user;
-      return (
-        <ConditionalWrap
-          condition={showHoverProfile}
-          wrap={() => (
-            <UserHoverProfile username={user.username}>
-              <Avatar {...this.props} />
-            </UserHoverProfile>
-          )}
-        >
-          <Avatar {...this.props} />
-        </ConditionalWrap>
-      );
-    }
-
-    if (!this.props.user && this.props.username) {
-      return (
-        <GetUserByUsername
-          username={this.props.username}
-          isClickable={isClickable}
-        />
-      );
-    }
-
-    return null;
+  if (props.user) {
+    const user = props.user;
+    return (
+      <ConditionalWrap
+        condition={showHoverProfile}
+        wrap={() => (
+          <UserHoverProfile username={user.username}>
+            <Avatar {...props} />
+          </UserHoverProfile>
+        )}
+      >
+        <Avatar {...props} />
+      </ConditionalWrap>
+    );
   }
+
+  if (!props.user && props.username) {
+    return (
+      <GetUserByUsername
+        username={props.username}
+        isClickable={isClickable}
+      />
+    );
+  }
+
+  return null;
 }
 
 export default AvatarHandler;

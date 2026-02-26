@@ -43,94 +43,90 @@ type Props = {
   currentUser: ?Object,
 };
 
-class InboxThread extends React.Component<Props> {
-  render() {
-    const {
-      data: thread,
-      active,
-      viewContext = null,
-      currentUser,
-    } = this.props;
+const InboxThread = ({
+  data: thread,
+  active,
+  viewContext = null,
+  currentUser,
+}: Props) => {
+  const newMessagesSinceLastViewed =
+    !active &&
+    thread.currentUserLastSeen &&
+    thread.lastActive &&
+    thread.currentUserLastSeen < thread.lastActive;
 
-    const newMessagesSinceLastViewed =
-      !active &&
-      thread.currentUserLastSeen &&
-      thread.lastActive &&
-      thread.currentUserLastSeen < thread.lastActive;
+  const newUnseenThread =
+    !active &&
+    currentUser &&
+    !thread.currentUserLastSeen &&
+    thread.community.communityPermissions.isMember &&
+    currentUser.id !== thread.author.user.id;
 
-    const newUnseenThread =
-      !active &&
-      currentUser &&
-      !thread.currentUserLastSeen &&
-      thread.community.communityPermissions.isMember &&
-      currentUser.id !== thread.author.user.id;
+  return (
+    <ErrorBoundary>
+      <InboxThreadItem
+        new={newMessagesSinceLastViewed || newUnseenThread}
+        data-cy="thread-card"
+        active={active}
+      >
+        <InboxLinkWrapper
+          to={{
+            pathname: getThreadLink(thread),
+            state: { modal: false },
+          }}
+        />
 
-    return (
-      <ErrorBoundary>
-        <InboxThreadItem
-          new={newMessagesSinceLastViewed || newUnseenThread}
-          data-cy="thread-card"
-          active={active}
-        >
-          <InboxLinkWrapper
-            to={{
-              pathname: getThreadLink(thread),
-              state: { modal: false },
-            }}
-          />
-
-          <InboxThreadContent>
-            {viewContext !== 'userProfile' &&
-              viewContext !== 'userProfileReplies' && (
-                <AvatarLink>
-                  <UserAvatar
-                    onlineBorderColor={active ? theme => theme.brand.alt : null}
-                    user={thread.author.user}
-                    size={40}
-                  />
-                </AvatarLink>
-              )}
-
-            {(viewContext === 'userProfile' ||
-              viewContext === 'userProfileReplies') && (
-              <CommunityAvatarLink>
-                <CommunityAvatar community={thread.community} size={40} />
-              </CommunityAvatarLink>
+        <InboxThreadContent>
+          {viewContext !== 'userProfile' &&
+            viewContext !== 'userProfileReplies' && (
+              <AvatarLink>
+                <UserAvatar
+                  onlineBorderColor={active ? theme => theme.brand.alt : null}
+                  user={thread.author.user}
+                  size={40}
+                />
+              </AvatarLink>
             )}
 
-            <Column>
-              <ErrorBoundary>
-                <Header
-                  thread={thread}
-                  active={active}
-                  viewContext={viewContext}
-                  currentUser={currentUser}
-                />
-              </ErrorBoundary>
+          {(viewContext === 'userProfile' ||
+            viewContext === 'userProfileReplies') && (
+            <CommunityAvatarLink>
+              <CommunityAvatar community={thread.community} size={40} />
+            </CommunityAvatarLink>
+          )}
 
-              <ThreadTitle active={active}>
-                {truncate(thread.content.title, 80)}
-              </ThreadTitle>
+          <Column>
+            <ErrorBoundary>
+              <Header
+                thread={thread}
+                active={active}
+                viewContext={viewContext}
+                currentUser={currentUser}
+              />
+            </ErrorBoundary>
 
-              <ThreadSnippet active={active}>
-                {getSnippet(JSON.parse(thread.content.body))}
-              </ThreadSnippet>
+            <ThreadTitle active={active}>
+              {truncate(thread.content.title, 80)}
+            </ThreadTitle>
 
-              <ErrorBoundary>
-                <ThreadActivity
-                  thread={thread}
-                  active={active}
-                  currentUser={currentUser}
-                  newMessages={!!newMessagesSinceLastViewed}
-                />
-              </ErrorBoundary>
-            </Column>
-          </InboxThreadContent>
-        </InboxThreadItem>
-      </ErrorBoundary>
-    );
-  }
-}
+            <ThreadSnippet active={active}>
+              {getSnippet(JSON.parse(thread.content.body))}
+            </ThreadSnippet>
+
+            <ErrorBoundary>
+              <ThreadActivity
+                thread={thread}
+                active={active}
+                currentUser={currentUser}
+                newMessages={!!newMessagesSinceLastViewed}
+              />
+            </ErrorBoundary>
+          </Column>
+        </InboxThreadContent>
+      </InboxThreadItem>
+    </ErrorBoundary>
+  );
+};
 
 export default compose(
   withRouter,

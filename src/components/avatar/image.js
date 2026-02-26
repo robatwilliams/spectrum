@@ -12,40 +12,40 @@ type Props = {
   alt: string,
 };
 
-export default class Image extends React.Component<Props> {
-  render() {
-    const { type, size, mobilesize } = this.props;
-    const { ...rest } = this.props;
-    const fallbackSrc =
-      type === 'user'
-        ? '/img/default_avatar.svg'
-        : '/img/default_community.svg';
+const Image = (props: Props) => {
+  const { type, size, mobilesize } = props;
+  const { ...rest } = props;
+  const fallbackSrc =
+    type === 'user'
+      ? '/img/default_avatar.svg'
+      : '/img/default_community.svg';
 
-    return (
-      <VisibilitySensor>
-        <Img
-          {...rest}
-          decode={false}
-          loader={
-            <LoadingImg
-              size={size}
-              mobilesize={mobilesize}
-              type={type}
-              src={fallbackSrc}
-              alt=""
-            />
-          }
-          unloader={
-            <FallbackImg
-              size={size}
-              mobilesize={mobilesize}
-              type={type}
-              src={fallbackSrc}
-              alt=""
-            />
-          }
-        />
-      </VisibilitySensor>
-    );
-  }
-}
+  return (
+    <VisibilitySensor>
+      <Img
+        {...rest}
+        decode={false}
+        loader={
+          <LoadingImg
+            size={size}
+            mobilesize={mobilesize}
+            type={type}
+            src={fallbackSrc}
+            alt=""
+          />
+        }
+        unloader={
+          <FallbackImg
+            size={size}
+            mobilesize={mobilesize}
+            type={type}
+            src={fallbackSrc}
+            alt=""
+          />
+        }
+      />
+    </VisibilitySensor>
+  );
+};
+
+export default Image;

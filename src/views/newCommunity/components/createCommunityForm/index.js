@@ -1,5 +1,5 @@
 // @flow
-import * as React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { connect } from 'react-redux';
 import compose from 'recompose/compose';
@@ -21,7 +21,7 @@ import {
   oddHyphenRegex,
 } from 'src/views/viewHelpers/textValidationHelper';
 import Icon from 'src/components/icon';
-
+ 
 import {
   Input,
   UnderlineInput,
@@ -47,27 +47,6 @@ import {
 import { FormContainer, Form, Actions } from '../../style';
 import type { Dispatch } from 'redux';
 
-type State = {
-  name: ?string,
-  slug: string,
-  description: string,
-  website: string,
-  image: string,
-  coverPhoto: string,
-  file: ?Object,
-  coverFile: ?Object,
-  slugTaken: boolean,
-  slugError: boolean,
-  descriptionError: boolean,
-  nameError: boolean,
-  createError: boolean,
-  isLoading: boolean,
-  agreeCoC: boolean,
-  photoSizeError: boolean,
-  communitySuggestions: ?Array<Object>,
-  isPrivate: boolean,
-};
-
 type Props = {
   client: Object,
   createCommunity: Function,
@@ -75,123 +54,32 @@ type Props = {
   dispatch: Dispatch<Object>,
   name: string,
 };
-class CreateCommunityForm extends React.Component<Props, State> {
-  constructor(props) {
-    super(props);
 
-    this.state = {
-      name: props.name || '',
-      slug: '',
-      description: '',
-      website: '',
-      image: '',
-      coverPhoto: '',
-      file: null,
-      coverFile: null,
-      slugTaken: false,
-      slugError: false,
-      descriptionError: false,
-      nameError: false,
-      createError: false,
-      isLoading: false,
-      agreeCoC: false,
-      photoSizeError: false,
-      communitySuggestions: null,
-      isPrivate: false,
-    };
+const CreateCommunityForm = (props: Props) => {
+  const { name: propName, createCommunity, communityCreated, dispatch, client } = props;
 
-    this.checkSlug = throttle(this.checkSlug, 500);
-  }
+  const [name, setName] = useState(propName || '');
+  const [slug, setSlug] = useState('');
+  const [description, setDescription] = useState('');
+  const [website, setWebsite] = useState('');
+  const [image, setImage] = useState('');
+  const [coverPhoto, setCoverPhoto] = useState('');
+  const [file, setFile] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [slugTaken, setSlugTaken] = useState(false);
+  const [slugError, setSlugError] = useState(false);
+  const [descriptionError, setDescriptionError] = useState(false);
+  const [nameError, setNameError] = useState(false);
+  const [createError, setCreateError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [agreeCoC, setAgreeCoC] = useState(false);
+  const [photoSizeError, setPhotoSizeError] = useState(false);
+  const [communitySuggestions, setCommunitySuggestions] = useState(null);
+  const [isPrivate, setIsPrivateState] = useState(false);
 
-  changeName = e => {
-    const { communitySuggestions } = this.state;
-    if (communitySuggestions) {
-      this.setState({
-        communitySuggestions: null,
-      });
-    }
-
-    const name = e.target.value;
-    // replace any non alpha-num characters to prevent bad community slugs
-    // (/[\W_]/g, "-") => replace non-alphanum with hyphens
-    // (/-{2,}/g, '-') => replace multiple hyphens in a row with one hyphen
-    let lowercaseName = name
-      .toLowerCase()
-      .trim()
-      .replace(/[\W_]/g, '-')
-      .replace(/-{2,}/g, '-');
-    let slug = slugg(lowercaseName);
-
-    let hasInvalidChars = name.search(whiteSpaceRegex) >= 0;
-    let hasOddHyphens = name.search(oddHyphenRegex) >= 0;
-    if (hasInvalidChars || hasOddHyphens || name.length > 20) {
-      this.setState({
-        nameError: true,
-      });
-
-      return;
-    }
-
-    if (COMMUNITY_SLUG_DENY_LIST.indexOf(slug) > -1) {
-      this.setState({
-        name,
-        slug,
-        slugTaken: true,
-      });
-    } else {
-      this.setState({
-        name,
-        slug,
-        nameError: false,
-        slugTaken: false,
-      });
-
-      // $FlowIssue
-      this.checkSlug(slug);
-    }
-  };
-
-  changeSlug = e => {
-    let slug = e.target.value;
-    // replace any non alpha-num characters to prevent bad community slugs
-    // (/[\W_]/g, "-") => replace non-alphanum with hyphens
-    // (/-{2,}/g, '-') => replace multiple hyphens in a row with one hyphen
-    let lowercaseSlug = slug
-      .toLowerCase()
-      .trim()
-      .replace(/[\W_]/g, '-')
-      .replace(/-{2,}/g, '-');
-    slug = slugg(lowercaseSlug);
-
-    if (slug.length >= 24) {
-      this.setState({
-        slug,
-        slugError: true,
-      });
-
-      return;
-    }
-
-    if (COMMUNITY_SLUG_DENY_LIST.indexOf(slug) > -1) {
-      this.setState({
-        slug,
-        slugTaken: true,
-      });
-    } else {
-      this.setState({
-        slug,
-        slugError: false,
-        slugTaken: false,
-      });
-
-      // $FlowIssue
-      this.checkSlug(slug);
-    }
-  };
-
-  checkSlug = slug => {
+  const checkSlug = useCallback(slug => {
     // check the db to see if this channel slug exists
-    this.props.client
+    client
       .query({
         query: getCommunityBySlugQuery,
         variables: {
@@ -199,32 +87,95 @@ class CreateCommunityForm extends React.Component<Props, State> {
         },
       })
       .then(({ data }) => {
-        if (COMMUNITY_SLUG_DENY_LIST.indexOf(this.state.slug) > -1) {
-          return this.setState({
-            slugTaken: true,
-          });
+        if (COMMUNITY_SLUG_DENY_LIST.indexOf(slug) > -1) {
+          setSlugTaken(true);
+          return;
         }
         // if the community exists
         if (!data.loading && data && data.community && data.community.id) {
-          return this.setState({
-            slugTaken: true,
-          });
+          setSlugTaken(true);
         } else {
-          return this.setState({
-            slugTaken: false,
-          });
+          setSlugTaken(false);
         }
       })
       .catch(err => {
-        return this.props.dispatch(addToastWithTimeout('success', err.message));
+        dispatch(addToastWithTimeout('success', err.message));
       });
+  }, [client, dispatch]);
+
+  const changeName = e => {
+    if (communitySuggestions) {
+      setCommunitySuggestions(null);
+    }
+
+    const nameValue = e.target.value;
+    // replace any non alpha-num characters to prevent bad community slugs
+    // (/[\W_]/g, "-") => replace non-alphanum with hyphens
+    // (/-{2,}/g, '-') => replace multiple hyphens in a row with one hyphen
+    let lowercaseName = nameValue
+      .toLowerCase()
+      .trim()
+      .replace(/[\W_]/g, '-')
+      .replace(/-{2,}/g, '-');
+    let slugValue = slugg(lowercaseName);
+
+    let hasInvalidChars = nameValue.search(whiteSpaceRegex) >= 0;
+    let hasOddHyphens = nameValue.search(oddHyphenRegex) >= 0;
+    if (hasInvalidChars || hasOddHyphens || nameValue.length > 20) {
+      setNameError(true);
+      return;
+    }
+
+    if (COMMUNITY_SLUG_DENY_LIST.indexOf(slugValue) > -1) {
+      setName(nameValue);
+      setSlug(slugValue);
+      setSlugTaken(true);
+    } else {
+      setName(nameValue);
+      setSlug(slugValue);
+      setNameError(false);
+      setSlugTaken(false);
+
+      // $FlowIssue
+      checkSlug(slugValue);
+    }
   };
 
-  checkSuggestedCommunities = () => {
-    const { name, slug, slugError } = this.state;
+  const changeSlug = e => {
+    let slugValue = e.target.value;
+    // replace any non alpha-num characters to prevent bad community slugs
+    // (/[\W_]/g, "-") => replace non-alphanum with hyphens
+    // (/-{2,}/g, '-') => replace multiple hyphens in a row with one hyphen
+    let lowercaseSlug = slugValue
+      .toLowerCase()
+      .trim()
+      .replace(/[\W_]/g, '-')
+      .replace(/-{2,}/g, '-');
+    slugValue = slugg(lowercaseSlug);
+
+    if (slugValue.length >= 24) {
+      setSlug(slugValue);
+      setSlugError(true);
+      return;
+    }
+
+    if (COMMUNITY_SLUG_DENY_LIST.indexOf(slugValue) > -1) {
+      setSlug(slugValue);
+      setSlugTaken(true);
+    } else {
+      setSlug(slugValue);
+      setSlugError(false);
+      setSlugTaken(false);
+
+      // $FlowIssue
+      checkSlug(slugValue);
+    }
+  };
+
+  const checkSuggestedCommunities = () => {
     if (name && name.length > 1 && slug && slug.length > 1 && !slugError) {
       // if the user has found a valid url, do a community search to see if they might be creating a duplicate community
-      this.props.client
+      client
         .query({
           // TODO: @BRIAN SWITCH THIS AFTER SEARCH IS MERGED IN
           query: searchCommunitiesQuery,
@@ -239,146 +190,110 @@ class CreateCommunityForm extends React.Component<Props, State> {
             !search.searchResultsConnection ||
             search.searchResultsConnection.edges.length === 0
           ) {
-            return this.setState({
-              communitySuggestions: null,
-            });
+            setCommunitySuggestions(null);
+            return;
           }
 
-          const communitySuggestions = search.searchResultsConnection.edges.map(
+          const suggestions = search.searchResultsConnection.edges.map(
             c => c.node
           );
 
           const filtered =
-            communitySuggestions &&
-            communitySuggestions
+            suggestions &&
+            suggestions
               .slice()
               .sort((a, b) => b.metaData.members - a.metaData.members)
               .slice(0, 5);
 
           if (filtered && filtered.length > 0) {
-            return this.setState({
-              communitySuggestions: filtered,
-            });
+            setCommunitySuggestions(filtered);
           } else {
-            return this.setState({
-              communitySuggestions: null,
-            });
+            setCommunitySuggestions(null);
           }
         })
         .catch(err => {
-          return this.props.dispatch(
-            addToastWithTimeout('success', err.message)
-          );
+          dispatch(addToastWithTimeout('success', err.message));
         });
     }
   };
 
-  changeDescription = e => {
-    const description = e.target.value;
+  const changeDescription = e => {
+    const descriptionValue = e.target.value;
 
-    let hasInvalidChars = description.search(whiteSpaceRegex) >= 0;
-    let hasOddHyphens = description.search(oddHyphenRegex) >= 0;
-    if (hasInvalidChars || hasOddHyphens || description.length >= 140) {
-      this.setState({
-        descriptionError: true,
-      });
+    let hasInvalidChars = descriptionValue.search(whiteSpaceRegex) >= 0;
+    let hasOddHyphens = descriptionValue.search(oddHyphenRegex) >= 0;
+    if (hasInvalidChars || hasOddHyphens || descriptionValue.length >= 140) {
+      setDescriptionError(true);
       return;
     }
 
-    this.setState({
-      description,
-      descriptionError: false,
-    });
+    setDescription(descriptionValue);
+    setDescriptionError(false);
   };
 
-  changeWebsite = e => {
-    const website = e.target.value;
-    this.setState({
-      website,
-    });
+  const changeWebsite = e => {
+    const websiteValue = e.target.value;
+    setWebsite(websiteValue);
   };
 
-  changeCoC = () => {
-    const value = this.state.agreeCoC;
-    this.setState({
-      agreeCoC: !value,
-    });
+  const changeCoC = () => {
+    setAgreeCoC(!agreeCoC);
   };
 
-  setCommunityPhoto = e => {
+  const setCommunityPhoto = e => {
     let reader = new FileReader();
-    let file = e.target.files[0];
+    let fileValue = e.target.files[0];
 
-    if (!file) return;
+    if (!fileValue) return;
 
-    if (file.size > 3000000) {
-      return this.setState({
-        photoSizeError: true,
-      });
+    if (fileValue.size > 3000000) {
+      setPhotoSizeError(true);
+      return;
     }
 
     reader.onloadend = () => {
-      this.setState({
-        file: file,
-        // $FlowFixMe
-        image: reader.result,
-        photoSizeError: false,
-      });
+      setFile(fileValue);
+      // $FlowFixMe
+      setImage(reader.result);
+      setPhotoSizeError(false);
     };
 
-    if (file) {
-      reader.readAsDataURL(file);
+    if (fileValue) {
+      reader.readAsDataURL(fileValue);
     }
   };
 
-  setCommunityCover = e => {
+  const setCommunityCover = e => {
     let reader = new FileReader();
-    let file = e.target.files[0];
+    let fileValue = e.target.files[0];
 
-    if (!file) return;
+    if (!fileValue) return;
 
-    if (file.size > 3000000) {
-      return this.setState({
-        photoSizeError: true,
-      });
+    if (fileValue.size > 3000000) {
+      setPhotoSizeError(true);
+      return;
     }
 
     reader.onloadend = () => {
-      this.setState({
-        coverFile: file,
-        // $FlowFixMe
-        coverPhoto: reader.result,
-        photoSizeError: false,
-      });
+      setCoverFile(fileValue);
+      // $FlowFixMe
+      setCoverPhoto(reader.result);
+      setPhotoSizeError(false);
     };
 
-    if (file) {
-      reader.readAsDataURL(file);
+    if (fileValue) {
+      reader.readAsDataURL(fileValue);
     }
   };
 
-  deleteCoverPhoto = e => {
+  const deleteCoverPhoto = e => {
     e.preventDefault();
-    this.setState({ coverPhoto: '', coverFile: null });
+    setCoverPhoto('');
+    setCoverFile(null);
   };
 
-  create = e => {
+  const create = e => {
     e.preventDefault();
-    const {
-      name,
-      slug,
-      description,
-      website,
-      file,
-      coverFile,
-      slugTaken,
-      slugError,
-      nameError,
-      descriptionError,
-      photoSizeError,
-      agreeCoC,
-      isPrivate,
-    } = this.state;
 
     // if an error is present, ensure the client cant submit the form
     if (
@@ -391,18 +306,13 @@ class CreateCommunityForm extends React.Component<Props, State> {
       !slug ||
       !agreeCoC
     ) {
-      this.setState({
-        createError: true,
-      });
-
+      setCreateError(true);
       return;
     }
 
     // clientside checks have passed
-    this.setState({
-      createError: false,
-      isLoading: true,
-    });
+    setCreateError(false);
+    setIsLoading(true);
 
     // create the mutation input
     const input = {
@@ -416,75 +326,48 @@ class CreateCommunityForm extends React.Component<Props, State> {
     };
 
     // create the community
-    this.props
-      .createCommunity(input)
+    createCommunity(input)
       .then(({ data }: CreateCommunityType) => {
-        const { createCommunity } = data;
-        this.props.communityCreated(createCommunity);
-        this.props.dispatch(
+        const { createCommunity: createdCommunity } = data;
+        communityCreated(createdCommunity);
+        dispatch(
           addToastWithTimeout('success', 'Community created!')
         );
         return;
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+        setIsLoading(false);
+        dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  setPrivate = () => {
-    return this.setState({
-      isPrivate: true,
-    });
+  const setPrivate = () => {
+    setIsPrivateState(true);
   };
 
-  setPublic = () => {
-    return this.setState({
-      isPrivate: false,
-    });
+  const setPublic = () => {
+    setIsPrivateState(false);
   };
 
-  render() {
-    const {
-      name,
-      slug,
-      description,
-      image,
-      coverPhoto,
-      website,
-      slugTaken,
-      slugError,
-      nameError,
-      descriptionError,
-      createError,
-      isLoading,
-      agreeCoC,
-      photoSizeError,
-      communitySuggestions,
-      isPrivate,
-    } = this.state;
+  const suggestionString = slugTaken
+    ? communitySuggestions && communitySuggestions.length > 0
+      ? 'Were you looking for one of these communities?'
+      : null
+    : "This community name and url are available! We also found communities that might be similar to what you're trying to create, just in case you would rather join an existing community instead!";
 
-    const suggestionString = slugTaken
-      ? communitySuggestions && communitySuggestions.length > 0
-        ? 'Were you looking for one of these communities?'
-        : null
-      : "This community name and url are available! We also found communities that might be similar to what you're trying to create, just in case you would rather join an existing community instead!";
-
-    return (
+  return (
       <FormContainer data-cy="create-community-form">
         <Form>
           <ImageInputWrapper>
             {coverPhoto && !/default_images/.test(coverPhoto) && (
               <DeleteCoverWrapper>
-                <DeleteCoverButton onClick={e => this.deleteCoverPhoto(e)}>
+                <DeleteCoverButton onClick={deleteCoverPhoto}>
                   <Icon glyph="view-close-small" size={'16'} />
                 </DeleteCoverButton>
               </DeleteCoverWrapper>
             )}
             <CoverInput
-              onChange={this.setCommunityCover}
+              onChange={setCommunityCover}
               defaultValue={coverPhoto}
               preview={true}
               allowGif
@@ -492,7 +375,7 @@ class CreateCommunityForm extends React.Component<Props, State> {
 
             <PhotoInput
               type={'community'}
-              onChange={this.setCommunityPhoto}
+              onChange={setCommunityPhoto}
               defaultValue={image}
             />
           </ImageInputWrapper>
@@ -507,9 +390,9 @@ class CreateCommunityForm extends React.Component<Props, State> {
 
           <Input
             defaultValue={name}
-            onChange={this.changeName}
+            onChange={changeName}
             autoFocus={!(window.innerWidth < 768)}
-            onBlur={this.checkSuggestedCommunities}
+            onBlur={checkSuggestedCommunities}
             dataCy="community-name-input"
           >
             What is your community called?
@@ -524,8 +407,8 @@ class CreateCommunityForm extends React.Component<Props, State> {
 
           <UnderlineInput
             defaultValue={slug}
-            onChange={this.changeSlug}
-            onBlur={this.checkSuggestedCommunities}
+            onChange={changeSlug}
+            onBlur={checkSuggestedCommunities}
             dataCy="community-slug-input"
           >
             spectrum.chat/
@@ -597,13 +480,13 @@ class CreateCommunityForm extends React.Component<Props, State> {
           </Input>
 
           <PrivacySelector>
-            <PrivacyOption selected={!isPrivate} onClick={this.setPublic}>
+            <PrivacyOption selected={!isPrivate} onClick={setPublic}>
               <PrivacyOptionLabel>
                 <input
                   type="radio"
                   value="public"
                   checked={!isPrivate}
-                  onChange={this.setPublic}
+                  onChange={setPublic}
                   data-cy="community-public-selector-input"
                 />
                 Public
@@ -616,13 +499,13 @@ class CreateCommunityForm extends React.Component<Props, State> {
               </PrivacyOptionText>
             </PrivacyOption>
 
-            <PrivacyOption selected={isPrivate} onClick={this.setPrivate}>
+            <PrivacyOption selected={isPrivate} onClick={setPrivate}>
               <PrivacyOptionLabel>
                 <input
                   type="radio"
                   checked={isPrivate}
                   value="private"
-                  onChange={this.setPrivate}
+                  onChange={setPrivate}
                   data-cy="community-private-selector-input"
                 />
                 Private
@@ -639,7 +522,7 @@ class CreateCommunityForm extends React.Component<Props, State> {
           <Checkbox
             id="isPrivate"
             checked={agreeCoC}
-            onChange={this.changeCoC}
+            onChange={changeCoC}
             dataCy="community-coc-input"
           >
             <span>
@@ -665,7 +548,7 @@ class CreateCommunityForm extends React.Component<Props, State> {
         <Actions>
           <div />
           <PrimaryOutlineButton
-            onClick={this.create}
+            onClick={create}
             disabled={
               slugTaken ||
               slugError ||
@@ -683,7 +566,6 @@ class CreateCommunityForm extends React.Component<Props, State> {
         </Actions>
       </FormContainer>
     );
-  }
 }
 
 export default compose(

@@ -29,9 +29,8 @@ type State = {
   activeThreadId: string,
 };
 
-class DirectMessages extends React.Component<Props, State> {
-  componentDidMount() {
-    const { dispatch } = this.props;
+const DirectMessages = ({ match, dispatch }: Props) => {
+  React.useEffect(() => {
     dispatch(
       setTitlebarProps({
         title: 'Messages',
@@ -42,10 +41,9 @@ class DirectMessages extends React.Component<Props, State> {
         ),
       })
     );
-  }
+  }, []);
 
-  componentDidUpdate() {
-    const { match, dispatch } = this.props;
+  React.useEffect(() => {
     const { params } = match;
     if (!params.threadId) {
       dispatch(
@@ -59,48 +57,45 @@ class DirectMessages extends React.Component<Props, State> {
         })
       );
     }
-  }
+  }, [match.params.threadId, dispatch]);
 
-  render() {
-    const { match } = this.props;
-    const activeThreadId = match.params.threadId;
+  const activeThreadId = match.params.threadId;
 
-    return (
-      <ViewGrid>
-        <SecondaryPrimaryColumnGrid>
-          <StyledSecondaryColumn shouldHideThreadList={!!activeThreadId}>
-            <ThreadsList activeThreadId={activeThreadId} />
-          </StyledSecondaryColumn>
+  return (
+    <ViewGrid>
+      <SecondaryPrimaryColumnGrid>
+        <StyledSecondaryColumn shouldHideThreadList={!!activeThreadId}>
+          <ThreadsList activeThreadId={activeThreadId} />
+        </StyledSecondaryColumn>
 
-          <PrimaryColumn>
-            {activeThreadId ? (
-              <ExistingThread id={activeThreadId} match={match} />
-            ) : (
-              <NoCommunitySelected>
-                <Head title={'Messages'} />
-                <div>
-                  <NoCommunityHeading>
-                    No conversation selected
-                  </NoCommunityHeading>
-                  <NoCommunitySubheading>
-                    Choose from an existing conversation, or start a new one.
-                  </NoCommunitySubheading>
-                  <PrimaryOutlineButton
-                    to={{
-                      pathname: '/new/message',
-                      state: { modal: true },
-                    }}
-                  >
-                    New message
-                  </PrimaryOutlineButton>
-                </div>
-              </NoCommunitySelected>
-            )}
-          </PrimaryColumn>
-        </SecondaryPrimaryColumnGrid>
-      </ViewGrid>
-    );
-  }
-}
+        <PrimaryColumn>
+          {activeThreadId ? (
+            <ExistingThread id={activeThreadId} match={match} />
+          ) : (
+            <NoCommunitySelected>
+              <Head title={'Messages'} />
+              <div>
+                <NoCommunityHeading>
+                  No conversation selected
+                </NoCommunityHeading>
+                <NoCommunitySubheading>
+                  Choose from an existing conversation, or start a new one.
+                </NoCommunitySubheading>
+                <PrimaryOutlineButton
+                  to={{
+                    pathname: '/new/message',
+                    state: { modal: true },
+                  }}
+                >
+                  New message
+                </PrimaryOutlineButton>
+              </div>
+            </NoCommunitySelected>
+          )}
+        </PrimaryColumn>
+      </SecondaryPrimaryColumnGrid>
+    </ViewGrid>
+  );
+};
 
 export default connect()(DirectMessages);

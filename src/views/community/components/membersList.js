@@ -30,34 +30,25 @@ type Props = {
   currentUser: ?Object,
 };
 
-class MembersList extends React.Component<Props> {
-  shouldComponentUpdate(nextProps) {
-    const curr = this.props;
-    // fetching more
-    if (curr.data.networkStatus === 7 && nextProps.data.networkStatus === 3)
-      return false;
-    return true;
+const MembersList = (props: Props) => {
+  const {
+    data: { community, fetchMore },
+    isLoading,
+    currentUser,
+    isFetchingMore,
+  } = props;
+
+  if (isLoading) {
+    return <Loading />;
   }
 
-  render() {
-    const {
-      data: { community },
-      isLoading,
-      currentUser,
-      isFetchingMore,
-    } = this.props;
+  if (community) {
+    const { edges: members } = community.members;
+    const nodes = members.map(member => member && member.node);
+    const uniqueNodes = deduplicateChildren(nodes, 'id');
+    const hasNextPage = community.members.pageInfo.hasNextPage;
 
-    if (isLoading) {
-      return <Loading />;
-    }
-
-    if (community) {
-      const { edges: members } = community.members;
-      const nodes = members.map(member => member && member.node);
-      const uniqueNodes = deduplicateChildren(nodes, 'id');
-      const hasNextPage = community.members.pageInfo.hasNextPage;
-
-      return (
+    return (
         <React.Fragment>
           {uniqueNodes.map(node => {
             if (!node) return null;
@@ -83,7 +74,7 @@ class MembersList extends React.Component<Props> {
           {hasNextPage && (
             <NextPageButton
               isFetchingMore={isFetchingMore}
-              fetchMore={this.props.data.fetchMore}
+              fetchMore={fetchMore}
               bottomOffset={-100}
             >
               Load more members
@@ -91,18 +82,17 @@ class MembersList extends React.Component<Props> {
           )}
         </React.Fragment>
       );
-    }
-
-    return (
-      <Card>
-        <ViewError
-          refresh
-          heading={'We weren’t able to fetch the members of this community.'}
-        />
-      </Card>
-    );
   }
-}
+
+  return (
+    <Card>
+      <ViewError
+        refresh
+        heading={"We weren't able to fetch the members of this community."}
+      />
+    </Card>
+  );
+};
 
 export default compose(
   withRouter,

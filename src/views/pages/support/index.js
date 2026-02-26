@@ -14,14 +14,13 @@ import {
 } from '../pricing/style';
 import Head from 'src/components/head';
 
-class Support extends React.Component<{}> {
-  render() {
-    return (
-      <Wrapper data-cy="support-page">
-        <Head
-          title={'Spectrum · Support'}
-          description={'Questions, feedback, or just need to get in touch?'}
-        />
+const Support = () => {
+  return (
+    <Wrapper data-cy="support-page">
+      <Head
+        title={'Spectrum · Support'}
+        description={'Questions, feedback, or just need to get in touch?'}
+      />
 
         <Section goop={2} color={'bg.reverse'}>
           <FourUp>
@@ -95,7 +94,6 @@ class Support extends React.Component<{}> {
 
         <PageFooter />
       </Wrapper>
-    );
-  }
-}
+  );
+};
 export default Support;

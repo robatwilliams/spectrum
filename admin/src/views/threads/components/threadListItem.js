@@ -31,49 +31,47 @@ type Props = {
   thread: ThreadProps,
 };
 
-class ThreadListItem extends React.Component<Props> {
-  render() {
-    const {
-      thread: {
-        id,
-        creator: { name, username },
-        content: { title },
-        messageCount,
-        community,
-        channel,
-      },
-    } = this.props;
+const ThreadListItem: React.ComponentType<Props> = (props) => {
+  const {
+    thread: {
+      id,
+      creator: { name, username },
+      content: { title },
+      messageCount,
+      community,
+      channel,
+    },
+  } = props;
 
-    return (
-      <StyledThreadListItem>
-        <a href={`https://spectrum.chat/thread/${id}`} target="_blank">
-          <ThreadListItemTitle>{title}</ThreadListItemTitle>
-        </a>
-        {messageCount > 0 && (
-          <ThreadListItemSubtitle>
-            {messageCount > 1 ? `${messageCount} messages` : `1 message`}
-          </ThreadListItemSubtitle>
-        )}
+  return (
+    <StyledThreadListItem>
+      <a href={`https://spectrum.chat/thread/${id}`} target="_blank">
+        <ThreadListItemTitle>{title}</ThreadListItemTitle>
+      </a>
+      {messageCount > 0 && (
         <ThreadListItemSubtitle>
-          By{' '}
-          <a href={`https://spectrum.chat/users/${username}`} target="_blank">
-            {name}
-          </a>{' '}
-          ·{' '}
-          <a href={`https://spectrum.chat/${community.slug}`} target="_blank">
-            {community.name}
-          </a>{' '}
-          ·{' '}
-          <a
-            href={`https://spectrum.chat/${community.slug}/${channel.slug}`}
-            target="_blank"
-          >
-            {channel.name}
-          </a>
+          {messageCount > 1 ? `${messageCount} messages` : `1 message`}
         </ThreadListItemSubtitle>
-      </StyledThreadListItem>
-    );
-  }
-}
+      )}
+      <ThreadListItemSubtitle>
+        By{' '}
+        <a href={`https://spectrum.chat/users/${username}`} target="_blank">
+          {name}
+        </a>{' '}
+        ·{' '}
+        <a href={`https://spectrum.chat/${community.slug}`} target="_blank">
+          {community.name}
+        </a>{' '}
+        ·{' '}
+        <a
+          href={`https://spectrum.chat/${community.slug}/${channel.slug}`}
+          target="_blank"
+        >
+          {channel.name}
+        </a>
+      </ThreadListItemSubtitle>
+    </StyledThreadListItem>
+  );
+};
 
 export default ThreadListItem;

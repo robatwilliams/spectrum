@@ -19,24 +19,22 @@ type Props = {
   newMessages?: boolean,
 };
 
-class ThreadActivity extends React.Component<Props> {
-  render() {
-    const { newMessages, thread, active, currentUser } = this.props;
+const ThreadActivity = (props: Props) => {
+  const { newMessages, thread, active, currentUser } = props;
 
-    if (!thread) return null;
+  if (!thread) return null;
 
-    return (
-      <ThreadActivityWrapper>
-        <LikeCount thread={thread} active={active} />
-        <MessageCount
-          currentUser={currentUser}
-          thread={thread}
-          active={active}
-        />
-        {newMessages && <NewMessagesIndicator>(new)</NewMessagesIndicator>}
-      </ThreadActivityWrapper>
-    );
-  }
+  return (
+    <ThreadActivityWrapper>
+      <LikeCount thread={thread} active={active} />
+      <MessageCount
+        currentUser={currentUser}
+        thread={thread}
+        active={active}
+      />
+      {newMessages && <NewMessagesIndicator>(new)</NewMessagesIndicator>}
+    </ThreadActivityWrapper>
+  );
 }
 
 export default ThreadActivity;

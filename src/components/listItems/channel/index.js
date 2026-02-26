@@ -13,20 +13,18 @@ type Props = {
   channel: ChannelInfoType,
 };
 
-class ChannelListItem extends React.Component<Props> {
-  render() {
-    const { channel, children } = this.props;
+const ChannelListItem = (props: Props) => {
+  const { channel, children } = props;
 
-    return (
-      <ChannelContainer>
-        <ChannelNameLink to={`/${channel.community.slug}/${channel.slug}`}>
-          <ChannelName>{channel.name}</ChannelName>
-        </ChannelNameLink>
+  return (
+    <ChannelContainer>
+      <ChannelNameLink to={`/${channel.community.slug}/${channel.slug}`}>
+        <ChannelName>{channel.name}</ChannelName>
+      </ChannelNameLink>
 
-        {children && <ChannelActions>{children}</ChannelActions>}
-      </ChannelContainer>
-    );
-  }
+      {children && <ChannelActions>{children}</ChannelActions>}
+    </ChannelContainer>
+  );
 }
 
 export default ChannelListItem;

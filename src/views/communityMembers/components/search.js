@@ -15,16 +15,14 @@ type Props = {
   render: Function,
 };
 
-class Search extends React.Component<Props> {
-  render() {
-    const { isLoading, data } = this.props;
-    const searchResults =
-      !isLoading &&
-      data.search &&
-      data.search.searchResultsConnection.edges.map(edge => edge && edge.node);
-    return this.props.render({ searchResults, isLoading });
-  }
-}
+const Search = (props: Props) => {
+  const { isLoading, data } = props;
+  const searchResults =
+    !isLoading &&
+    data.search &&
+    data.search.searchResultsConnection.edges.map(edge => edge && edge.node);
+  return props.render({ searchResults, isLoading });
+};
 
 export default compose(
   searchCommunityMembers,

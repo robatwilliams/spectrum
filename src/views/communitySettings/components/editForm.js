@@ -1,5 +1,5 @@
 // @flow
-import * as React from 'react';
+import React, { useState } from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
@@ -33,114 +33,78 @@ import {
 import { SectionCard, SectionTitle } from 'src/components/settingsViews/style';
 import type { Dispatch } from 'redux';
 
-type State = {
-  name: string,
-  slug: string,
-  description: string,
-  communityId: string,
-  website: string,
-  image: string,
-  coverPhoto: string,
-  file: ?Object,
-  coverFile: ?Object,
-  communityData: Object,
-  photoSizeError: boolean,
-  nameError: boolean,
-  isLoading: boolean,
-};
-
 type Props = {
   community: GetCommunityType,
   dispatch: Dispatch<Object>,
   editCommunity: Function,
 };
 
-class EditForm extends React.Component<Props, State> {
-  constructor(props) {
-    super(props);
+const EditForm = (props: Props) => {
+  const { community, editCommunity, dispatch } = props;
 
-    const { community } = this.props;
-    this.state = {
-      name: community.name,
-      slug: community.slug,
-      description: community.description ? community.description : '',
-      communityId: community.id,
-      website: community.website ? community.website : '',
-      image: community.profilePhoto,
-      coverPhoto: community.coverPhoto,
-      file: null,
-      coverFile: null,
-      nameError: false,
-      communityData: community,
-      photoSizeError: false,
-      isLoading: false,
-    };
-  }
+  const [name, setName] = useState(community.name);
+  const [slug, setSlug] = useState(community.slug);
+  const [description, setDescription] = useState(community.description ? community.description : '');
+  const [communityId, setCommunityId] = useState(community.id);
+  const [website, setWebsite] = useState(community.website ? community.website : '');
+  const [image, setImage] = useState(community.profilePhoto);
+  const [coverPhoto, setCoverPhoto] = useState(community.coverPhoto);
+  const [file, setFile] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [nameError, setNameError] = useState(false);
+  const [communityData, setCommunityData] = useState(community);
+  const [photoSizeError, setPhotoSizeError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  changeName = e => {
+  const changeName = e => {
     const name = e.target.value;
 
     if (name.length > 20) {
-      this.setState({
-        name,
-        nameError: true,
-      });
+      setName(name);
+      setNameError(true);
 
       return;
     }
 
-    this.setState({
-      name,
-      nameError: false,
-    });
+    setName(name);
+    setNameError(false);
   };
 
-  changeDescription = e => {
+  const changeDescription = e => {
     const description = e.target.value;
-    this.setState({
-      description,
-    });
+    setDescription(description);
   };
 
-  changeSlug = e => {
+  const changeSlug = e => {
     const slug = e.target.value;
-    this.setState({
-      slug,
-    });
+    setSlug(slug);
   };
 
-  changeWebsite = e => {
+  const changeWebsite = e => {
     const website = e.target.value;
-    this.setState({
-      website,
-    });
+    setWebsite(website);
   };
 
-  setCommunityPhoto = e => {
+  const setCommunityPhoto = e => {
     let reader = new FileReader();
     let file = e.target.files[0];
 
     if (!file) return;
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
     if (file && file.size > 3000000) {
-      return this.setState({
-        photoSizeError: true,
-        isLoading: false,
-      });
+      setPhotoSizeError(true);
+      setIsLoading(false);
+      return;
     }
 
     reader.onloadend = () => {
-      this.setState({
-        file: file,
-        // $FlowFixMe
-        image: reader.result,
-        photoSizeError: false,
-        isLoading: false,
-      });
+      setFile(file);
+      // $FlowFixMe
+      setImage(reader.result);
+      setPhotoSizeError(false);
+      setIsLoading(false);
     };
 
     if (file) {
@@ -148,31 +112,26 @@ class EditForm extends React.Component<Props, State> {
     }
   };
 
-  setCommunityCover = e => {
+  const setCommunityCover = e => {
     let reader = new FileReader();
     let file = e.target.files[0];
 
     if (!file) return;
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
     if (file && file.size > 3000000) {
-      return this.setState({
-        photoSizeError: true,
-        isLoading: false,
-      });
+      setPhotoSizeError(true);
+      setIsLoading(false);
+      return;
     }
 
     reader.onloadend = () => {
-      this.setState({
-        coverFile: file,
-        // $FlowFixMe
-        coverPhoto: reader.result,
-        photoSizeError: false,
-        isLoading: false,
-      });
+      setCoverFile(file);
+      // $FlowFixMe
+      setCoverPhoto(reader.result);
+      setPhotoSizeError(false);
+      setIsLoading(false);
     };
 
     if (file) {
@@ -180,18 +139,8 @@ class EditForm extends React.Component<Props, State> {
     }
   };
 
-  save = e => {
+  const save = e => {
     e.preventDefault();
-    const {
-      name,
-      description,
-      website,
-      file,
-      coverFile,
-      coverPhoto,
-      communityId,
-      photoSizeError,
-    } = this.state;
     const input = {
       name,
       description,
@@ -206,40 +155,31 @@ class EditForm extends React.Component<Props, State> {
       return;
     }
 
-    this.setState({
-      isLoading: true,
-    });
+    setIsLoading(true);
 
-    this.props
-      .editCommunity(input)
+    editCommunity(input)
       .then(({ data }: EditCommunityType) => {
         const { editCommunity: community } = data;
 
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
 
         // community was returned
         if (community !== undefined) {
-          this.props.dispatch(
+          dispatch(
             addToastWithTimeout('success', 'Community saved!')
           );
         }
         return;
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
 
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+        dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  triggerDeleteCommunity = (e, communityId) => {
+  const triggerDeleteCommunity = (e, communityId) => {
     e.preventDefault();
-    const { community } = this.props;
-    const { name, communityData } = this.state;
     const message = (
       <div>
         <p>
@@ -257,7 +197,7 @@ class EditForm extends React.Component<Props, State> {
       </div>
     );
 
-    return this.props.dispatch(
+    return dispatch(
       openModal('DELETE_DOUBLE_CHECK_MODAL', {
         id: communityId,
         entity: 'community',
@@ -266,26 +206,13 @@ class EditForm extends React.Component<Props, State> {
     );
   };
 
-  deleteCoverPhoto = e => {
+  const deleteCoverPhoto = e => {
     e.preventDefault();
-    this.setState({ coverPhoto: '', coverFile: null });
+    setCoverPhoto('');
+    setCoverFile(null);
   };
 
-  render() {
-    const {
-      name,
-      slug,
-      description,
-      image,
-      coverPhoto,
-      website,
-      photoSizeError,
-      nameError,
-      isLoading,
-    } = this.state;
-    const { community } = this.props;
-
-    if (!community) {
+  if (!community) {
       return (
         <SectionCard>
           <FormTitle>This community doesn’t exist yet.</FormTitle>
@@ -300,17 +227,17 @@ class EditForm extends React.Component<Props, State> {
     return (
       <SectionCard>
         <SectionTitle>Community Settings</SectionTitle>
-        <Form onSubmit={this.save}>
+        <Form onSubmit={save}>
           <ImageInputWrapper>
             {coverPhoto && !/default_images/.test(coverPhoto) && (
               <DeleteCoverWrapper>
-                <DeleteCoverButton onClick={e => this.deleteCoverPhoto(e)}>
+                <DeleteCoverButton onClick={e => deleteCoverPhoto(e)}>
                   <Icon glyph="view-close-small" size={'16'} />
                 </DeleteCoverButton>
               </DeleteCoverWrapper>
             )}
             <CoverInput
-              onChange={this.setCommunityCover}
+              onChange={setCommunityCover}
               defaultValue={coverPhoto}
               preview={true}
               allowGif
@@ -318,7 +245,7 @@ class EditForm extends React.Component<Props, State> {
 
             <PhotoInput
               type={'community'}
-              onChange={this.setCommunityPhoto}
+              onChange={setCommunityPhoto}
               defaultValue={image}
             />
           </ImageInputWrapper>
@@ -326,7 +253,7 @@ class EditForm extends React.Component<Props, State> {
           <Input
             dataCy="community-settings-name-input"
             defaultValue={name}
-            onChange={this.changeName}
+            onChange={changeName}
           >
             Name
           </Input>
@@ -340,7 +267,7 @@ class EditForm extends React.Component<Props, State> {
 
           <TextArea
             defaultValue={description}
-            onChange={this.changeDescription}
+            onChange={changeDescription}
             dataCy="community-settings-description-input"
           >
             Description
@@ -348,7 +275,7 @@ class EditForm extends React.Component<Props, State> {
 
           <Input
             defaultValue={website}
-            onChange={this.changeWebsite}
+            onChange={changeWebsite}
             dataCy="community-settings-website-input"
           >
             Optional: Add your community’s website
@@ -357,7 +284,7 @@ class EditForm extends React.Component<Props, State> {
           <Actions>
             <PrimaryOutlineButton
               loading={isLoading}
-              onClick={this.save}
+              onClick={save}
               disabled={photoSizeError}
               type="submit"
               data-cy="community-settings-edit-save-button"
@@ -373,7 +300,7 @@ class EditForm extends React.Component<Props, State> {
                       color="text.placeholder"
                       hoverColor={'warn.alt'}
                       onClick={e =>
-                        this.triggerDeleteCommunity(e, community.id)
+                        triggerDeleteCommunity(e, community.id)
                       }
                     />
                   </span>
@@ -390,8 +317,7 @@ class EditForm extends React.Component<Props, State> {
         </Form>
       </SectionCard>
     );
-  }
-}
+};
 
 export default compose(
   connect(),

@@ -15,12 +15,6 @@ import {
 } from './style';
 import { ESC, ARROW_LEFT, ARROW_RIGHT } from 'src/helpers/keycodes';
 
-type State = {
-  images: Array<Object>,
-  activeMessageId: string,
-  index: ?number,
-};
-
 type Props = {
   dispatch: Dispatch<Object>,
   data: {
@@ -29,21 +23,22 @@ type Props = {
   activeMessageId: string,
 };
 
-class Browser extends React.Component<Props, State> {
-  constructor(props) {
-    super(props);
+const Browser = (props: Props) => {
+  const { dispatch, data, activeMessageId } = props;
+
+  const getInitialState = () => {
     // if there are no messages found
-    if (!props.data.messages || props.data.messages.length === 0) {
-      this.state = {
+    if (!data.messages || data.messages.length === 0) {
+      return {
         images: [],
-        activeMessageId: props.activeMessageId,
+        activeMessageId: activeMessageId,
         index: null,
       };
     }
 
     let index;
-    props.data.messages.map((message, i) => {
-      if (message.id === props.activeMessageId) {
+    data.messages.map((message, i) => {
+      if (message.id === activeMessageId) {
         index = i;
         return message;
       } else {
@@ -51,124 +46,102 @@ class Browser extends React.Component<Props, State> {
       }
     });
 
-    this.state = {
-      images: props.data.messages,
-      activeMessageId: props.activeMessageId,
+    return {
+      images: data.messages,
+      activeMessageId: activeMessageId,
       index,
     };
-  }
-
-  componentDidMount() {
-    // $FlowFixMe
-    document.addEventListener('keydown', this.handleKeyPress, false);
-  }
-
-  componentWillUnmount() {
-    // $FlowFixMe
-    document.removeEventListener('keydown', this.handleKeyPress, false);
-  }
-
-  closeGallery = () => {
-    this.props.dispatch(closeGallery());
   };
 
-  handleKeyPress = e => {
-    const { images } = this.state;
+  const [images, setImages] = React.useState(getInitialState().images);
+  const [index, setIndex] = React.useState(getInitialState().index);
+
+  const closeGallery = () => {
+    dispatch(closeGallery());
+  };
+
+  const handleKeyPress = e => {
     // if no media, skip on outta here
     if (!images) return;
 
     if (e.keyCode === ESC) {
-      this.closeGallery();
+      closeGallery();
     }
 
     if (e.keyCode === ARROW_LEFT) {
-      this.previousImage();
+      previousImage();
     }
 
     if (e.keyCode === ARROW_RIGHT) {
-      this.nextImage();
+      nextImage();
     }
   };
 
-  previousImage = () => {
-    let { index, images } = this.state;
+  React.useEffect(() => {
+    // $FlowFixMe
+    document.addEventListener('keydown', handleKeyPress, false);
+    return () => {
+      // $FlowFixMe
+      document.removeEventListener('keydown', handleKeyPress, false);
+    };
+  }, []);
 
+  const previousImage = () => {
     if (index === null) return;
 
     if (index === 0) {
-      index = images.length - 1;
-      this.setState({
-        index,
-      });
+      setIndex(images.length - 1);
     } else {
       // $FlowFixMe
-      index -= 1;
-
-      this.setState({
-        index,
-      });
+      setIndex(index - 1);
     }
   };
 
-  nextImage = () => {
-    let { index, images } = this.state;
+  const nextImage = () => {
     if (index === images.length - 1) {
-      index = 0;
-      this.setState({
-        index,
-      });
+      setIndex(0);
     } else {
-      index += 1;
-
-      this.setState({
-        index,
-      });
+      setIndex(index + 1);
     }
   };
 
-  setCount = i => {
-    this.setState({
-      index: i,
-    });
+  const setCount = i => {
+    setIndex(i);
   };
 
-  render() {
-    const { images, index } = this.state;
-    const {
-      data: { messages },
-    } = this.props;
+  const { messages } = data;
 
-    if (!messages || messages.length === 0) return null;
+  if (!messages || messages.length === 0) return null;
 
-    // when a user uploads an image, sometimes the resulting image doesn't get updated in the Apollo cache
-    // if it doesn't update in the cache, then the browser component will receive a bad `activeMessageId`
-    // prop. If it's the case that this happens, we just select the *last* image, assuming it's the one that the user just uploaded.
-    let filteredIndex = typeof index === 'number' ? index : messages.length - 1;
+  // when a user uploads an image, sometimes the resulting image doesn't get updated in the Apollo cache
+  // if it doesn't update in the cache, then the browser component will receive a bad `activeMessageId`
+  // prop. If it's the case that this happens, we just select the *last* image, assuming it's the one that the user just uploaded.
+  let filteredIndex = typeof index === 'number' ? index : messages.length - 1;
 
-    const src = `${images[filteredIndex].content.body}`;
+  const src = `${images[filteredIndex].content.body}`;
 
-    return (
-      <GalleryWrapper>
-        <CloseButton onClick={this.closeGallery}>✕</CloseButton>
-        <Overlay onClick={this.closeGallery} onKeyDown={this.handleKeyPress} />
-        <ActiveImage onClick={this.nextImage} src={src} />
-        <Minigallery>
-          <MiniContainer>
-            {images.map((image, i) => {
-              return (
-                <MiniImg
-                  src={`${image.content.body}`}
-                  key={i}
-                  onClick={() => this.setCount(i)}
-                  active={i === filteredIndex}
-                />
-              );
-            })}
-          </MiniContainer>
-        </Minigallery>
-      </GalleryWrapper>
-    );
-  }
-}
+  return (
+    <GalleryWrapper>
+      <CloseButton onClick={closeGallery}>✕</CloseButton>
+      <Overlay onClick={closeGallery} onKeyDown={handleKeyPress} />
+      <ActiveImage onClick={nextImage} src={src} />
+      <Minigallery>
+        <MiniContainer>
+          {images.map((image, i) => {
+            return (
+              <MiniImg
+                src={`${image.content.body}`}
+                key={i}
+                onClick={() => setCount(i)}
+                active={i === filteredIndex}
+              />
+            );
+          })}
+        </MiniContainer>
+      </Minigallery>
+    </GalleryWrapper>
+  );
+};
 
 export default connect()(Browser);
+

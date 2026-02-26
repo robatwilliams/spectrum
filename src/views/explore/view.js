@@ -1,5 +1,6 @@
 // @flow
 import * as React from 'react';
+import { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { connect } from 'react-redux';
 import compose from 'recompose/compose';
@@ -32,74 +33,65 @@ export const Charts = () => {
   return <ChartGrid>{collections && <CollectionSwitcher />}</ChartGrid>;
 };
 
-type State = {
-  selectedView: string,
-};
+const CollectionSwitcher = () => {
+  const [selectedView, setSelectedView] = useState('top-communities-by-members');
+  const parentRef = useRef(null);
+  const ref = useRef(null);
+  const prevSelectedViewRef = useRef(selectedView);
 
-class CollectionSwitcher extends React.Component<{}, State> {
-  state = {
-    selectedView: 'top-communities-by-members',
+  useEffect(() => {
+    parentRef.current = document.getElementById('main');
+  }, []);
+
+  useEffect(() => {
+    if (prevSelectedViewRef.current !== selectedView) {
+      if (!parentRef.current || !ref.current) return;
+      parentRef.current.scrollTop = ref.current.offsetTop;
+    }
+    prevSelectedViewRef.current = selectedView;
+  }, [selectedView]);
+
+  const handleSegmentClick = newView => {
+    if (selectedView === newView) return;
+    return setSelectedView(newView);
   };
 
-  parentRef = null;
-  ref = null;
+  return (
+    <Collections ref={ref}>
+      <SegmentedControl>
+        {collections.map((collection, i) => (
+          <Segment
+            key={i}
+            onClick={() =>
+              handleSegmentClick(collection.curatedContentType)
+            }
+            isActive={
+              collection.curatedContentType === selectedView
+            }
+          >
+            {collection.title}
+          </Segment>
+        ))}
+      </SegmentedControl>
 
-  componentDidMount() {
-    this.parentRef = document.getElementById('main');
-  }
-
-  handleSegmentClick(selectedView) {
-    if (this.state.selectedView === selectedView) return;
-
-    return this.setState({ selectedView });
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    const currState = this.state;
-    if (prevState.selectedView !== currState.selectedView) {
-      if (!this.parentRef || !this.ref) return;
-      return (this.parentRef.scrollTop = this.ref.offsetTop);
-    }
-  }
-
-  render() {
-    return (
-      <Collections ref={el => (this.ref = el)}>
-        <SegmentedControl>
-          {collections.map((collection, i) => (
-            <Segment
-              key={i}
-              onClick={() =>
-                this.handleSegmentClick(collection.curatedContentType)
-              }
-              isActive={
-                collection.curatedContentType === this.state.selectedView
-              }
-            >
-              {collection.title}
-            </Segment>
-          ))}
-        </SegmentedControl>
-
-        <CollectionWrapper>
-          {collections.map((collection, index) => {
-            const communitySlugs = collection.communities;
-            return (
-              <div key={index}>
-                {collection.curatedContentType === this.state.selectedView && (
-                  <Category
-                    slugs={communitySlugs}
-                    curatedContentType={collection.curatedContentType}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </CollectionWrapper>
-      </Collections>
-    );
-  }
-}
+      <CollectionWrapper>
+        {collections.map((collection, index) => {
+          const communitySlugs = collection.communities;
+          return (
+            <div key={index}>
+              {collection.curatedContentType === selectedView && (
+                <Category
+                  slugs={communitySlugs}
+                  curatedContentType={collection.curatedContentType}
+                />
+              )}
+            </div>
+          );
+        })}
+      </CollectionWrapper>
+    </Collections>
+  );
+};
 
 type CategoryListProps = {
   title: string,
@@ -110,51 +102,50 @@ type CategoryListProps = {
   },
   isLoading: boolean,
 };
-class CategoryList extends React.Component<CategoryListProps> {
-  render() {
-    const {
-      data: { communities },
-      title,
-      slugs,
-      isLoading,
-    } = this.props;
 
-    if (communities) {
-      let filteredCommunities = communities;
-      if (slugs) {
-        filteredCommunities = communities.filter(c => {
-          if (!c) return null;
-          if (slugs.indexOf(c.slug) > -1) return c;
-          return null;
-        });
-      }
+const CategoryList = (props: CategoryListProps) => {
+  const {
+    data: { communities },
+    title,
+    slugs,
+    isLoading,
+  } = props;
 
-      return (
-        <ListWithTitle>
-          {title ? <ListTitle>{title}</ListTitle> : null}
-          <ListWrapper>
-            {filteredCommunities.map(
-              (community, i) =>
-                community && (
-                  <ErrorBoundary key={i}>
-                    <ProfileCardWrapper>
-                      <CommunityProfileCard community={community} />
-                    </ProfileCardWrapper>
-                  </ErrorBoundary>
-                )
-            )}
-          </ListWrapper>
-        </ListWithTitle>
-      );
+  if (communities) {
+    let filteredCommunities = communities;
+    if (slugs) {
+      filteredCommunities = communities.filter(c => {
+        if (!c) return null;
+        if (slugs.indexOf(c.slug) > -1) return c;
+        return null;
+      });
     }
 
-    if (isLoading) {
-      return <Loading style={{ padding: '64px 32px', minHeight: '100vh' }} />;
-    }
-
-    return <ErrorView />;
+    return (
+      <ListWithTitle>
+        {title ? <ListTitle>{title}</ListTitle> : null}
+        <ListWrapper>
+          {filteredCommunities.map(
+            (community, i) =>
+              community && (
+                <ErrorBoundary key={i}>
+                  <ProfileCardWrapper>
+                    <CommunityProfileCard community={community} />
+                  </ProfileCardWrapper>
+                </ErrorBoundary>
+              )
+          )}
+        </ListWrapper>
+      </ListWithTitle>
+    );
   }
-}
+
+  if (isLoading) {
+    return <Loading style={{ padding: '64px 32px', minHeight: '100vh' }} />;
+  }
+
+  return <ErrorView />;
+};
 
 export const Category = compose(
   withCurrentUser,

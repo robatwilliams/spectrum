@@ -1,5 +1,4 @@
 // @flow
-import * as React from 'react';
 import { openModal } from 'src/actions/modals';
 import type { GetMessageType } from 'shared/graphql/queries/message/getMessage';
 import type { Dispatch } from 'redux';
@@ -13,10 +12,10 @@ type Props = {
   render: Function,
 };
 
-class Reaction extends React.Component<Props> {
-  triggerMutation = () => {
-    const { toggleReaction, message, dispatch, currentUser } = this.props;
+const Reaction = (props: Props) => {
+  const { toggleReaction, message, dispatch, currentUser, me, render } = props;
 
+  const triggerMutation = () => {
     if (!currentUser) {
       return dispatch(openModal('LOGIN_MODAL', {}));
     }
@@ -27,17 +26,12 @@ class Reaction extends React.Component<Props> {
     });
   };
 
-  render() {
-    const {
-      me,
-      message: {
-        reactions: { hasReacted, count },
-      },
-    } = this.props;
-    const mutation = me ? () => {} : this.triggerMutation;
+  const {
+    reactions: { hasReacted, count },
+  } = message;
+  const mutation = me ? () => {} : triggerMutation;
 
-    return this.props.render({ me, hasReacted, count, mutation });
-  }
+  return render({ me, hasReacted, count, mutation });
 }
 
 export default Reaction;

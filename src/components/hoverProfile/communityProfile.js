@@ -1,5 +1,5 @@
 // @flow
-import React, { Component } from 'react';
+import React from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
@@ -31,68 +31,66 @@ type ProfileProps = {
   style: CSSStyleDeclaration,
 };
 
-class HoverProfile extends Component<ProfileProps> {
-  render() {
-    const { community, ref, style } = this.props;
+const HoverProfile = (props: ProfileProps) => {
+  const { community, ref, style } = props;
 
-    const { communityPermissions } = community;
-    const { isOwner, isModerator } = communityPermissions;
+  const { communityPermissions } = community;
+  const { isOwner, isModerator } = communityPermissions;
 
-    return (
-      <HoverWrapper popperStyle={style} ref={ref}>
-        <ProfileCard>
-          <Link to={`/${community.slug}`}>
-            <CoverContainer>
-              <CoverPhoto src={community.coverPhoto} />
-              <ProfilePhotoContainer>
-                <AvatarImage
-                  src={community.profilePhoto}
-                  type={'community'}
-                  size={40}
-                  isClickable={false}
-                  alt={community.name}
-                />
-              </ProfilePhotoContainer>
-            </CoverContainer>
-          </Link>
-
-          <Content>
-            <Link to={`/${community.slug}`}>
-              <Title>{community.name}</Title>
-            </Link>
-            {community.description && (
-              <Description>
-                {renderTextWithLinks(community.description)}
-              </Description>
-            )}
-          </Content>
-
-          <Actions>
-            {!isModerator && !isOwner && (
-              // TODO @Brian
-              <JoinCommunityWrapper
-                community={community}
-                render={({ isLoading }) => {
-                  return (
-                    <Button loading={isLoading}>
-                      {isLoading ? 'Joining...' : 'Join'}
-                    </Button>
-                  );
-                }}
+  return (
+    <HoverWrapper popperStyle={style} ref={ref}>
+      <ProfileCard>
+        <Link to={`/${community.slug}`}>
+          <CoverContainer>
+            <CoverPhoto src={community.coverPhoto} />
+            <ProfilePhotoContainer>
+              <AvatarImage
+                src={community.profilePhoto}
+                type={'community'}
+                size={40}
+                isClickable={false}
+                alt={community.name}
               />
-            )}
+            </ProfilePhotoContainer>
+          </CoverContainer>
+        </Link>
 
-            {(isModerator || isOwner) && (
-              <Link to={`/${community.slug}/settings`}>
-                <OutlineButton icon={'settings'}>Settings</OutlineButton>
-              </Link>
-            )}
-          </Actions>
-        </ProfileCard>
-      </HoverWrapper>
-    );
-  }
-}
+        <Content>
+          <Link to={`/${community.slug}`}>
+            <Title>{community.name}</Title>
+          </Link>
+          {community.description && (
+            <Description>
+              {renderTextWithLinks(community.description)}
+            </Description>
+          )}
+        </Content>
+
+        <Actions>
+          {!isModerator && !isOwner && (
+            // TODO @Brian
+            <JoinCommunityWrapper
+              community={community}
+              render={({ isLoading }) => {
+                return (
+                  <Button loading={isLoading}>
+                    {isLoading ? 'Joining...' : 'Join'}
+                  </Button>
+                );
+              }}
+            />
+          )}
+
+          {(isModerator || isOwner) && (
+            <Link to={`/${community.slug}/settings`}>
+              <OutlineButton icon={'settings'}>Settings</OutlineButton>
+            </Link>
+          )}
+        </Actions>
+      </ProfileCard>
+    </HoverWrapper>
+  );
+};
 
 export default compose(
   withCurrentUser,

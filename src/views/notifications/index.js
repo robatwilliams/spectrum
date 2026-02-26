@@ -1,5 +1,6 @@
 // @flow
 import * as React from 'react';
+import { useEffect, useState } from 'react';
 import compose from 'recompose/compose';
 import { connect } from 'react-redux';
 import { deduplicateChildren } from 'src/components/infiniteScroll/deduplicateChildren';
@@ -63,36 +64,68 @@ type Props = {
   websocketConnection: WebsocketConnectionType,
 };
 
-type State = {
-  showWebPushPrompt: boolean,
-  webPushPromptLoading: boolean,
-};
+const NotificationsPure = (props: Props) => {
+  const {
+    markAllNotificationsSeen: markAllNotificationsSeenProp,
+    markSingleNotificationSeen: markSingleNotificationSeenProp,
+    subscribeToWebPush: subscribeToWebPushProp,
+    dispatch,
+    currentUser,
+    data,
+    isLoading,
+    hasError,
+    isFetchingMore,
+    networkOnline,
+    websocketConnection,
+  } = props;
 
-class NotificationsPure extends React.Component<Props, State> {
-  constructor() {
-    super();
+  const [showWebPushPrompt, setShowWebPushPrompt] = useState(false);
+  const [webPushPromptLoading, setWebPushPromptLoading] = useState(false);
 
-    this.state = {
-      showWebPushPrompt: false,
-      webPushPromptLoading: false,
-    };
-  }
-
-  markAllNotificationsSeen = () => {
-    this.props.dispatch(updateNotificationsCount('notifications', 0));
-    this.props.markAllNotificationsSeen &&
-      this.props.markAllNotificationsSeen().catch(err => {
+  const markAllNotificationsSeen = () => {
+    dispatch(updateNotificationsCount('notifications', 0));
+    markAllNotificationsSeenProp &&
+      markAllNotificationsSeenProp().catch(err => {
         console.error('Error marking all notifications seen: ', err);
       });
   };
 
-  componentDidMount() {
-    const { dispatch } = this.props;
+  const subscribeToWebPush = () => {
+    setWebPushPromptLoading(true);
+    WebPushManager.subscribe()
+      .then(subscription => {
+        setWebPushPromptLoading(false);
+        setShowWebPushPrompt(false);
+        return subscribeToWebPushProp(subscription);
+      })
+      .catch(err => {
+        setWebPushPromptLoading(false);
+        console.error(err);
+        return dispatch(
+          addToastWithTimeout(
+            'error',
+            "Oops, we couldn't enable browser notifications for you. Please try again!"
+          )
+        );
+      });
+  };
+
+  const dismissWebPushRequest = () => {
+    setShowWebPushPrompt(false);
+  };
+
+  const markSingleNotificationSeen = (id: string) => {
+    return markSingleNotificationSeenProp(id).catch(err => {
+      // ignore errors for now
+    });
+  };
+
+  useEffect(() => {
     dispatch(
       setTitlebarProps({
         title: 'Notifications',
         rightAction: (
-          <OutlineButton onClick={() => this.markAllNotificationsSeen()}>
+          <OutlineButton onClick={() => markAllNotificationsSeen()}>
             Mark all seen
           </OutlineButton>
         ),
@@ -106,17 +139,13 @@ class NotificationsPure extends React.Component<Props, State> {
           result === 'denied' ||
           (result !== 'prompt' && result !== 'granted')
         ) {
-          this.setState({
-            showWebPushPrompt: false,
-          });
+          setShowWebPushPrompt(false);
           return;
         }
 
         WebPushManager.getSubscription()
           .then(subscription => {
-            this.setState({
-              showWebPushPrompt: !subscription,
-            });
+            setShowWebPushPrompt(!subscription);
             return;
           })
           .catch(err => {
@@ -126,79 +155,23 @@ class NotificationsPure extends React.Component<Props, State> {
       .catch(err => {
         console.error('Error getting permission state:', err);
       });
-  }
+  }, [dispatch]);
 
-  shouldComponentUpdate(nextProps: Props) {
-    const curr = this.props;
-    if (curr.networkOnline !== nextProps.networkOnline) return true;
-    if (curr.websocketConnection !== nextProps.websocketConnection) return true;
-    // fetching more
-    if (curr.data.networkStatus === 7 && nextProps.data.networkStatus === 3)
-      return false;
-    return true;
-  }
-
-  componentDidUpdate(prev: Props) {
-    const curr = this.props;
-    const didReconnect = useConnectionRestored({ curr, prev });
-    if (didReconnect && curr.data.refetch) {
-      curr.data.refetch();
+  useEffect(() => {
+    const didReconnect = useConnectionRestored({ 
+      curr: { networkOnline, websocketConnection, data }, 
+      prev: { networkOnline, websocketConnection, data } 
+    });
+    if (didReconnect && data && data.refetch) {
+      data.refetch();
     }
-  }
+  }, [networkOnline, websocketConnection, data && data.refetch]);
 
-  subscribeToWebPush = () => {
-    this.setState({
-      webPushPromptLoading: true,
-    });
-    WebPushManager.subscribe()
-      .then(subscription => {
-        this.setState({
-          webPushPromptLoading: false,
-          showWebPushPrompt: false,
-        });
-        return this.props.subscribeToWebPush(subscription);
-      })
-      .catch(err => {
-        this.setState({
-          webPushPromptLoading: false,
-        });
-        console.error(err);
-        return this.props.dispatch(
-          addToastWithTimeout(
-            'error',
-            "Oops, we couldn't enable browser notifications for you. Please try again!"
-          )
-        );
-      });
-  };
+  const { title, description } = generateMetaInfo({
+    type: 'notifications',
+  });
 
-  dismissWebPushRequest = () => {
-    this.setState({
-      showWebPushPrompt: false,
-    });
-  };
-
-  markSingleNotificationSeen = (id: string) => {
-    const { markSingleNotificationSeen } = this.props;
-    return markSingleNotificationSeen(id).catch(err => {
-      // ignore errors for now
-    });
-  };
-
-  render() {
-    const {
-      currentUser,
-      data,
-      isLoading,
-      hasError,
-      isFetchingMore,
-    } = this.props;
-
-    const { title, description } = generateMetaInfo({
-      type: 'notifications',
-    });
-
-    if (data.notifications && data.notifications.edges.length > 0) {
+  if (data.notifications && data.notifications.edges.length > 0) {
       let notifications = data.notifications.edges
         .map(notification => parseNotification(notification.node))
         .filter(
@@ -214,10 +187,10 @@ class NotificationsPure extends React.Component<Props, State> {
             <StyledSingleColumn>
               <div>
                 <StickyHeader>
-                  {!isDesktopApp() && this.state.showWebPushPrompt && (
+                  {!isDesktopApp() && showWebPushPrompt && (
                     <OutlineButton
-                      onClick={this.subscribeToWebPush}
-                      isLoading={this.state.webPushPromptLoading}
+                      onClick={subscribeToWebPush}
+                      isLoading={webPushPromptLoading}
                       css={{ marginRight: '16px' }}
                     >
                       {isLoading ? 'Enabling...' : 'Enable push notifications'}
@@ -227,7 +200,7 @@ class NotificationsPure extends React.Component<Props, State> {
                     disabled={notifications.every(
                       notification => notification.isSeen
                     )}
-                    onClick={() => this.markAllNotificationsSeen()}
+                    onClick={() => markAllNotificationsSeen()}
                   >
                     Mark all seen
                   </PrimaryButton>
@@ -241,7 +214,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -254,7 +227,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -267,7 +240,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -280,7 +253,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -293,7 +266,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -310,7 +283,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -323,7 +296,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -336,7 +309,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -349,7 +322,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -362,7 +335,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -375,7 +348,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -388,7 +361,7 @@ class NotificationsPure extends React.Component<Props, State> {
                             notification={notification}
                             currentUser={currentUser}
                             markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
+                              markSingleNotificationSeen
                             }
                           />
                         </ErrorBoundary>
@@ -414,26 +387,25 @@ class NotificationsPure extends React.Component<Props, State> {
           </ViewGrid>
         </React.Fragment>
       );
-    }
-
-    if (isLoading) {
-      return <LoadingView />;
-    }
-
-    if (hasError) {
-      return <ErrorView />;
-    }
-
-    // no issues loading, but the user doesnt have notifications yet
-    return (
-      <ErrorView
-        emoji="😙"
-        heading="No notifications...yet"
-        subheading="Looks like you’re new around here! When you start receiving notifications about conversations on Spectrum, they'll show up here."
-      />
-    );
   }
-}
+
+  if (isLoading) {
+    return <LoadingView />;
+  }
+
+  if (hasError) {
+    return <ErrorView />;
+  }
+
+  // no issues loading, but the user doesnt have notifications yet
+  return (
+    <ErrorView
+      emoji="😙"
+      heading="No notifications...yet"
+      subheading="Looks like you're new around here! When you start receiving notifications about conversations on Spectrum, they'll show up here."
+    />
+  );
+};
 
 const map = state => ({
   networkOnline: state.connectionStatus.networkOnline,

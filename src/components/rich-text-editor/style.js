@@ -38,21 +38,19 @@ type MentionProps = {
   currentUser: ?Object,
 };
 
-class MentionWithCurrentUser extends React.Component<MentionProps> {
-  render() {
-    const { username, currentUser, children } = this.props;
-    const me = currentUser && currentUser.username === username;
-    return (
-      <UsernameWrapper me={me}>
-        <UserHoverProfile username={username}>
-          <Link to={`/users/${username}`} onClick={e => e.stopPropagation()}>
-            {children}
-          </Link>
-        </UserHoverProfile>
-      </UsernameWrapper>
-    );
-  }
-}
+const MentionWithCurrentUser = (props: MentionProps) => {
+  const { username, currentUser, children } = props;
+  const me = currentUser && currentUser.username === username;
+  return (
+    <UsernameWrapper me={me}>
+      <UserHoverProfile username={username}>
+        <Link to={`/users/${username}`} onClick={e => e.stopPropagation()}>
+          {children}
+        </Link>
+      </UserHoverProfile>
+    </UsernameWrapper>
+  );
+};
 
 export const Mention = compose(
   withCurrentUser,

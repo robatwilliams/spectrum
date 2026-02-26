@@ -20,47 +20,42 @@ type LikeButtonProps = {
   dispatch: Dispatch<Object>,
 };
 
-class LikeButtonPure extends React.Component<LikeButtonProps> {
-  handleClick = () => {
-    const { thread, dispatch, currentUser } = this.props;
+const LikeButtonPure = (props: LikeButtonProps) => {
+  const { thread, dispatch, currentUser, addThreadReaction, removeThreadReaction } = props;
 
-    if (!currentUser || !currentUser.id) {
-      return dispatch(openModal('LOGIN_MODAL', {}));
-    }
-
-    const { hasReacted } = thread.reactions;
-    return hasReacted ? this.removeThreadReaction() : this.addThreadReaction();
-  };
-
-  addThreadReaction = () => {
-    const { thread, addThreadReaction, dispatch } = this.props;
+  const addThreadReactionHandler = () => {
     const input = { threadId: thread.id };
     return addThreadReaction({ input }).catch(err =>
       dispatch(addToastWithTimeout('error', err.message))
     );
   };
 
-  removeThreadReaction = () => {
-    const { thread, removeThreadReaction, dispatch } = this.props;
+  const removeThreadReactionHandler = () => {
     const input = { threadId: thread.id };
     return removeThreadReaction({ input }).catch(err =>
       dispatch(addToastWithTimeout('error', err.message))
     );
   };
 
-  render() {
-    const { thread } = this.props;
-    const { hasReacted, count } = thread.reactions;
+  const handleClick = () => {
+    if (!currentUser || !currentUser.id) {
+      return dispatch(openModal('LOGIN_MODAL', {}));
+    }
 
-    return (
-      <LikeButtonWrapper hasReacted={hasReacted} onClick={this.handleClick}>
-        <Icon style={{ pointerEvents: 'none' }} glyph="thumbsup" size={24} />
-        {hasReacted ? 'Liked' : 'Like'}
-        <CurrentCount>{count}</CurrentCount>
-      </LikeButtonWrapper>
-    );
-  }
-}
+    const { hasReacted } = thread.reactions;
+    return hasReacted ? removeThreadReactionHandler() : addThreadReactionHandler();
+  };
+
+  const { hasReacted, count } = thread.reactions;
+
+  return (
+    <LikeButtonWrapper hasReacted={hasReacted} onClick={handleClick}>
+      <Icon style={{ pointerEvents: 'none' }} glyph="thumbsup" size={24} />
+      {hasReacted ? 'Liked' : 'Like'}
+      <CurrentCount>{count}</CurrentCount>
+    </LikeButtonWrapper>
+  );
+};
 
 export const LikeButton = compose(
   addThreadReactionMutation,

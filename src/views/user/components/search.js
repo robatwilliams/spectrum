@@ -13,74 +13,57 @@ type Props = {
   user: Object,
 };
 
-type State = {
-  searchString: string,
-  sendStringToServer: string,
-};
+const Search = (props) => {
+  const [searchString, setSearchString] = React.useState('');
+  const [sendStringToServer, setSendStringToServer] = React.useState('');
 
-class Search extends React.Component<Props, State> {
-  constructor() {
-    super();
+  const search = React.useCallback(
+    throttle((searchString) => {
+      // don't start searching until at least 3 characters are typed
+      if (searchString.length < 3) return;
 
-    this.state = {
-      searchString: '',
-      sendStringToServer: '',
-    };
+      // start the input loading spinner
+      setSendStringToServer(searchString);
+    }, 500),
+    []
+  );
 
-    this.search = throttle(this.search, 500);
-  }
-
-  search = searchString => {
-    // don't start searching until at least 3 characters are typed
-    if (searchString.length < 3) return;
-
-    // start the input loading spinner
-    this.setState({
-      sendStringToServer: searchString,
-    });
-  };
-
-  handleChange = (e: any) => {
+  const handleChange = (e: any) => {
     const searchString = e.target.value.toLowerCase().trim();
 
     // set the searchstring to state
-    this.setState({
-      searchString,
-    });
+    setSearchString(searchString);
 
     // trigger a new search based on the search input
     // $FlowIssue
-    this.search(searchString);
+    search(searchString);
   };
 
-  render() {
-    const { user } = this.props;
-    const { searchString, sendStringToServer } = this.state;
+  const { user } = props;
 
-    return (
-      <div>
-        <SearchContainer>
-          <SearchInput
-            defaultValue={searchString}
-            autoFocus={true}
-            type="text"
-            placeholder={`Search ${user.name}'s conversations...`}
-            onChange={this.handleChange}
-          />
-        </SearchContainer>
-        {searchString && sendStringToServer && (
-          <SearchThreadFeed
-            search
-            viewContext="userProfile"
-            userId={user.id}
-            queryString={sendStringToServer}
-            filter={{ creatorId: user.id }}
-            user={user}
-          />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      <SearchContainer>
+        <SearchInput
+          defaultValue={searchString}
+          autoFocus={true}
+          type="text"
+          placeholder={`Search ${user.name}'s conversations...`}
+          onChange={handleChange}
+        />
+      </SearchContainer>
+      {searchString && sendStringToServer && (
+        <SearchThreadFeed
+          search
+          viewContext="userProfile"
+          userId={user.id}
+          queryString={sendStringToServer}
+          filter={{ creatorId: user.id }}
+          user={user}
+        />
+      )}
+    </div>
+  );
+};
 
 export default compose()(Search);

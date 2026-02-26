@@ -36,62 +36,40 @@ type ContactProps = {
   error: boolean,
 };
 
-type State = {
-  isLoading: boolean,
-  contacts: Array<ContactProps>,
-  importError: string,
-  hasCustomMessage: boolean,
-  customMessageString: string,
-  customMessageError: boolean,
-  inputValue: ?string,
-};
+const EmailInvitationForm = (props: Props) => {
+  const { id, dispatch, currentUser, sendEmailInvites } = props;
 
-class EmailInvitationForm extends React.Component<Props, State> {
-  constructor(props) {
-    super(props);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [importError, setImportError] = React.useState('');
+  const [contacts, setContacts] = React.useState([
+    {
+      email: '',
+      firstName: '',
+      lastName: '',
+      error: false,
+    },
+    {
+      email: '',
+      firstName: '',
+      lastName: '',
+      error: false,
+    },
+    {
+      email: '',
+      firstName: '',
+      lastName: '',
+      error: false,
+    },
+  ]);
+  const [hasCustomMessage, setHasCustomMessage] = React.useState(false);
+  const [customMessageString, setCustomMessageString] = React.useState('');
+  const [customMessageError, setCustomMessageError] = React.useState(false);
+  const [inputValue, setInputValue] = React.useState('');
 
-    this.state = {
-      isLoading: false,
-      importError: '',
-      contacts: [
-        {
-          email: '',
-          firstName: '',
-          lastName: '',
-          error: false,
-        },
-        {
-          email: '',
-          firstName: '',
-          lastName: '',
-          error: false,
-        },
-        {
-          email: '',
-          firstName: '',
-          lastName: '',
-          error: false,
-        },
-      ],
-      hasCustomMessage: false,
-      customMessageString: '',
-      customMessageError: false,
-      inputValue: '',
-    };
-  }
+  const getUniqueEmails = array => array.filter((x, i, a) => a.indexOf(x) === i);
 
-  getUniqueEmails = array => array.filter((x, i, a) => a.indexOf(x) === i);
-
-  sendInvitations = () => {
-    const {
-      contacts,
-      hasCustomMessage,
-      customMessageError,
-      customMessageString,
-    } = this.state;
-    const { dispatch, currentUser, sendEmailInvites } = this.props;
-
-    this.setState({ isLoading: true });
+  const sendInvitations = () => {
+    setIsLoading(true);
 
     let validContacts = contacts
       .filter(contact => !contact.error)
@@ -107,12 +85,10 @@ class EmailInvitationForm extends React.Component<Props, State> {
       hasCustomMessage && !customMessageError ? customMessageString : null;
 
     // make sure to uniqify the emails so you can't enter on email multiple times
-    validContacts = this.getUniqueEmails(validContacts);
+    validContacts = getUniqueEmails(validContacts);
 
     if (validContacts.length === 0) {
-      this.setState({
-        isLoading: false,
-      });
+      setIsLoading(false);
 
       return dispatch(
         addToastWithTimeout('error', 'No emails entered - try again!')
@@ -120,37 +96,35 @@ class EmailInvitationForm extends React.Component<Props, State> {
     }
 
     sendEmailInvites({
-      id: this.props.id,
+      id: id,
       contacts: validContacts,
       customMessage,
     })
       .then(() => {
-        this.setState({
-          isLoading: false,
-          contacts: [
-            {
-              email: '',
-              firstName: '',
-              lastName: '',
-              error: false,
-            },
-            {
-              email: '',
-              firstName: '',
-              lastName: '',
-              error: false,
-            },
-            {
-              email: '',
-              firstName: '',
-              lastName: '',
-              error: false,
-            },
-          ],
-          hasCustomMessage: false,
-          customMessageString: '',
-          customMessageError: false,
-        });
+        setIsLoading(false);
+        setContacts([
+          {
+            email: '',
+            firstName: '',
+            lastName: '',
+            error: false,
+          },
+          {
+            email: '',
+            firstName: '',
+            lastName: '',
+            error: false,
+          },
+          {
+            email: '',
+            firstName: '',
+            lastName: '',
+            error: false,
+          },
+        ]);
+        setHasCustomMessage(false);
+        setCustomMessageString('');
+        setCustomMessageError(false);
 
         return dispatch(
           addToastWithTimeout(
@@ -164,119 +138,86 @@ class EmailInvitationForm extends React.Component<Props, State> {
         );
       })
       .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
         dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  handleChange = (e, i, key) => {
-    const { contacts } = this.state;
-    contacts[i][key] = e.target.value;
-
-    this.setState({
-      ...this.state,
-      contacts,
-    });
+  const handleChange = (e, i, key) => {
+    const newContacts = [...contacts];
+    newContacts[i][key] = e.target.value;
+    setContacts(newContacts);
   };
 
-  addRow = () => {
-    const { contacts } = this.state;
-    contacts.push({
+  const addRow = () => {
+    const newContacts = [...contacts];
+    newContacts.push({
       email: '',
       firstName: '',
       lastName: '',
       error: false,
     });
-
-    this.setState({
-      ...this.state,
-      contacts,
-    });
+    setContacts(newContacts);
   };
 
-  removeRow = index => {
-    const { contacts } = this.state;
-    contacts.splice(index, 1);
-    this.setState({
-      ...this.state,
-      contacts,
-    });
+  const removeRow = index => {
+    const newContacts = [...contacts];
+    newContacts.splice(index, 1);
+    setContacts(newContacts);
   };
 
-  validate = (e, i) => {
-    const { contacts } = this.state;
+  const validate = (e, i) => {
+    const newContacts = [...contacts];
     if (!isEmail(e.target.value)) {
-      contacts[i].error = true;
+      newContacts[i].error = true;
     } else {
-      contacts[i].error = false;
+      newContacts[i].error = false;
     }
-
-    this.setState({
-      ...this.state,
-      contacts,
-    });
+    setContacts(newContacts);
   };
 
-  handleCustomMessageChange = e => {
-    const customMessageString = e.target.value;
-    if (customMessageString.length > 500) {
-      this.setState({
-        customMessageString,
-        customMessageError: true,
-      });
+  const handleCustomMessageChange = e => {
+    const newCustomMessageString = e.target.value;
+    if (newCustomMessageString.length > 500) {
+      setCustomMessageString(newCustomMessageString);
+      setCustomMessageError(true);
     } else {
-      this.setState({
-        customMessageString,
-        customMessageError: false,
-      });
+      setCustomMessageString(newCustomMessageString);
+      setCustomMessageError(false);
     }
   };
 
-  toggleCustomMessage = () => {
-    const { hasCustomMessage } = this.state;
-    this.setState({
-      hasCustomMessage: !hasCustomMessage,
-    });
+  const toggleCustomMessage = () => {
+    setHasCustomMessage(!hasCustomMessage);
   };
 
-  handleFile = evt => {
-    this.setState({
-      importError: '',
-    });
+  const handleFile = evt => {
+    setImportError('');
 
     // Only show loading indicator for large files
     // where it takes > 200ms to load
     const timeout = setTimeout(() => {
-      this.setState({
-        isLoading: true,
-      });
+      setIsLoading(true);
     }, 200);
 
     const reader = new FileReader();
     reader.onload = file => {
       clearTimeout(timeout);
-      this.setState({
-        isLoading: false,
-      });
+      setIsLoading(false);
 
       let parsed;
       try {
         if (typeof reader.result !== 'string') return;
         parsed = JSON.parse(reader.result);
       } catch (err) {
-        this.setState({
-          importError: 'Only .json files are supported for import.',
-        });
+        setImportError('Only .json files are supported for import.');
         return;
       }
 
       if (!Array.isArray(parsed)) {
-        this.setState({
-          importError:
-            'Your JSON data is in the wrong format. Please provide either an array of emails ["hi@me.com"] or an array of objects with an "email" property and (optionally) a "name" property [{ "email": "hi@me.com", "name": "Me" }].',
-        });
+        setImportError(
+          'Your JSON data is in the wrong format. Please provide either an array of emails ["hi@me.com"] or an array of objects with an "email" property and (optionally) a "name" property [{ "email": "hi@me.com", "name": "Me" }].'
+        );
         return;
       }
 
@@ -301,14 +242,12 @@ class EmailInvitationForm extends React.Component<Props, State> {
         .filter(Boolean);
 
       if (validated.length > 5000) {
-        this.setState({
-          importError: 'Cannot invite more than 5,000 emails.',
-        });
+        setImportError('Cannot invite more than 5,000 emails.');
         return;
       }
 
       const consolidated = [
-        ...this.state.contacts.filter(
+        ...contacts.filter(
           contact =>
             contact.email.length > 0 ||
             contact.firstName.length > 0 ||
@@ -322,109 +261,96 @@ class EmailInvitationForm extends React.Component<Props, State> {
           consolidated.findIndex(a => a['email'] === obj['email']) === i
       );
 
-      this.setState({
-        contacts: unique,
-        inputValue: '',
-      });
+      setContacts(unique);
+      setInputValue('');
     };
 
     reader.readAsText(evt.target.files[0]);
   };
 
-  render() {
-    const {
-      contacts,
-      isLoading,
-      hasCustomMessage,
-      customMessageString,
-      customMessageError,
-      importError,
-    } = this.state;
+  return (
+    <div>
+      {importError && <Error>{importError}</Error>}
+      {contacts.map((contact, i) => {
+        return (
+          <EmailInviteForm key={i}>
+            <EmailInviteInput
+              error={contact.error}
+              type="email"
+              onBlur={e => validate(e, i)}
+              placeholder="Email address"
+              value={contact.email}
+              onChange={e => handleChange(e, i, 'email')}
+            />
+            <EmailInviteInput
+              type="text"
+              placeholder="First name (optional)"
+              value={contact.firstName}
+              onChange={e => handleChange(e, i, 'firstName')}
+              hideOnMobile
+            />
+            <RemoveRow onClick={() => removeRow(i)}>
+              <Icon glyph="view-close" size="16" />
+            </RemoveRow>
+          </EmailInviteForm>
+        );
+      })}
 
-    return (
-      <div>
-        {importError && <Error>{importError}</Error>}
-        {contacts.map((contact, i) => {
-          return (
-            <EmailInviteForm key={i}>
-              <EmailInviteInput
-                error={contact.error}
-                type="email"
-                onBlur={e => this.validate(e, i)}
-                placeholder="Email address"
-                value={contact.email}
-                onChange={e => this.handleChange(e, i, 'email')}
-              />
-              <EmailInviteInput
-                type="text"
-                placeholder="First name (optional)"
-                value={contact.firstName}
-                onChange={e => this.handleChange(e, i, 'firstName')}
-                hideOnMobile
-              />
-              <RemoveRow onClick={() => this.removeRow(i)}>
-                <Icon glyph="view-close" size="16" />
-              </RemoveRow>
-            </EmailInviteForm>
-          );
-        })}
+      <Action onClick={addRow}>
+        <Icon glyph="plus" size={20} /> Add row
+      </Action>
+      <ActionAsLabel mb="8px">
+        <HiddenInput
+          value={inputValue}
+          type="file"
+          accept=".json"
+          onChange={handleFile}
+        />
+        <Icon size={20} glyph="upload" /> Import emails
+      </ActionAsLabel>
+      <ActionHelpText>
+        Upload a .json file with an array of up to 5,000 email addresses.
+      </ActionHelpText>
 
-        <Action onClick={this.addRow}>
-          <Icon glyph="plus" size={20} /> Add row
-        </Action>
-        <ActionAsLabel mb="8px">
-          <HiddenInput
-            value={this.state.inputValue}
-            type="file"
-            accept=".json"
-            onChange={this.handleFile}
-          />
-          <Icon size={20} glyph="upload" /> Import emails
-        </ActionAsLabel>
-        <ActionHelpText>
-          Upload a .json file with an array of up to 5,000 email addresses.
-        </ActionHelpText>
+      <Action onClick={toggleCustomMessage}>
+        <Icon glyph={hasCustomMessage ? 'view-close' : 'post'} size={20} />
+        {hasCustomMessage
+          ? 'Remove custom message'
+          : 'Optional: Add a custom message to your invitation'}
+      </Action>
 
-        <Action onClick={this.toggleCustomMessage}>
-          <Icon glyph={hasCustomMessage ? 'view-close' : 'post'} size={20} />
-          {hasCustomMessage
-            ? 'Remove custom message'
-            : 'Optional: Add a custom message to your invitation'}
-        </Action>
+      {hasCustomMessage && (
+        <Textarea
+          autoFocus
+          value={customMessageString}
+          placeholder="Write something sweet here..."
+          style={{
+            ...CustomMessageTextAreaStyles,
+            border: customMessageError
+              ? '2px solid #E3353C'
+              : '2px solid #DFE7EF',
+          }}
+          onChange={handleCustomMessageChange}
+        />
+      )}
 
-        {hasCustomMessage && (
-          <Textarea
-            autoFocus
-            value={customMessageString}
-            placeholder="Write something sweet here..."
-            style={{
-              ...CustomMessageTextAreaStyles,
-              border: customMessageError
-                ? '2px solid #E3353C'
-                : '2px solid #DFE7EF',
-            }}
-            onChange={this.handleCustomMessageChange}
-          />
-        )}
+      {hasCustomMessage && customMessageError && (
+        <Error>
+          Your custom invitation message can be up to 500 characters.
+        </Error>
+      )}
 
-        {hasCustomMessage && customMessageError && (
-          <Error>
-            Your custom invitation message can be up to 500 characters.
-          </Error>
-        )}
-
-        <SectionCardFooter>
-          <OutlineButton
-            loading={isLoading}
-            onClick={this.sendInvitations}
-            disabled={hasCustomMessage && customMessageError}
-          >
-            {isLoading ? 'Sending...' : 'Send Invitations'}
-          </OutlineButton>
-        </SectionCardFooter>
-      </div>
-    );
-  }
+      <SectionCardFooter>
+        <OutlineButton
+          loading={isLoading}
+          onClick={sendInvitations}
+          disabled={hasCustomMessage && customMessageError}
+        >
+          {isLoading ? 'Sending...' : 'Send Invitations'}
+        </OutlineButton>
+      </SectionCardFooter>
+    </div>
+  );
 }
 
 export const CommunityInvitationForm = compose(
