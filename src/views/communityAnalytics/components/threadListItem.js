@@ -13,39 +13,37 @@ type Props = {
   thread: GetThreadType,
 };
 
-class ThreadListItem extends React.Component<Props> {
-  render() {
-    const {
-      thread: {
-        author: {
-          user: { name, username },
-        },
-        content: { title },
-        messageCount,
+const ThreadListItem = (props: Props) => {
+  const {
+    thread: {
+      author: {
+        user: { name, username },
       },
-    } = this.props;
+      content: { title },
+      messageCount,
+    },
+  } = props;
 
-    return (
-      <StyledThreadListItem>
-        <Link
-          to={{
-            pathname: getThreadLink(this.props.thread),
-            state: { modal: true },
-          }}
-        >
-          <ThreadListItemTitle>{title}</ThreadListItemTitle>
-        </Link>
-        {messageCount > 0 && (
-          <ThreadListItemSubtitle>
-            {messageCount > 1 ? `${messageCount} messages` : '1 message'}
-          </ThreadListItemSubtitle>
-        )}
+  return (
+    <StyledThreadListItem>
+      <Link
+        to={{
+          pathname: getThreadLink(props.thread),
+          state: { modal: true },
+        }}
+      >
+        <ThreadListItemTitle>{title}</ThreadListItemTitle>
+      </Link>
+      {messageCount > 0 && (
         <ThreadListItemSubtitle>
-          By <Link to={`/users/${username}`}>{name}</Link>
+          {messageCount > 1 ? `${messageCount} messages` : '1 message'}
         </ThreadListItemSubtitle>
-      </StyledThreadListItem>
-    );
-  }
-}
+      )}
+      <ThreadListItemSubtitle>
+        By <Link to={`/users/${username}`}>{name}</Link>
+      </ThreadListItemSubtitle>
+    </StyledThreadListItem>
+  );
+};
 
 export default ThreadListItem;

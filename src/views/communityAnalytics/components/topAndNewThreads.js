@@ -16,78 +16,76 @@ type Props = {
   },
 };
 
-class TopAndNewThreads extends React.Component<Props> {
-  render() {
+const TopAndNewThreads = (props: Props) => {
+  const {
+    data: { community },
+    isLoading,
+  } = props;
+
+  if (community) {
     const {
-      data: { community },
-      isLoading,
-    } = this.props;
+      topAndNewThreads: { topThreads, newThreads },
+    } = community;
+    // resort on the client because while the server *did* technically return the top threads, they get unsorted during the 'getThreads' model query
+    const sortedTopThreads = topThreads.slice().sort((a, b) => {
+      const bc = b && parseInt(b.messageCount, 10);
+      const ac = a && parseInt(a.messageCount, 10);
+      return bc && ac && bc <= ac ? -1 : 1;
+    });
 
-    if (community) {
-      const {
-        topAndNewThreads: { topThreads, newThreads },
-      } = community;
-      // resort on the client because while the server *did* technically return the top threads, they get unsorted during the 'getThreads' model query
-      const sortedTopThreads = topThreads.slice().sort((a, b) => {
-        const bc = b && parseInt(b.messageCount, 10);
-        const ac = a && parseInt(a.messageCount, 10);
-        return bc && ac && bc <= ac ? -1 : 1;
-      });
-
-      return (
-        <span>
-          <SectionCard>
-            <SectionTitle>Top conversations this week</SectionTitle>
-
-            {sortedTopThreads.length > 0 ? (
-              sortedTopThreads.map(thread => {
-                if (!thread) return null;
-                return <ThreadListItem key={thread.id} thread={thread} />;
-              })
-            ) : (
-              <ViewError
-                small
-                emoji={'😴'}
-                heading={'It’s been a bit quiet this week.'}
-                subheading={
-                  'Top conversations will show up here when people start chatting.'
-                }
-              />
-            )}
-          </SectionCard>
-          <SectionCard>
-            <SectionTitle>Unanswered conversations this week</SectionTitle>
-            {newThreads.length > 0 ? (
-              newThreads.map(thread => {
-                if (!thread) return null;
-                return <ThreadListItem key={thread.id} thread={thread} />;
-              })
-            ) : (
-              <ViewError
-                small
-                emoji={'✌️'}
-                heading={'All caught up!'}
-                subheading={
-                  'It looks like everyone is getting responses in their conversations - nice work!'
-                }
-              />
-            )}
-          </SectionCard>
-        </span>
-      );
-    }
-
-    if (isLoading) {
-      return (
+    return (
+      <span>
         <SectionCard>
-          <Loading />
-        </SectionCard>
-      );
-    }
+          <SectionTitle>Top conversations this week</SectionTitle>
 
-    return null;
+          {sortedTopThreads.length > 0 ? (
+            sortedTopThreads.map(thread => {
+              if (!thread) return null;
+              return <ThreadListItem key={thread.id} thread={thread} />;
+            })
+          ) : (
+            <ViewError
+              small
+              emoji={'😴'}
+              heading={'It’s been a bit quiet this week.'}
+              subheading={
+                'Top conversations will show up here when people start chatting.'
+              }
+            />
+          )}
+        </SectionCard>
+        <SectionCard>
+          <SectionTitle>Unanswered conversations this week</SectionTitle>
+          {newThreads.length > 0 ? (
+            newThreads.map(thread => {
+              if (!thread) return null;
+              return <ThreadListItem key={thread.id} thread={thread} />;
+            })
+          ) : (
+            <ViewError
+              small
+              emoji={'✌️'}
+              heading={'All caught up!'}
+              subheading={
+                'It looks like everyone is getting responses in their conversations - nice work!'
+              }
+            />
+          )}
+        </SectionCard>
+      </span>
+    );
   }
-}
+
+  if (isLoading) {
+    return (
+      <SectionCard>
+        <Loading />
+      </SectionCard>
+    );
+  }
+
+  return null;
+};
 
 export default compose(
   getCommunityTopAndNewThreads,
