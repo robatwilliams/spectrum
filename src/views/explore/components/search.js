@@ -30,95 +30,77 @@ import {
   SearchIcon,
 } from '../style';
 
-type State = {
-  searchString: string,
-  searchResults: Array<any>,
-  searchIsLoading: boolean,
-  focusedSearchResult: ?string,
-  isFocused: boolean,
-};
-
 type Props = {
   client: Object,
   history: Object,
   dispatch: Dispatch<Object>,
 };
 
-class Search extends React.Component<Props, State> {
-  input: React$Node;
+const Search = (props: Props) => {
+  const { client, history, dispatch } = props;
+  const [searchString, setSearchString] = React.useState('');
+  const [searchResults, setSearchResults] = React.useState([]);
+  const [searchIsLoading, setSearchIsLoading] = React.useState(false);
+  const [focusedSearchResult, setFocusedSearchResult] = React.useState('');
+  const [isFocused, setIsFocused] = React.useState(true);
+  const inputRef = React.useRef(null);
 
-  constructor() {
-    super();
+  const search = React.useRef(
+    debounce(
+      (searchString: string) => {
+        if (!searchString || searchString.length === 0) return;
 
-    this.state = {
-      searchString: '',
-      searchResults: [],
-      searchIsLoading: false,
-      focusedSearchResult: '',
-      isFocused: true,
-    };
+        // start the input loading spinner
+        setSearchIsLoading(true);
 
-    // only kick off search query if 500ms have passed without a consecutive invocation
-    this.search = debounce(this.search, 500, false);
-  }
+        // trigger the query
+        client
+          .query({
+            query: searchCommunitiesQuery,
+            variables: { queryString: searchString, type: 'COMMUNITIES' },
+          })
+          .then(
+            ({
+              data: { search },
+            }: {
+              data: { search: SearchCommunitiesType },
+            }) => {
+              if (
+                !search ||
+                !search.searchResultsConnection ||
+                search.searchResultsConnection.edges.length === 0
+              ) {
+                setSearchResults([]);
+                setSearchIsLoading(false);
+                setFocusedSearchResult('');
+                return;
+              }
 
-  search = (searchString: string) => {
-    const { client } = this.props;
-    if (!searchString || searchString.length === 0) return;
+              const results = search.searchResultsConnection.edges;
 
-    // start the input loading spinner
-    this.setState({
-      searchIsLoading: true,
-    });
+              const sorted = results
+                .slice()
+                .map(c => c && c.node)
+                .sort((a, b) => {
+                  if (!b) return 0;
+                  if (!a) return 0;
+                  return b.metaData.members - a.metaData.members;
+                });
 
-    // trigger the query
-    client
-      .query({
-        query: searchCommunitiesQuery,
-        variables: { queryString: searchString, type: 'COMMUNITIES' },
-      })
-      .then(
-        ({ data: { search } }: { data: { search: SearchCommunitiesType } }) => {
-          if (
-            !search ||
-            !search.searchResultsConnection ||
-            search.searchResultsConnection.edges.length === 0
-          ) {
-            return this.setState({
-              searchResults: [],
-              searchIsLoading: false,
-              focusedSearchResult: '',
-            });
-          }
+              setSearchResults(sorted);
+              setSearchIsLoading(false);
+              setFocusedSearchResult(sorted && sorted[0] ? sorted[0].id : null);
+            }
+          )
+          .catch(err => dispatch(addToastWithTimeout('error', err.message)));
+      },
+      500,
+      false
+    )
+  );
 
-          const searchResults = search.searchResultsConnection.edges;
-
-          const sorted = searchResults
-            .slice()
-            .map(c => c && c.node)
-            .sort((a, b) => {
-              if (!b) return 0;
-              if (!a) return 0;
-              return b.metaData.members - a.metaData.members;
-            });
-
-          return this.setState({
-            searchResults: sorted,
-            searchIsLoading: false,
-            focusedSearchResult: sorted && sorted[0] ? sorted[0].id : null,
-          });
-        }
-      )
-      .catch(err =>
-        this.props.dispatch(addToastWithTimeout('error', err.message))
-      );
-  };
-
-  handleKeyPress = (e: any) => {
-    // destructure the whole state object
-    const { searchResults, focusedSearchResult } = this.state;
-
-    const input = this.input;
+  const handleKeyPress = (e: any) => {
+    const input = inputRef.current;
     const searchResultIds =
       searchResults && searchResults.map(community => community.id);
     const indexOfFocusedSearchResult = searchResultIds.indexOf(
@@ -127,9 +109,7 @@ class Search extends React.Component<Props, State> {
 
     // if person presses escape
     if (e.keyCode === ESC) {
-      this.setState({
-        isFocused: false,
-      });
+      setIsFocused(false);
 
       // $FlowFixMe
       input && input.focus();
@@ -143,7 +123,8 @@ class Search extends React.Component<Props, State> {
       )
         return;
       const slug = searchResults[indexOfFocusedSearchResult].slug;
-      return this.props.history.push(`/${slug}`);
+      history.push(`/${slug}`);
+      return;
     }
 
     if (e.keyCode === ARROW_DOWN) {
@@ -153,9 +134,8 @@ class Search extends React.Component<Props, State> {
       const resultToFocus = searchResults[indexOfFocusedSearchResult + 1];
       if (!resultToFocus) return;
 
-      return this.setState({
-        focusedSearchResult: resultToFocus.id,
-      });
+      setFocusedSearchResult(resultToFocus.id);
+      return;
     }
 
     if (e.keyCode === ARROW_UP) {
@@ -165,157 +145,134 @@ class Search extends React.Component<Props, State> {
       const resultToFocus = searchResults[indexOfFocusedSearchResult - 1];
       if (!resultToFocus) return;
 
-      return this.setState({
-        focusedSearchResult: resultToFocus.id,
-      });
+      setFocusedSearchResult(resultToFocus.id);
+      return;
     }
   };
 
-  handleChange = (e: any) => {
+  const handleChange = (e: any) => {
     const string = e.target.value.toLowerCase().trim();
 
     if (e.target.value.length === 0) {
-      this.setState({
-        searchIsLoading: false,
-        searchString: '',
-      });
+      setSearchIsLoading(false);
+      setSearchString('');
       return;
     }
 
     // set the searchstring to state
-    this.setState({
-      searchString: e.target.value,
-      searchIsLoading: true,
-    });
+    setSearchString(e.target.value);
+    setSearchIsLoading(true);
 
     // trigger a new search based on the search input
     // $FlowIssue
-    this.search(string);
+    search.current(string);
   };
 
-  componentDidMount() {
-    document.addEventListener('keydown', this.handleKeyPress, false);
-  }
+  React.useEffect(() => {
+    document.addEventListener('keydown', handleKeyPress, false);
 
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.handleKeyPress, false);
-  }
+    return () => {
+      document.removeEventListener('keydown', handleKeyPress, false);
+    };
+  });
 
-  onFocus = (e: any) => {
+  const onFocus = (e: any) => {
     const val = e.target.value;
     if (!val || val.length === 0) return;
 
     const string = val.toLowerCase().trim();
 
     // $FlowIssue
-    this.search(string);
+    search.current(string);
 
-    return this.setState({
-      isFocused: true,
-    });
+    setIsFocused(true);
   };
 
-  hideSearchResults = () => {
-    return this.setState({
-      isFocused: false,
-    });
+  const hideSearchResults = () => {
+    setIsFocused(false);
   };
 
-  render() {
-    const {
-      searchString,
-      searchIsLoading,
-      searchResults,
-      focusedSearchResult,
-      isFocused,
-    } = this.state;
+  return (
+    <SearchWrapper>
+      {searchIsLoading && (
+        <SearchSpinnerContainer>
+          <Spinner size={16} color={'brand.default'} />
+        </SearchSpinnerContainer>
+      )}
+      <SearchInputWrapper>
+        <SearchIcon glyph="search" onClick={onFocus} />
+        <SearchInput
+          data-cy="explore-community-search-input"
+          ref={inputRef}
+          type="text"
+          value={searchString}
+          placeholder="Search for communities or topics..."
+          onChange={handleChange}
+          onFocus={onFocus}
+        />
+      </SearchInputWrapper>
 
-    return (
-      <SearchWrapper>
-        {searchIsLoading && (
-          <SearchSpinnerContainer>
-            <Spinner size={16} color={'brand.default'} />
-          </SearchSpinnerContainer>
-        )}
-        <SearchInputWrapper>
-          <SearchIcon glyph="search" onClick={this.onFocus} />
-          <SearchInput
-            data-cy="explore-community-search-input"
-            ref={c => {
-              this.input = c;
-            }}
-            type="text"
-            value={searchString}
-            placeholder="Search for communities or topics..."
-            onChange={this.handleChange}
-            onFocus={this.onFocus}
-          />
-        </SearchInputWrapper>
+      {// user has typed in a search string
+      isFocused && searchString && (
+        <OutsideClickHandler onOutsideClick={hideSearchResults}>
+          <SearchResultsDropdown>
+            {searchResults.length > 0 &&
+              !searchIsLoading &&
+              searchResults.map(community => {
+                return (
+                  <SearchResult
+                    focused={focusedSearchResult === community.id}
+                    key={community.id}
+                  >
+                    <SearchLink to={`/${community.slug}`}>
+                      <SearchResultImage
+                        community={community}
+                        showHoverProfile={false}
+                      />
+                      <SearchResultTextContainer>
+                        <SearchResultMetaWrapper>
+                          <SearchResultName>{community.name}</SearchResultName>
+                          {community.metaData && (
+                            <SearchResultMetadata>
+                              {community.metaData.members.toLocaleString()}{' '}
+                              members
+                            </SearchResultMetadata>
+                          )}
+                        </SearchResultMetaWrapper>
+                      </SearchResultTextContainer>
+                    </SearchLink>
+                  </SearchResult>
+                );
+              })}
 
-        {// user has typed in a search string
-        isFocused && searchString && (
-          <OutsideClickHandler onOutsideClick={this.hideSearchResults}>
-            <SearchResultsDropdown>
-              {searchResults.length > 0 &&
-                !searchIsLoading &&
-                searchResults.map(community => {
-                  return (
-                    <SearchResult
-                      focused={focusedSearchResult === community.id}
-                      key={community.id}
-                    >
-                      <SearchLink to={`/${community.slug}`}>
-                        <SearchResultImage
-                          community={community}
-                          showHoverProfile={false}
-                        />
-                        <SearchResultTextContainer>
-                          <SearchResultMetaWrapper>
-                            <SearchResultName>
-                              {community.name}
-                            </SearchResultName>
-                            {community.metaData && (
-                              <SearchResultMetadata>
-                                {community.metaData.members.toLocaleString()}{' '}
-                                members
-                              </SearchResultMetadata>
-                            )}
-                          </SearchResultMetaWrapper>
-                        </SearchResultTextContainer>
-                      </SearchLink>
-                    </SearchResult>
-                  );
-                })}
+            {searchResults.length === 0 && !searchIsLoading && isFocused && (
+              <SearchResult>
+                <SearchResultTextContainer>
+                  <SearchResultNull>
+                    <p>No communities found matching “{searchString}”</p>
+                    <Link to={'/new/community'}>
+                      <Button>Create a Community</Button>
+                    </Link>
+                  </SearchResultNull>
+                </SearchResultTextContainer>
+              </SearchResult>
+            )}
 
-              {searchResults.length === 0 && !searchIsLoading && isFocused && (
-                <SearchResult>
-                  <SearchResultTextContainer>
-                    <SearchResultNull>
-                      <p>No communities found matching “{searchString}”</p>
-                      <Link to={'/new/community'}>
-                        <Button>Create a Community</Button>
-                      </Link>
-                    </SearchResultNull>
-                  </SearchResultTextContainer>
-                </SearchResult>
-              )}
-
-              {searchIsLoading && isFocused && (
-                <SearchResult>
-                  <SearchResultTextContainer>
-                    <SearchResultNull>
-                      <p>Searching for “{searchString}”</p>
-                    </SearchResultNull>
-                  </SearchResultTextContainer>
-                </SearchResult>
-              )}
-            </SearchResultsDropdown>
-          </OutsideClickHandler>
-        )}
-      </SearchWrapper>
-    );
-  }
-}
+            {searchIsLoading && isFocused && (
+              <SearchResult>
+                <SearchResultTextContainer>
+                  <SearchResultNull>
+                    <p>Searching for “{searchString}”</p>
+                  </SearchResultNull>
+                </SearchResultTextContainer>
+              </SearchResult>
+            )}
+          </SearchResultsDropdown>
+        </OutsideClickHandler>
+      )}
+    </SearchWrapper>
+  );
+};
 
 export default compose(
   connect(),
