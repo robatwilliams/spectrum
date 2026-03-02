@@ -15,41 +15,37 @@ type Props = {
   user: GetCurrentUserSettingsType,
 };
 
-class Overview extends React.Component<Props> {
-  render() {
-    const { user } = this.props;
+const Overview = ({ user }: Props) => {
+  return (
+    <SectionsContainer>
+      <Column>
+        <ErrorBoundary fallbackComponent={SettingsFallback}>
+          <UserEditForm user={user} />
+        </ErrorBoundary>
 
-    return (
-      <SectionsContainer>
-        <Column>
-          <ErrorBoundary fallbackComponent={SettingsFallback}>
-            <UserEditForm user={user} />
-          </ErrorBoundary>
+        <ErrorBoundary fallbackComponent={SettingsFallback}>
+          <DeleteAccountForm id={user.id} />
+        </ErrorBoundary>
 
-          <ErrorBoundary fallbackComponent={SettingsFallback}>
-            <DeleteAccountForm id={user.id} />
-          </ErrorBoundary>
+        <ErrorBoundary fallbackComponent={SettingsFallback}>
+          <DownloadDataForm user={user} />
+        </ErrorBoundary>
+      </Column>
+      <Column>
+        <ErrorBoundary fallbackComponent={SettingsFallback}>
+          <EmailSettings user={user} />
+        </ErrorBoundary>
 
-          <ErrorBoundary fallbackComponent={SettingsFallback}>
-            <DownloadDataForm user={user} />
-          </ErrorBoundary>
-        </Column>
-        <Column>
-          <ErrorBoundary fallbackComponent={SettingsFallback}>
-            <EmailSettings user={user} />
-          </ErrorBoundary>
+        <ErrorBoundary fallbackComponent={SettingsFallback}>
+          {!isDesktopApp() &&
+            'serviceWorker' in navigator &&
+            'PushManager' in window && <NotificationSettings largeOnly />}
+        </ErrorBoundary>
 
-          <ErrorBoundary fallbackComponent={SettingsFallback}>
-            {!isDesktopApp() &&
-              'serviceWorker' in navigator &&
-              'PushManager' in window && <NotificationSettings largeOnly />}
-          </ErrorBoundary>
-
-          <Logout />
-        </Column>
-      </SectionsContainer>
-    );
-  }
-}
+        <Logout />
+      </Column>
+    </SectionsContainer>
+  );
+};
 
 export default Overview;

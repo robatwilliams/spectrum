@@ -26,68 +26,67 @@ type Props = {
   ...$Exact<ContextRouter>,
 };
 
-class UserSettings extends React.Component<Props> {
-  componentDidMount() {
-    const { dispatch } = this.props;
-    return dispatch(
+const UserSettings = (props: Props) => {
+  const { dispatch } = props;
+
+  React.useEffect(() => {
+    dispatch(
       setTitlebarProps({
         title: 'Settings',
       })
     );
+  }, [dispatch]);
+
+  const {
+    data: { user },
+    match,
+    isLoading,
+    currentUser,
+  } = props;
+
+  if (isLoading) {
+    return <LoadingView />;
   }
 
-  render() {
-    const {
-      data: { user },
-      match,
-      isLoading,
-      currentUser,
-    } = this.props;
-
-    if (isLoading) {
-      return <LoadingView />;
-    }
-
-    // the user is logged in but somehow a user wasnt fetched from the server prompt a refresh to reauth the user
-    if ((currentUser && !user) || (currentUser && user && !user.id)) {
-      return <ErrorView />;
-    }
-
-    // user is viewing their own settings, validated on the server
-    if (user && user.id && currentUser.id === user.id) {
-      const subheading = {
-        to: `/users/${user.username}`,
-        label: `Return to profile`,
-      };
-
-      const avatar = {
-        profilePhoto: user.profilePhoto,
-        user,
-      };
-
-      return (
-        <React.Fragment>
-          <Head title={'My settings'} />
-          <ViewGrid>
-            <View data-cy="user-settings">
-              <Header
-                avatar={avatar}
-                subheading={subheading}
-                heading={'My Settings'}
-              />
-
-              <Route path={`${match.url}`}>
-                {() => <Overview user={user} />}
-              </Route>
-            </View>
-          </ViewGrid>
-        </React.Fragment>
-      );
-    }
-
+  // the user is logged in but somehow a user wasnt fetched from the server prompt a refresh to reauth the user
+  if ((currentUser && !user) || (currentUser && user && !user.id)) {
     return <ErrorView />;
   }
-}
+
+  // user is viewing their own settings, validated on the server
+  if (user && user.id && currentUser.id === user.id) {
+    const subheading = {
+      to: `/users/${user.username}`,
+      label: `Return to profile`,
+    };
+
+    const avatar = {
+      profilePhoto: user.profilePhoto,
+      user,
+    };
+
+    return (
+      <React.Fragment>
+        <Head title={'My settings'} />
+        <ViewGrid>
+          <View data-cy="user-settings">
+            <Header
+              avatar={avatar}
+              subheading={subheading}
+              heading={'My Settings'}
+            />
+
+            <Route path={`${match.url}`}>
+              {() => <Overview user={user} />}
+            </Route>
+          </View>
+        </ViewGrid>
+      </React.Fragment>
+    );
+  }
+
+  return <ErrorView />;
+};
 
 export default compose(
   getCurrentUserSettings,

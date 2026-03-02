@@ -18,47 +18,51 @@ type Props = {
   dispatch: Dispatch<Object>,
 };
 
-class BrandedLoginToggle extends React.Component<Props> {
-  init = () => {
-    return this.props.settings.isEnabled ? this.disable() : this.enable();
+const BrandedLoginToggle = (props: Props) => {
+  const {
+    id,
+    settings,
+    enableBrandedLogin,
+    disableBrandedLogin,
+    dispatch,
+  } = props;
+
+  const init = () => {
+    return settings.isEnabled ? disable() : enable();
   };
 
-  disable = () => {
-    return this.props
-      .disableBrandedLogin({ id: this.props.id })
+  const disable = () => {
+    return disableBrandedLogin({ id })
       .then(() => {
-        return this.props.dispatch(
+        return dispatch(
           addToastWithTimeout('neutral', 'Branded login disabled')
         );
       })
       .catch(err => {
-        return this.props.dispatch(addToastWithTimeout('error', err.message));
+        return dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  enable = () => {
-    return this.props
-      .enableBrandedLogin({ id: this.props.id })
+  const enable = () => {
+    return enableBrandedLogin({ id })
       .then(() => {
-        return this.props.dispatch(
+        return dispatch(
           addToastWithTimeout('success', 'Branded login enabled')
         );
       })
       .catch(err => {
-        return this.props.dispatch(addToastWithTimeout('error', err.message));
+        return dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  render() {
-    const { isEnabled } = this.props.settings;
+  const { isEnabled } = settings;
 
-    return (
-      <Checkbox checked={isEnabled} onChange={this.init}>
-        Enable custom branded login
-      </Checkbox>
-    );
-  }
-}
+  return (
+    <Checkbox checked={isEnabled} onChange={init}>
+      Enable custom branded login
+    </Checkbox>
+  );
+};
 
 export default compose(
   connect(),

@@ -13,23 +13,21 @@ type Props = {
   },
 };
 
-class PendingUsersNotificationPure extends React.Component<Props> {
-  render() {
-    const { channel } = this.props.data;
+const PendingUsersNotificationPure = ({ data }: Props) => {
+  const { channel } = data;
 
-    if (!channel || !channel.pendingUsers || channel.pendingUsers.length === 0)
-      return null;
+  if (!channel || !channel.pendingUsers || channel.pendingUsers.length === 0)
+    return null;
 
-    return (
-      <PendingUserNotificationContainer>
-        <Link to={`/${channel.community.slug}/${channel.slug}/settings`}>
-          <PendingUserCount>{channel.pendingUsers.length}</PendingUserCount>
-          Pending members
-        </Link>
-      </PendingUserNotificationContainer>
-    );
-  }
-}
+  return (
+    <PendingUserNotificationContainer>
+      <Link to={`/${channel.community.slug}/${channel.slug}/settings`}>
+        <PendingUserCount>{channel.pendingUsers.length}</PendingUserCount>
+        Pending members
+      </Link>
+    </PendingUserNotificationContainer>
+  );
+};
 
 export const PendingUsersNotification = compose(
   getPendingUsersQuery,

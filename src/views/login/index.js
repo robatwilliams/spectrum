@@ -25,80 +25,79 @@ type Props = {
   githubOnly?: boolean,
 };
 
-class Login extends React.Component<Props> {
-  componentDidMount() {
-    const { dispatch } = this.props;
+const Login = (props: Props) => {
+  const { dispatch } = props;
+
+  React.useEffect(() => {
     dispatch(setTitlebarProps({ title: 'Login' }));
-  }
+  }, [dispatch]);
 
-  render() {
-    const { redirectPath, signinType = 'signin', githubOnly } = this.props;
+  const { redirectPath, signinType = 'signin', githubOnly } = props;
 
-    return (
-      <FullscreenView closePath={CLIENT_URL}>
-        <FullscreenContent
-          data-cy="login-page"
-          style={{ justifyContent: 'center' }}
-        >
-          <LargeTitle>{githubOnly ? 'Sign up' : 'Log in'}</LargeTitle>
-          {githubOnly && (
-            <LargeSubtitle>
-              New accounts on Spectrum can only be created by signing up with
-              GitHub.
-            </LargeSubtitle>
-          )}
+  return (
+    <FullscreenView closePath={CLIENT_URL}>
+      <FullscreenContent
+        data-cy="login-page"
+        style={{ justifyContent: 'center' }}
+      >
+        <LargeTitle>{githubOnly ? 'Sign up' : 'Log in'}</LargeTitle>
+        {githubOnly && (
+          <LargeSubtitle>
+            New accounts on Spectrum can only be created by signing up with
+            GitHub.
+          </LargeSubtitle>
+        )}
 
-          <LoginButtonSet
-            githubOnly={githubOnly}
-            redirectPath={redirectPath}
-            signinType={signinType}
-          />
+        <LoginButtonSet
+          githubOnly={githubOnly}
+          redirectPath={redirectPath}
+          signinType={signinType}
+        />
 
-          {githubOnly && (
-            <OutlineButton
-              css={{ width: '100%' }}
-              to={`/login?r=${redirectPath || `${CLIENT_URL}/home`}`}
-            >
-              Existing user? Click here to log in
-            </OutlineButton>
-          )}
+        {githubOnly && (
+          <OutlineButton
+            css={{ width: '100%' }}
+            to={`/login?r=${redirectPath || `${CLIENT_URL}/home`}`}
+          >
+            Existing user? Click here to log in
+          </OutlineButton>
+        )}
 
-          <CodeOfConduct>
-            By using Spectrum, you agree to our{' '}
-            <a
-              href="https://github.com/withspectrum/code-of-conduct"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Code of Conduct
-            </a>
-            ,{' '}
-            <a
-              target="_blank"
-              rel="noopener noreferrer"
-              href={
-                'https://help.github.com/en/github/site-policy/github-privacy-statement'
-              }
-            >
-              Privacy Statement
-            </a>
-            {', and '}
-            <a
-              target="_blank"
-              rel="noopener noreferrer"
-              href={
-                'https://help.github.com/en/github/site-policy/github-terms-of-service'
-              }
-            >
-              Terms of Service
-            </a>
-            .
-          </CodeOfConduct>
-        </FullscreenContent>
-      </FullscreenView>
-    );
-  }
-}
+        <CodeOfConduct>
+          By using Spectrum, you agree to our{' '}
+          <a
+            href="https://github.com/withspectrum/code-of-conduct"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Code of Conduct
+          </a>
+          ,{' '}
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            href={
+              'https://help.github.com/en/github/site-policy/github-privacy-statement'
+            }
+          >
+            Privacy Statement
+          </a>
+          {', and '}
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            href={
+              'https://help.github.com/en/github/site-policy/github-terms-of-service'
+            }
+          >
+            Terms of Service
+          </a>
+          .
+        </CodeOfConduct>
+      </FullscreenContent>
+    </FullscreenView>
+  );
+};
 
 export default compose(
   withRouter,

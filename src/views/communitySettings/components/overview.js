@@ -14,41 +14,37 @@ type Props = {
   community: Object,
 };
 
-class Overview extends React.Component<Props> {
-  render() {
-    const { community, communitySlug } = this.props;
+const Overview = ({ community, communitySlug }: Props) => {
+  return (
+    <SectionsContainer>
+      <Column>
+        <ErrorBoundary fallbackComponent={SettingsFallback}>
+          <EditForm community={community} />
+        </ErrorBoundary>
 
-    return (
-      <SectionsContainer>
-        <Column>
-          <ErrorBoundary fallbackComponent={SettingsFallback}>
-            <EditForm community={community} />
-          </ErrorBoundary>
+        <ErrorBoundary fallbackComponent={SettingsFallback}>
+          <RedirectSettings community={community} />
+        </ErrorBoundary>
+      </Column>
+      <Column>
+        <ErrorBoundary fallbackComponent={SettingsFallback}>
+          <SlackSettings id={community.id} />
+        </ErrorBoundary>
 
-          <ErrorBoundary fallbackComponent={SettingsFallback}>
-            <RedirectSettings community={community} />
-          </ErrorBoundary>
-        </Column>
-        <Column>
-          <ErrorBoundary fallbackComponent={SettingsFallback}>
-            <SlackSettings id={community.id} />
-          </ErrorBoundary>
+        <ErrorBoundary fallbackComponent={SettingsFallback}>
+          <BrandedLogin id={community.id} />
+        </ErrorBoundary>
 
-          <ErrorBoundary fallbackComponent={SettingsFallback}>
-            <BrandedLogin id={community.id} />
-          </ErrorBoundary>
+        <ErrorBoundary fallbackComponent={SettingsFallback}>
+          <Watercooler id={community.id} />
+        </ErrorBoundary>
 
-          <ErrorBoundary fallbackComponent={SettingsFallback}>
-            <Watercooler id={community.id} />
-          </ErrorBoundary>
-
-          <ErrorBoundary fallbackComponent={SettingsFallback}>
-            <ChannelList id={community.id} communitySlug={communitySlug} />
-          </ErrorBoundary>
-        </Column>
-      </SectionsContainer>
-    );
-  }
-}
+        <ErrorBoundary fallbackComponent={SettingsFallback}>
+          <ChannelList id={community.id} communitySlug={communitySlug} />
+        </ErrorBoundary>
+      </Column>
+    </SectionsContainer>
+  );
+};
 
 export default Overview;

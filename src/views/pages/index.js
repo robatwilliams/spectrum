@@ -14,55 +14,53 @@ type Props = {
   match: Object,
 };
 
-class Pages extends React.Component<Props> {
-  renderPage = () => {
-    switch (this.props.match.path) {
+const Pages = (props: Props) => {
+  const renderPage = () => {
+    switch (props.match.path) {
       case '/support': {
-        return <Support {...this.props} />;
+        return <Support {...props} />;
       }
       case '/features': {
-        return <Features {...this.props} />;
+        return <Features {...props} />;
       }
       case '/terms':
       case '/terms.html': {
-        return <Terms {...this.props} />;
+        return <Terms {...props} />;
       }
       case '/privacy':
       case '/privacy.html': {
-        return <Privacy {...this.props} />;
+        return <Privacy {...props} />;
       }
       case '/faq': {
-        return <Faq {...this.props} />;
+        return <Faq {...props} />;
       }
       case '/apps': {
-        return <Apps {...this.props} />;
+        return <Apps {...props} />;
       }
       case '/':
       case '/about':
       default: {
-        return <Home {...this.props} />;
+        return <Home {...props} />;
       }
     }
   };
 
-  render() {
-    const {
-      match: { path },
-    } = this.props;
-    const dark = path === '/' || path === '/about';
+  const {
+    match: { path },
+  } = props;
+  const dark = path === '/' || path === '/about';
 
-    return (
-      <StyledViewGrid>
-        <div style={{ position: 'relative' }}>
-          <Nav
-            dark={dark ? 'true' : undefined}
-            location={this.props.match.path.substr(1)}
-          />
-          {this.renderPage()}
-        </div>
-      </StyledViewGrid>
-    );
-  }
-}
+  return (
+    <StyledViewGrid>
+      <div style={{ position: 'relative' }}>
+        <Nav
+          dark={dark ? 'true' : undefined}
+          location={props.match.path.substr(1)}
+        />
+        {renderPage()}
+      </div>
+    </StyledViewGrid>
+  );
+};
 
 export default Pages;

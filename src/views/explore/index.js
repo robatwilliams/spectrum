@@ -17,42 +17,41 @@ type Props = {
   dispatch: Function,
 };
 
-class Explore extends React.Component<Props> {
-  componentDidMount() {
-    const { dispatch } = this.props;
+const Explore = (props: Props) => {
+  const { dispatch } = props;
+
+  React.useEffect(() => {
     dispatch(setTitlebarProps({ title: 'Explore' }));
-  }
+  }, [dispatch]);
 
-  render() {
-    const { title, description } = generateMetaInfo({
-      type: 'explore',
-    });
+  const { title, description } = generateMetaInfo({
+    type: 'explore',
+  });
 
-    // previous features include: Vectors, Frontend Cafe, Abstract, Work in Progress, Mental Health
-    // const featureSlug = 'crypto';
-    // const featureNotes = `Crypto is a place to discuss crypto-currencies and tokens. As blockchain technology becomes more and more mainstream, communities like Crypto allow more people to get involved, learn, and share what they know. We're all for that, so if you're an existing investor, a newcomer to crypto-currencies, or just interested in learning about blockchain, check out Crypto!`;
+  // previous features include: Vectors, Frontend Cafe, Abstract, Work in Progress, Mental Health
+  // const featureSlug = 'crypto';
+  // const featureNotes = `Crypto is a place to discuss crypto-currencies and tokens. As blockchain technology becomes more and more mainstream, communities like Crypto allow more people to get involved, learn, and share what they know. We're all for that, so if you're an existing investor, a newcomer to crypto-currencies, or just interested in learning about blockchain, check out Crypto!`;
 
-    return (
-      <React.Fragment>
-        <Head title={title} description={description} />
-        <ViewGrid data-cy="explore-page">
-          <ErrorBoundary>
-            <CommunitySearchWrapper
-              currentUser={this.props.currentUser}
-              redirectPath={window.location}
-            >
-              <Search />
-            </CommunitySearchWrapper>
-          </ErrorBoundary>
+  return (
+    <React.Fragment>
+      <Head title={title} description={description} />
+      <ViewGrid data-cy="explore-page">
+        <ErrorBoundary>
+          <CommunitySearchWrapper
+            currentUser={this.props.currentUser}
+            redirectPath={window.location}
+          >
+            <Search />
+          </CommunitySearchWrapper>
+        </ErrorBoundary>
 
-          <ErrorBoundary>
-            <Charts />
-          </ErrorBoundary>
-        </ViewGrid>
-      </React.Fragment>
-    );
-  }
-}
+        <ErrorBoundary>
+          <Charts />
+        </ErrorBoundary>
+      </ViewGrid>
+    </React.Fragment>
+  );
+};
 
 export default compose(
   withCurrentUser,
