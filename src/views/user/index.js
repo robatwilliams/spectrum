@@ -71,42 +71,21 @@ type Props = {
   location: Location,
 };
 
-type State = {
-  hasNoThreads: boolean,
-  hasThreads: boolean,
-};
+const UserView = (props: Props) => {
+  const {
+    dispatch,
+    data,
+    isLoading,
+    queryVarIsChanging,
+    match,
+    location,
+    history,
+    currentUser,
+  } = props;
+  const [hasThreads, setHasThreads] = React.useState(true);
+  const prevDataRef = React.useRef(data);
 
-class UserView extends React.Component<Props, State> {
-  state = {
-    hasNoThreads: false,
-    hasThreads: true,
-  };
-
-  componentDidMount() {
-    const { dispatch } = this.props;
-
-    if (this.props.data && this.props.data.user) {
-      this.setDefaultTab();
-
-      return dispatch(
-        setTitlebarProps({
-          title: this.props.data.user.name,
-          titleIcon: (
-            <UserAvatar
-              isClickable={false}
-              showOnlineStatus={false}
-              user={this.props.data.user}
-              size={24}
-            />
-          ),
-          rightAction: <MobileUserAction user={this.props.data.user} />,
-        })
-      );
-    }
-  }
-
-  setDefaultTab = () => {
-    const { location, history } = this.props;
+  const setDefaultTab = () => {
     const { search } = location;
     const { tab } = querystring.parse(search);
     if (!tab)
@@ -116,263 +95,270 @@ class UserView extends React.Component<Props, State> {
       });
   };
 
-  componentDidUpdate(prevProps: Props) {
-    const { dispatch } = this.props;
+  React.useEffect(() => {
+    if (data && data.user) {
+      setDefaultTab();
 
-    if (!prevProps.data || !this.props.data) return;
-
-    if (!prevProps.data.user && this.props.data.user) {
-      this.setDefaultTab();
-
-      return dispatch(
+      dispatch(
         setTitlebarProps({
-          title: this.props.data.user.name,
+          title: data.user.name,
           titleIcon: (
             <UserAvatar
               isClickable={false}
               showOnlineStatus={false}
-              user={this.props.data.user}
+              user={data.user}
               size={24}
             />
           ),
-          rightAction: <MobileUserAction user={this.props.data.user} />,
+          rightAction: <MobileUserAction user={data.user} />,
+        })
+      );
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const prevData = prevDataRef.current;
+
+    if (!prevData || !data) {
+      prevDataRef.current = data;
+      return;
+    }
+
+    if (!prevData.user && data.user) {
+      setDefaultTab();
+
+      dispatch(
+        setTitlebarProps({
+          title: data.user.name,
+          titleIcon: (
+            <UserAvatar
+              isClickable={false}
+              showOnlineStatus={false}
+              user={data.user}
+              size={24}
+            />
+          ),
+          rightAction: <MobileUserAction user={data.user} />,
         })
       );
     }
     // track when a new profile is viewed without the component having been remounted
-    if (
-      prevProps.data.user &&
-      this.props.data.user &&
-      prevProps.data.user.id !== this.props.data.user.id
-    ) {
-      this.setDefaultTab();
-      return dispatch(
+    else if (prevData.user && data.user && prevData.user.id !== data.user.id) {
+      setDefaultTab();
+      dispatch(
         setTitlebarProps({
-          title: this.props.data.user.name,
+          title: data.user.name,
           titleIcon: (
             <UserAvatar
               isClickable={false}
               showOnlineStatus={false}
-              user={this.props.data.user}
+              user={data.user}
               size={24}
             />
           ),
-          rightAction: <MobileUserAction user={this.props.data.user} />,
+          rightAction: <MobileUserAction user={data.user} />,
         })
       );
     }
-  }
 
-  hasNoThreads = () => this.setState({ hasThreads: false });
-  hasThreads = () => this.setState({ hasThreads: true });
+    prevDataRef.current = data;
+  });
 
-  handleSegmentClick = (tab: string) => {
-    const { history, location } = this.props;
+  const hasNoThreadsCallback = () => setHasThreads(false);
+  const hasThreadsCallback = () => setHasThreads(true);
+
+  const handleSegmentClick = (tab: string) => {
     return history.replace({
       ...location,
       search: querystring.stringify({ tab }),
     });
   };
 
-  render() {
-    const {
-      data: { user },
-      isLoading,
-      queryVarIsChanging,
-      match: {
-        params: { username },
+  const { user } = data;
+  const { username } = match.params;
+  const { search } = location;
+  const { tab } = querystring.parse(search);
+  const selectedView = tab;
+
+  if (queryVarIsChanging) {
+    return <LoadingView />;
+  }
+
+  if (user && user.id) {
+    const isCurrentUser = currentUser && user.id === currentUser.id;
+    const { title, description } = generateMetaInfo({
+      type: 'user',
+      data: {
+        name: user.name,
+        username: user.username,
+        description: user.description,
       },
-      location,
-      currentUser,
-    } = this.props;
-    const { hasThreads } = this.state;
+    });
 
-    const { search } = location;
-    const { tab } = querystring.parse(search);
-    const selectedView = tab;
+    const Feed =
+      selectedView === 'posts'
+        ? ThreadFeedWithData
+        : ThreadParticipantFeedWithData;
 
-    if (queryVarIsChanging) {
-      return <LoadingView />;
-    }
+    return (
+      <React.Fragment>
+        <Head
+          title={title}
+          description={description}
+          image={user.profilePhoto}
+          type="profile"
+        >
+          <meta property="profile:last_name" content={user.name} />
+          <meta property="profile:username" content={user.username} />
+        </Head>
 
-    if (user && user.id) {
-      const isCurrentUser = currentUser && user.id === currentUser.id;
-      const { title, description } = generateMetaInfo({
-        type: 'user',
-        data: {
-          name: user.name,
-          username: user.username,
-          description: user.description,
-        },
-      });
+        <ViewGrid data-cy="user-view">
+          <SecondaryPrimaryColumnGrid>
+            <SecondaryColumn>
+              <SidebarSection>
+                <UserProfileCard user={user} />
+              </SidebarSection>
 
-      const Feed =
-        selectedView === 'posts'
-          ? ThreadFeedWithData
-          : ThreadParticipantFeedWithData;
+              <SidebarSection>
+                <SidebarSectionHeader>
+                  <SidebarSectionHeading>Communities</SidebarSectionHeading>
+                </SidebarSectionHeader>
 
-      return (
-        <React.Fragment>
-          <Head
-            title={title}
-            description={description}
-            image={user.profilePhoto}
-            type="profile"
-          >
-            <meta property="profile:last_name" content={user.name} />
-            <meta property="profile:username" content={user.username} />
-          </Head>
+                <CommunityList
+                  currentUser={currentUser}
+                  user={user}
+                  id={user.id}
+                />
+              </SidebarSection>
+            </SecondaryColumn>
+            <PrimaryColumn>
+              <FeedsContainer>
+                <SegmentedControl>
+                  <Segment
+                    onClick={() => handleSegmentClick('posts')}
+                    isActive={selectedView === 'posts'}
+                    data-cy="user-posts-tab"
+                  >
+                    Posts
+                  </Segment>
 
-          <ViewGrid data-cy="user-view">
-            <SecondaryPrimaryColumnGrid>
-              <SecondaryColumn>
-                <SidebarSection>
-                  <UserProfileCard user={user} />
-                </SidebarSection>
+                  <Segment
+                    onClick={() => handleSegmentClick('activity')}
+                    isActive={selectedView === 'activity'}
+                    data-cy="user-activity-tab"
+                  >
+                    Activity
+                  </Segment>
 
-                <SidebarSection>
-                  <SidebarSectionHeader>
-                    <SidebarSectionHeading>Communities</SidebarSectionHeading>
-                  </SidebarSectionHeader>
+                  <Segment
+                    onClick={() => handleSegmentClick('info')}
+                    hideOnDesktop
+                    isActive={selectedView === 'info'}
+                    data-cy="user-info-tab"
+                  >
+                    Info
+                  </Segment>
 
-                  <CommunityList
-                    currentUser={currentUser}
-                    user={user}
-                    id={user.id}
-                  />
-                </SidebarSection>
-              </SecondaryColumn>
-              <PrimaryColumn>
-                <FeedsContainer>
-                  <SegmentedControl>
-                    <Segment
-                      onClick={() => this.handleSegmentClick('posts')}
-                      isActive={selectedView === 'posts'}
-                      data-cy="user-posts-tab"
-                    >
-                      Posts
-                    </Segment>
+                  <Segment
+                    onClick={() => handleSegmentClick('search')}
+                    isActive={selectedView === 'search'}
+                    data-cy="user-search-tab"
+                  >
+                    Search
+                  </Segment>
+                </SegmentedControl>
 
-                    <Segment
-                      onClick={() => this.handleSegmentClick('activity')}
-                      isActive={selectedView === 'activity'}
-                      data-cy="user-activity-tab"
-                    >
-                      Activity
-                    </Segment>
-
-                    <Segment
-                      onClick={() => this.handleSegmentClick('info')}
-                      hideOnDesktop
-                      isActive={selectedView === 'info'}
-                      data-cy="user-info-tab"
-                    >
-                      Info
-                    </Segment>
-
-                    <Segment
-                      onClick={() => this.handleSegmentClick('search')}
-                      isActive={selectedView === 'search'}
-                      data-cy="user-search-tab"
-                    >
-                      Search
-                    </Segment>
-                  </SegmentedControl>
-
-                  {hasThreads &&
-                    (selectedView === 'posts' ||
-                      selectedView === 'activity') && (
-                      <Feed
-                        userId={user.id}
-                        username={username}
-                        viewContext={
-                          selectedView === 'activity'
-                            ? 'userProfileReplies'
-                            : 'userProfile'
-                        }
-                        hasNoThreads={this.hasNoThreads}
-                        hasThreads={this.hasThreads}
-                        kind={
-                          selectedView === 'posts' ? 'creator' : 'participant'
-                        }
-                        id={user.id}
-                      />
-                    )}
-
-                  {selectedView === 'search' && <Search user={user} />}
-
-                  {selectedView === 'info' && (
-                    <InfoContainer>
-                      <SidebarSection>
-                        <UserProfileCard user={user} />
-                      </SidebarSection>
-
-                      <SidebarSection>
-                        <SidebarSectionHeader>
-                          <SidebarSectionHeading>
-                            Communities
-                          </SidebarSectionHeading>
-                        </SidebarSectionHeader>
-
-                        <CommunityList
-                          currentUser={currentUser}
-                          user={user}
-                          id={user.id}
-                        />
-                      </SidebarSection>
-                    </InfoContainer>
+                {hasThreads &&
+                  (selectedView === 'posts' || selectedView === 'activity') && (
+                    <Feed
+                      userId={user.id}
+                      username={username}
+                      viewContext={
+                        selectedView === 'activity'
+                          ? 'userProfileReplies'
+                          : 'userProfile'
+                      }
+                      hasNoThreads={hasNoThreadsCallback}
+                      hasThreads={hasThreadsCallback}
+                      kind={
+                        selectedView === 'posts' ? 'creator' : 'participant'
+                      }
+                      id={user.id}
+                    />
                   )}
 
-                  {!hasThreads &&
-                    (selectedView === 'posts' ||
-                      selectedView === 'activity') && (
-                      <NullColumn>
-                        <span>
-                          <NullColumnHeading>No posts yet</NullColumnHeading>
-                          <NullColumnSubheading>
-                            Posts will show up here as they are published and
-                            when conversations are joined.
-                          </NullColumnSubheading>
-                          {isCurrentUser && (
-                            <PrimaryOutlineButton
-                              to={{
-                                pathname: '/new/thread',
-                                state: { modal: true },
-                              }}
-                            >
-                              <Icon glyph={'post'} size={24} />
-                              New post
-                            </PrimaryOutlineButton>
-                          )}
-                        </span>
-                      </NullColumn>
-                    )}
-                </FeedsContainer>
-              </PrimaryColumn>
-            </SecondaryPrimaryColumnGrid>
-          </ViewGrid>
-        </React.Fragment>
-      );
-    }
+                {selectedView === 'search' && <Search user={user} />}
 
-    if (isLoading) {
-      return <LoadingView />;
-    }
+                {selectedView === 'info' && (
+                  <InfoContainer>
+                    <SidebarSection>
+                      <UserProfileCard user={user} />
+                    </SidebarSection>
 
-    if (!user) {
-      return (
-        <ErrorView
-          heading={'We couldn’t find a user with this username'}
-          subheading={
-            'You may be trying to view a profile that is deleted, or Spectrum is just having a hiccup. If you think something has gone wrong, please contact us.'
-          }
-        />
-      );
-    }
+                    <SidebarSection>
+                      <SidebarSectionHeader>
+                        <SidebarSectionHeading>
+                          Communities
+                        </SidebarSectionHeading>
+                      </SidebarSectionHeader>
 
-    return <ErrorView />;
+                      <CommunityList
+                        currentUser={currentUser}
+                        user={user}
+                        id={user.id}
+                      />
+                    </SidebarSection>
+                  </InfoContainer>
+                )}
+
+                {!hasThreads &&
+                  (selectedView === 'posts' || selectedView === 'activity') && (
+                    <NullColumn>
+                      <span>
+                        <NullColumnHeading>No posts yet</NullColumnHeading>
+                        <NullColumnSubheading>
+                          Posts will show up here as they are published and when
+                          conversations are joined.
+                        </NullColumnSubheading>
+                        {isCurrentUser && (
+                          <PrimaryOutlineButton
+                            to={{
+                              pathname: '/new/thread',
+                              state: { modal: true },
+                            }}
+                          >
+                            <Icon glyph={'post'} size={24} />
+                            New post
+                          </PrimaryOutlineButton>
+                        )}
+                      </span>
+                    </NullColumn>
+                  )}
+              </FeedsContainer>
+            </PrimaryColumn>
+          </SecondaryPrimaryColumnGrid>
+        </ViewGrid>
+      </React.Fragment>
+    );
   }
-}
+
+  if (isLoading) {
+    return <LoadingView />;
+  }
+
+  if (!user) {
+    return (
+      <ErrorView
+        heading={'We couldn’t find a user with this username'}
+        subheading={
+          'You may be trying to view a profile that is deleted, or Spectrum is just having a hiccup. If you think something has gone wrong, please contact us.'
+        }
+      />
+    );
+  }
+
+  return <ErrorView />;
+};
 
 export default compose(
   getUserByMatch,

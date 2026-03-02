@@ -52,10 +52,13 @@ type Props = {
   location: Location,
 };
 
-class ChannelView extends React.Component<Props> {
-  constructor(props) {
-    super(props);
-    const { location, history } = props;
+const ChannelView = (props: Props) => {
+  const { data, currentUser, isLoading, location, history, dispatch } = props;
+  const { channel } = data;
+  const prevDataRef = React.useRef(data);
+
+  // Set default tab on mount
+  React.useEffect(() => {
     const { search } = location;
     const { tab } = querystring.parse(search);
     if (!tab)
@@ -63,69 +66,39 @@ class ChannelView extends React.Component<Props> {
         ...location,
         search: querystring.stringify({ tab: 'posts' }),
       });
-  }
+  }, []);
 
-  componentDidMount() {
-    if (this.props.data && this.props.data.channel) {
-      const { channel } = this.props.data;
-
-      this.props.dispatch(
-        setTitlebarProps({
-          title: `# ${channel.name}`,
-          titleIcon: (
-            <CommunityAvatar
-              isClickable={false}
-              community={channel.community}
-              size={24}
-            />
-          ),
-          rightAction: <MobileChannelAction channel={channel} />,
-        })
-      );
-    }
-  }
-
-  componentDidUpdate(prevProps) {
-    const { dispatch } = this.props;
-    if (!prevProps.data.channel && this.props.data.channel) {
-      const { channel } = this.props.data;
+  // Set titlebar on mount and when channel loads
+  React.useEffect(() => {
+    if (data && data.channel) {
       dispatch(
         setTitlebarProps({
-          title: `# ${channel.name}`,
+          title: `# ${data.channel.name}`,
           titleIcon: (
             <CommunityAvatar
               isClickable={false}
-              community={channel.community}
+              community={data.channel.community}
               size={24}
             />
           ),
-          rightAction: <MobileChannelAction channel={channel} />,
+          rightAction: <MobileChannelAction channel={data.channel} />,
         })
       );
     }
+  }, [data.channel]);
+
+  // Track channel changes and scroll to top
+  React.useEffect(() => {
+    const prevData = prevDataRef.current;
 
     if (
-      this.props.data.channel &&
-      prevProps.data.channel &&
-      this.props.data.channel.id !== prevProps.data.channel.id
+      data.channel &&
+      prevData.channel &&
+      data.channel.id !== prevData.channel.id
     ) {
       const elem = document.getElementById('main');
       if (elem) elem.scrollTop = 0;
-      const { channel } = this.props.data;
-      dispatch(
-        setTitlebarProps({
-          title: `# ${channel.name}`,
-          titleIcon: (
-            <CommunityAvatar
-              isClickable={false}
-              community={channel.community}
-              size={24}
-            />
-          ),
-          rightAction: <MobileChannelAction channel={channel} />,
-        })
-      );
-      const { location, history } = this.props;
+
       const { search } = location;
       const { tab } = querystring.parse(search);
       if (!tab)
@@ -134,153 +107,144 @@ class ChannelView extends React.Component<Props> {
           search: querystring.stringify({ tab: 'posts' }),
         });
     }
-  }
 
-  handleSegmentClick = (tab: string) => {
-    const { history, location } = this.props;
+    prevDataRef.current = data;
+  });
+
+  const handleSegmentClick = (tab: string) => {
     return history.replace({
       ...location,
       search: querystring.stringify({ tab }),
     });
   };
 
-  render() {
-    const {
-      data: { channel },
-      currentUser,
-      isLoading,
-      location,
-    } = this.props;
-    const isLoggedIn = currentUser;
-    const { search } = location;
-    const { tab } = querystring.parse(search);
-    const selectedView = tab;
-    if (channel && channel.id) {
-      // at this point the view is no longer loading, has not encountered an error, and has returned a channel record
-      const { isOwner } = channel.channelPermissions;
-      const { community } = channel;
-      const isGlobalOwner =
-        isOwner || channel.community.communityPermissions.isOwner;
+  const isLoggedIn = currentUser;
+  const { search } = location;
+  const { tab } = querystring.parse(search);
+  const selectedView = tab;
 
-      // at this point the user has full permission to view the channel
-      const { title, description } = generateMetaInfo({
-        type: 'channel',
-        data: {
-          name: channel.name,
-          communityName: community.name,
-          description: channel.description,
-        },
-      });
+  if (channel && channel.id) {
+    // at this point the view is no longer loading, has not encountered an error, and has returned a channel record
+    const { isOwner } = channel.channelPermissions;
+    const { community } = channel;
+    const isGlobalOwner =
+      isOwner || channel.community.communityPermissions.isOwner;
 
-      if (community.redirect && community.website) {
-        return <FullScreenRedirectView community={community} />;
-      }
+    // at this point the user has full permission to view the channel
+    const { title, description } = generateMetaInfo({
+      type: 'channel',
+      data: {
+        name: channel.name,
+        communityName: community.name,
+        description: channel.description,
+      },
+    });
 
-      return (
-        <React.Fragment>
-          <Head
-            title={title}
-            description={description}
-            image={community.profilePhoto}
-          >
-            {community.redirect && community.noindex && (
-              <meta name="robots" content="noindex, nofollow" />
-            )}
-          </Head>
+    if (community.redirect && community.website) {
+      return <FullScreenRedirectView community={community} />;
+    }
 
-          <ViewGrid>
-            <SecondaryPrimaryColumnGrid data-cy="channel-view">
-              <SecondaryColumn>
-                <CommunitySidebar community={channel.community} />
+    return (
+      <React.Fragment>
+        <Head
+          title={title}
+          description={description}
+          image={community.profilePhoto}
+        >
+          {community.redirect && community.noindex && (
+            <meta name="robots" content="noindex, nofollow" />
+          )}
+        </Head>
 
-                {/* user is signed in and has permissions to view pending users */}
-                {isLoggedIn && (isOwner || isGlobalOwner) && (
+        <ViewGrid>
+          <SecondaryPrimaryColumnGrid data-cy="channel-view">
+            <SecondaryColumn>
+              <CommunitySidebar community={channel.community} />
+
+              {/* user is signed in and has permissions to view pending users */}
+              {isLoggedIn && (isOwner || isGlobalOwner) && (
+                <ErrorBoundary>
+                  <PendingUsersNotification channel={channel} id={channel.id} />
+                </ErrorBoundary>
+              )}
+            </SecondaryColumn>
+
+            <PrimaryColumn>
+              <FeedsContainer>
+                <SegmentedControl>
+                  <Segment
+                    onClick={() => handleSegmentClick('posts')}
+                    isActive={selectedView === 'posts'}
+                    data-cy="channel-posts-tab"
+                    hideOnDesktop
+                  >
+                    Posts
+                  </Segment>
+
+                  <Segment
+                    onClick={() => handleSegmentClick('members')}
+                    isActive={selectedView === 'members'}
+                    hideOnDesktop
+                    data-cy="channel-members-tab"
+                  >
+                    Members
+                  </Segment>
+
+                  <Segment
+                    onClick={() => handleSegmentClick('info')}
+                    isActive={selectedView === 'info'}
+                    data-cy="channel-info-tab"
+                    hideOnDesktop
+                  >
+                    Info
+                  </Segment>
+                </SegmentedControl>
+
+                {selectedView === 'posts' && <PostFeed channel={channel} />}
+
+                {selectedView === 'search' && (
                   <ErrorBoundary>
-                    <PendingUsersNotification
-                      channel={channel}
-                      id={channel.id}
-                    />
+                    <Search channel={channel} />
                   </ErrorBoundary>
                 )}
-              </SecondaryColumn>
 
-              <PrimaryColumn>
-                <FeedsContainer>
-                  <SegmentedControl>
-                    <Segment
-                      onClick={() => this.handleSegmentClick('posts')}
-                      isActive={selectedView === 'posts'}
-                      data-cy="channel-posts-tab"
-                      hideOnDesktop
-                    >
-                      Posts
-                    </Segment>
+                {selectedView === 'members' && (
+                  <ErrorBoundary>
+                    <MembersList id={channel.id} />
+                  </ErrorBoundary>
+                )}
 
-                    <Segment
-                      onClick={() => this.handleSegmentClick('members')}
-                      isActive={selectedView === 'members'}
-                      hideOnDesktop
-                      data-cy="channel-members-tab"
-                    >
-                      Members
-                    </Segment>
+                {selectedView === 'info' && (
+                  <InfoContainer>
+                    <SidebarSection>
+                      <ChannelProfileCard channel={channel} />
+                    </SidebarSection>
 
-                    <Segment
-                      onClick={() => this.handleSegmentClick('info')}
-                      isActive={selectedView === 'info'}
-                      data-cy="channel-info-tab"
-                      hideOnDesktop
-                    >
-                      Info
-                    </Segment>
-                  </SegmentedControl>
-
-                  {selectedView === 'posts' && <PostFeed channel={channel} />}
-
-                  {selectedView === 'search' && (
-                    <ErrorBoundary>
-                      <Search channel={channel} />
-                    </ErrorBoundary>
-                  )}
-
-                  {selectedView === 'members' && (
-                    <ErrorBoundary>
-                      <MembersList id={channel.id} />
-                    </ErrorBoundary>
-                  )}
-
-                  {selectedView === 'info' && (
-                    <InfoContainer>
-                      <SidebarSection>
-                        <ChannelProfileCard channel={channel} />
-                      </SidebarSection>
-
-                      {/* user is signed in and has permissions to view pending users */}
-                      {isLoggedIn && (isOwner || isGlobalOwner) && (
-                        <ErrorBoundary>
-                          <PendingUsersNotification
-                            channel={channel}
-                            id={channel.id}
-                          />
-                        </ErrorBoundary>
-                      )}
-                    </InfoContainer>
-                  )}
-                </FeedsContainer>
-              </PrimaryColumn>
-            </SecondaryPrimaryColumnGrid>
-          </ViewGrid>
-        </React.Fragment>
-      );
-    }
-
-    if (isLoading) {
-      return <LoadingView />;
-    }
-
-    return <ErrorView data-cy="channel-view-error" />;
+                    {/* user is signed in and has permissions to view pending users */}
+                    {isLoggedIn && (isOwner || isGlobalOwner) && (
+                      <ErrorBoundary>
+                        <PendingUsersNotification
+                          channel={channel}
+                          id={channel.id}
+                        />
+                      </ErrorBoundary>
+                    )}
+                  </InfoContainer>
+                )}
+              </FeedsContainer>
+            </PrimaryColumn>
+          </SecondaryPrimaryColumnGrid>
+        </ViewGrid>
+      </React.Fragment>
+    );
   }
-}
+
+  if (isLoading) {
+    return <LoadingView />;
+  }
+
+  return <ErrorView data-cy="channel-view-error" />;
+};
 
 export default compose(
   withCurrentUser,
