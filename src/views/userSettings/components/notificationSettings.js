@@ -11,11 +11,6 @@ import { SectionCard, SectionTitle } from 'src/components/settingsViews/style';
 import { EmailListItem } from '../style';
 import type { Dispatch } from 'redux';
 
-type State = {
-  webPushBlocked: boolean,
-  subscription: ?any,
-};
-
 type Props = {
   subscribeToWebPush: Function,
   dispatch: Dispatch<Object>,
@@ -23,38 +18,36 @@ type Props = {
   largeOnly?: boolean,
 };
 
-class NotificationSettings extends React.Component<Props, State> {
-  state = {
-    webPushBlocked: false,
-    subscription: null,
-  };
+const NotificationSettings = (props: Props) => {
+  const [webPushBlocked, setWebPushBlocked] = React.useState(false);
+  const [subscription, setSubscription] = React.useState(null);
+  const {
+    subscribeToWebPush: subscribeToWebPushProp,
+    dispatch,
+    smallOnly,
+    largeOnly,
+  } = props;
 
-  componentDidMount() {
+  React.useEffect(() => {
     WebPushManager.getPermissionState().then(result => {
       if (result === 'denied') {
-        this.setState({
-          webPushBlocked: true,
-        });
+        setWebPushBlocked(true);
       }
     });
     WebPushManager.getSubscription().then(subscription => {
-      this.setState({
-        subscription: subscription || false,
-      });
+      setSubscription(subscription || false);
     });
-  }
+  }, []);
 
-  subscribeToWebPush = () => {
+  const subscribeToWebPushHandler = () => {
     WebPushManager.subscribe()
       .then(subscription => {
-        this.setState({
-          subscription,
-          webPushBlocked: false,
-        });
-        return this.props.subscribeToWebPush(subscription);
+        setSubscription(subscription);
+        setWebPushBlocked(false);
+        return subscribeToWebPushProp(subscription);
       })
       .catch(err => {
-        return this.props.dispatch(
+        return dispatch(
           addToastWithTimeout(
             'error',
             "Oops, we couldn't enable browser notifications for you. Please try again!"
@@ -63,15 +56,13 @@ class NotificationSettings extends React.Component<Props, State> {
       });
   };
 
-  unsubscribeFromWebPush = () => {
+  const unsubscribeFromWebPush = () => {
     WebPushManager.unsubscribe()
       .then(result => {
         if (result) {
-          this.setState({
-            subscription: false,
-          });
+          setSubscription(false);
         } else {
-          return this.props.dispatch(
+          return dispatch(
             addToastWithTimeout(
               'error',
               "Oops, we couldn't disable browser notifications for you. Please try again!"
@@ -80,7 +71,7 @@ class NotificationSettings extends React.Component<Props, State> {
         }
       })
       .catch(() => {
-        return this.props.dispatch(
+        return dispatch(
           addToastWithTimeout(
             'error',
             "Oops, we couldn't disable browser notifications for you. Please try again!"
@@ -89,51 +80,45 @@ class NotificationSettings extends React.Component<Props, State> {
       });
   };
 
-  render() {
-    const { webPushBlocked, subscription } = this.state;
-    const onChange = !subscription
-      ? this.subscribeToWebPush
-      : this.unsubscribeFromWebPush;
+  const onChange = !subscription
+    ? subscribeToWebPushHandler
+    : unsubscribeFromWebPush;
 
-    return (
-      <SectionCard
-        smallOnly={this.props.smallOnly}
-        largeOnly={this.props.largeOnly}
-      >
-        <SectionTitle>Notification Preferences</SectionTitle>
-        <ListContainer>
-          <EmailListItem>
-            {subscription !== null && (
-              <Checkbox
-                checked={!!subscription}
-                disabled={webPushBlocked}
-                onChange={onChange}
+  return (
+    <SectionCard smallOnly={smallOnly} largeOnly={largeOnly}>
+      <SectionTitle>Notification Preferences</SectionTitle>
+      <ListContainer>
+        <EmailListItem>
+          {subscription !== null && (
+            <Checkbox
+              checked={!!subscription}
+              disabled={webPushBlocked}
+              onChange={onChange}
+            >
+              Enable browser push notifications
+            </Checkbox>
+          )}
+          {webPushBlocked && (
+            <Notice>
+              <strong>
+                You have blocked browser push notifications on this device!
+              </strong>{' '}
+              Unblock them by following{' '}
+              <a
+                target="_blank"
+                rel="noopener noreferrer"
+                href="https://support.sendpulse.com/456261-How-to-Unblock-Web-Push-Notifications"
               >
-                Enable browser push notifications
-              </Checkbox>
-            )}
-            {webPushBlocked && (
-              <Notice>
-                <strong>
-                  You have blocked browser push notifications on this device!
-                </strong>{' '}
-                Unblock them by following{' '}
-                <a
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  href="https://support.sendpulse.com/456261-How-to-Unblock-Web-Push-Notifications"
-                >
-                  these steps
-                </a>
-                .
-              </Notice>
-            )}
-          </EmailListItem>
-        </ListContainer>
-      </SectionCard>
-    );
-  }
-}
+                these steps
+              </a>
+              .
+            </Notice>
+          )}
+        </EmailListItem>
+      </ListContainer>
+    </SectionCard>
+  );
+};
 
 export default compose(
   subscribeToWebPush,
