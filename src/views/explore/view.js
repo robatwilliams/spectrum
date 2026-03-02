@@ -36,70 +36,58 @@ type State = {
   selectedView: string,
 };
 
-class CollectionSwitcher extends React.Component<{}, State> {
-  state = {
-    selectedView: 'top-communities-by-members',
+const CollectionSwitcher = () => {
+  const [selectedView, setSelectedView] = React.useState(
+    'top-communities-by-members'
+  );
+  const parentRef = React.useRef(null);
+  const ref = React.useRef(null);
+
+  React.useEffect(() => {
+    parentRef.current = document.getElementById('main');
+  }, []);
+
+  const handleSegmentClick = selectedView => {
+    setSelectedView(selectedView);
   };
 
-  parentRef = null;
-  ref = null;
+  React.useEffect(() => {
+    if (!parentRef.current || !ref.current) return;
+    parentRef.current.scrollTop = ref.current.offsetTop;
+  }, [selectedView]);
 
-  componentDidMount() {
-    this.parentRef = document.getElementById('main');
-  }
+  return (
+    <Collections ref={ref}>
+      <SegmentedControl>
+        {collections.map((collection, i) => (
+          <Segment
+            key={i}
+            onClick={() => handleSegmentClick(collection.curatedContentType)}
+            isActive={collection.curatedContentType === selectedView}
+          >
+            {collection.title}
+          </Segment>
+        ))}
+      </SegmentedControl>
 
-  handleSegmentClick(selectedView) {
-    if (this.state.selectedView === selectedView) return;
-
-    return this.setState({ selectedView });
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    const currState = this.state;
-    if (prevState.selectedView !== currState.selectedView) {
-      if (!this.parentRef || !this.ref) return;
-      return (this.parentRef.scrollTop = this.ref.offsetTop);
-    }
-  }
-
-  render() {
-    return (
-      <Collections ref={el => (this.ref = el)}>
-        <SegmentedControl>
-          {collections.map((collection, i) => (
-            <Segment
-              key={i}
-              onClick={() =>
-                this.handleSegmentClick(collection.curatedContentType)
-              }
-              isActive={
-                collection.curatedContentType === this.state.selectedView
-              }
-            >
-              {collection.title}
-            </Segment>
-          ))}
-        </SegmentedControl>
-
-        <CollectionWrapper>
-          {collections.map((collection, index) => {
-            const communitySlugs = collection.communities;
-            return (
-              <div key={index}>
-                {collection.curatedContentType === this.state.selectedView && (
-                  <Category
-                    slugs={communitySlugs}
-                    curatedContentType={collection.curatedContentType}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </CollectionWrapper>
-      </Collections>
-    );
-  }
-}
+      <CollectionWrapper>
+        {collections.map((collection, index) => {
+          const communitySlugs = collection.communities;
+          return (
+            <div key={index}>
+              {collection.curatedContentType === selectedView && (
+                <Category
+                  slugs={communitySlugs}
+                  curatedContentType={collection.curatedContentType}
+                />
+              )}
+            </div>
+          );
+        })}
+      </CollectionWrapper>
+    </Collections>
+  );
+};
 
 type CategoryListProps = {
   title: string,

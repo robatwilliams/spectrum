@@ -27,55 +27,53 @@ type State = {
   timeframe: 'weekly' | 'monthly',
 };
 
-class CommunityAnalytics extends React.Component<Props, State> {
-  render() {
-    const { community } = this.props;
+const CommunityAnalytics = (props: Props) => {
+  const { community } = props;
 
-    if (community && community.id) {
-      return (
-        <SectionsContainer>
-          <Column>
-            <ErrorBoundary fallbackComponent={SettingsFallback}>
-              <MemberGrowth id={community.id} />
-            </ErrorBoundary>
-
-            <ErrorBoundary fallbackComponent={SettingsFallback}>
-              <TopMembers id={community.id} />
-            </ErrorBoundary>
-          </Column>
-          <Column>
-            <ErrorBoundary fallbackComponent={SettingsFallback}>
-              <ConversationGrowth id={community.id} />
-            </ErrorBoundary>
-
-            <ErrorBoundary fallbackComponent={SettingsFallback}>
-              <TopAndNewThreads id={community.id} />
-            </ErrorBoundary>
-          </Column>
-        </SectionsContainer>
-      );
-    }
-
+  if (community && community.id) {
     return (
-      <ViewError
-        heading={'You don’t have permission to manage this community.'}
-        subheading={
-          'If you want to create your own community, you can get started below.'
-        }
-      >
-        <div style={{ display: 'flex' }}>
-          <Link to={'/'}>
-            <OutlineButton large>Take me back</OutlineButton>
-          </Link>
+      <SectionsContainer>
+        <Column>
+          <ErrorBoundary fallbackComponent={SettingsFallback}>
+            <MemberGrowth id={community.id} />
+          </ErrorBoundary>
 
-          <Link to={'/new/community'}>
-            <Button large>Create a community</Button>
-          </Link>
-        </div>
-      </ViewError>
+          <ErrorBoundary fallbackComponent={SettingsFallback}>
+            <TopMembers id={community.id} />
+          </ErrorBoundary>
+        </Column>
+        <Column>
+          <ErrorBoundary fallbackComponent={SettingsFallback}>
+            <ConversationGrowth id={community.id} />
+          </ErrorBoundary>
+
+          <ErrorBoundary fallbackComponent={SettingsFallback}>
+            <TopAndNewThreads id={community.id} />
+          </ErrorBoundary>
+        </Column>
+      </SectionsContainer>
     );
   }
-}
+
+  return (
+    <ViewError
+      heading={'You don’t have permission to manage this community.'}
+      subheading={
+        'If you want to create your own community, you can get started below.'
+      }
+    >
+      <div style={{ display: 'flex' }}>
+        <Link to={'/'}>
+          <OutlineButton large>Take me back</OutlineButton>
+        </Link>
+
+        <Link to={'/new/community'}>
+          <Button large>Create a community</Button>
+        </Link>
+      </div>
+    </ViewError>
+  );
+};
 
 export default compose(
   withCurrentUser,
