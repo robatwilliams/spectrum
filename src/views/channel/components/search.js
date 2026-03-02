@@ -13,75 +13,56 @@ type Props = {
   channel: GetChannelType,
 };
 
-type State = {
-  searchString: string,
-  sendStringToServer: string,
-};
+const Search = (props: Props) => {
+  const { channel } = props;
+  const [searchString, setSearchString] = React.useState('');
+  const [sendStringToServer, setSendStringToServer] = React.useState('');
 
-class Search extends React.Component<Props, State> {
-  constructor() {
-    super();
+  const searchRef = React.useRef(
+    throttle((str: string) => {
+      // don't start searching until at least 3 characters are typed
+      if (str.length < 3) return;
 
-    this.state = {
-      searchString: '',
-      sendStringToServer: '',
-    };
+      // start the input loading spinner
+      setSendStringToServer(str);
+    }, 500)
+  );
 
-    this.search = throttle(this.search, 500);
-  }
-
-  search = searchString => {
-    // don't start searching until at least 3 characters are typed
-    if (searchString.length < 3) return;
-
-    // start the input loading spinner
-    this.setState({
-      sendStringToServer: searchString,
-    });
-  };
-
-  handleChange = (e: any) => {
-    const searchString = e.target.value.toLowerCase().trim();
+  const handleChange = (e: any) => {
+    const str = e.target.value.toLowerCase().trim();
 
     // set the searchstring to state
-    this.setState({
-      searchString,
-    });
+    setSearchString(str);
 
     // trigger a new search based on the search input
     // $FlowIssue
-    this.search(searchString);
+    searchRef.current(str);
   };
 
-  render() {
-    const { channel } = this.props;
-    const { searchString, sendStringToServer } = this.state;
-
-    return (
-      <div>
-        <SearchContainer>
-          <SearchInput
-            defaultValue={searchString}
-            autoFocus={true}
-            type="text"
-            placeholder={`Search all threads in ${channel.name}...`}
-            onChange={this.handleChange}
-            data-cy="channel-search-input"
-          />
-        </SearchContainer>
-        {searchString && sendStringToServer && (
-          <SearchThreadFeed
-            search
-            viewContext="channelProfile"
-            channelId={channel.id}
-            queryString={sendStringToServer}
-            filter={{ channelId: channel.id }}
-            channel={channel}
-          />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      <SearchContainer>
+        <SearchInput
+          defaultValue={searchString}
+          autoFocus={true}
+          type="text"
+          placeholder={`Search all threads in ${channel.name}...`}
+          onChange={handleChange}
+          data-cy="channel-search-input"
+        />
+      </SearchContainer>
+      {searchString && sendStringToServer && (
+        <SearchThreadFeed
+          search
+          viewContext="channelProfile"
+          channelId={channel.id}
+          queryString={sendStringToServer}
+          filter={{ channelId: channel.id }}
+          channel={channel}
+        />
+      )}
+    </div>
+  );
+};
 
 export default compose()(Search);
