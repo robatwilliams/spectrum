@@ -32,72 +32,66 @@ type Props = {
   dispatch: Dispatch<Object>,
 };
 
-type State = {
-  isLoading: boolean,
+const LoginTokenSettings = (props: Props) => {
+  const {
+    data: { channel },
+    isLoading,
+    dispatch,
+  } = props;
+
+  if (channel) {
+    const { joinSettings } = channel;
+
+    return (
+      <SectionCard data-cy="login-with-token-settings">
+        <SectionTitle>Join channel via link</SectionTitle>
+        <SectionSubtitle>
+          Allow people to join this private channel by visiting a unique link.
+          Anyone with this link will be able to join this channel.
+        </SectionSubtitle>
+
+        <LoginTokenToggle settings={joinSettings} id={channel.id} />
+
+        {joinSettings.tokenJoinEnabled && (
+          <Clipboard
+            style={{ background: 'none' }}
+            data-clipboard-text={`${CLIENT_URL}/${channel.community.slug}/${
+              channel.slug
+            }/join/${joinSettings.token}`}
+            onSuccess={() =>
+              dispatch(addToastWithTimeout('success', 'Copied to clipboard'))
+            }
+          >
+            <TokenInputWrapper>
+              <Input
+                value={`${CLIENT_URL}/${channel.community.slug}/${
+                  channel.slug
+                }/join/${joinSettings.token}`}
+                onChange={() => {}}
+                dataCy={'join-link-input'}
+              />
+            </TokenInputWrapper>
+          </Clipboard>
+        )}
+
+        {joinSettings.tokenJoinEnabled && <ResetJoinToken id={channel.id} />}
+      </SectionCard>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <SectionCard>
+        <Loading />
+      </SectionCard>
+    );
+  }
+
+  return null;
 };
 
-class LoginTokenSettings extends React.Component<Props, State> {
-  state = {
-    isLoading: false,
-  };
-
-  render() {
-    const { data: { channel }, isLoading } = this.props;
-
-    if (channel) {
-      const { joinSettings } = channel;
-
-      return (
-        <SectionCard data-cy="login-with-token-settings">
-          <SectionTitle>Join channel via link</SectionTitle>
-          <SectionSubtitle>
-            Allow people to join this private channel by visiting a unique link.
-            Anyone with this link will be able to join this channel.
-          </SectionSubtitle>
-
-          <LoginTokenToggle settings={joinSettings} id={channel.id} />
-
-          {joinSettings.tokenJoinEnabled && (
-            <Clipboard
-              style={{ background: 'none' }}
-              data-clipboard-text={`${CLIENT_URL}/${channel.community.slug}/${
-                channel.slug
-              }/join/${joinSettings.token}`}
-              onSuccess={() =>
-                this.props.dispatch(
-                  addToastWithTimeout('success', 'Copied to clipboard')
-                )
-              }
-            >
-              <TokenInputWrapper>
-                <Input
-                  value={`${CLIENT_URL}/${channel.community.slug}/${
-                    channel.slug
-                  }/join/${joinSettings.token}`}
-                  onChange={() => {}}
-                  dataCy={'join-link-input'}
-                />
-              </TokenInputWrapper>
-            </Clipboard>
-          )}
-
-          {joinSettings.tokenJoinEnabled && <ResetJoinToken id={channel.id} />}
-        </SectionCard>
-      );
-    }
-
-    if (isLoading) {
-      return (
-        <SectionCard>
-          <Loading />
-        </SectionCard>
-      );
-    }
-
-    return null;
-  }
-}
-
-export default compose(getChannelSettings, viewNetworkHandler, connect())(
-  LoginTokenSettings
-);
+export default compose(
+  getChannelSettings,
+  viewNetworkHandler,
+  connect()
+)(LoginTokenSettings);

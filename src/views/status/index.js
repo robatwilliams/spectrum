@@ -15,16 +15,10 @@ type Props = {
   currentUser: Object,
 };
 
-type State = {|
-  color: ?string,
-  label: ?string,
-  wsConnected: boolean,
-  online: boolean,
-  hidden: boolean,
-|};
+const Status = (props: Props) => {
+  const { dispatch, history, currentUser, websocketConnection } = props;
 
-class Status extends React.Component<Props, State> {
-  initialState = {
+  const initialState = {
     color: null,
     label: null,
     online: true,
@@ -32,106 +26,108 @@ class Status extends React.Component<Props, State> {
     hidden: true,
   };
 
-  state = this.initialState;
+  const [color, setColor] = React.useState(null);
+  const [label, setLabel] = React.useState(null);
+  const [online, setOnline] = React.useState(true);
+  const [wsConnected, setWsConnected] = React.useState(true);
+  const [hidden, setHidden] = React.useState(true);
 
-  componentDidMount() {
-    window.addEventListener('offline', this.handleOnlineChange);
-    window.addEventListener('online', this.handleOnlineChange);
-    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+  const resetState = React.useCallback(() => {
+    setColor(null);
+    setLabel(null);
+    setOnline(true);
+    setWsConnected(true);
+    setHidden(true);
+  }, []);
 
-    // Only show the bar after a five second timeout
-    setTimeout(() => {
-      this.setState({
-        hidden: false,
-      });
-    }, 5000);
-  }
-
-  componentWillUnmount() {
-    window.removeEventListener('offline', this.handleOnlineChange);
-    window.removeEventListener('online', this.handleOnlineChange);
-  }
-
-  handleVisibilityChange = () => {
+  const handleVisibilityChange = React.useCallback(() => {
     if (document && document.visibilityState === 'hidden') {
-      return this.props.dispatch({ type: 'PAGE_VISIBILITY', value: 'hidden' });
+      return dispatch({ type: 'PAGE_VISIBILITY', value: 'hidden' });
     } else if (document && document.visibilityState === 'visible') {
-      return this.props.dispatch({ type: 'PAGE_VISIBILITY', value: 'visible' });
+      return dispatch({ type: 'PAGE_VISIBILITY', value: 'visible' });
     } else {
       return;
     }
-  };
+  }, [dispatch]);
 
-  handleOnlineChange = () => {
-    const online = window.navigator.onLine;
-    this.setState({
-      online,
-      label: online ? null : 'Lost internet connection.',
-      color: online ? null : 'warn',
-    });
+  const handleOnlineChange = React.useCallback(() => {
+    const isOnline = window.navigator.onLine;
+    setOnline(isOnline);
+    setLabel(isOnline ? null : 'Lost internet connection.');
+    setColor(isOnline ? null : 'warn');
 
-    this.props.dispatch({ type: 'NETWORK_CONNECTION', value: online });
-  };
+    dispatch({ type: 'NETWORK_CONNECTION', value: isOnline });
+  }, [dispatch]);
 
-  handleWsChange = () => {
-    const { websocketConnection } = this.props;
-
+  const handleWsChange = React.useCallback(() => {
     if (websocketConnection === 'connected') {
-      return setTimeout(() => this.setState(this.initialState), 1000);
+      return setTimeout(() => resetState(), 1000);
     }
 
     if (websocketConnection === 'disconnected') {
-      return this.setState({
-        color: 'special',
-        label: 'Reconnecting to server...',
-        wsConnected: false,
-        hidden: false,
-      });
+      setColor('special');
+      setLabel('Reconnecting to server...');
+      setWsConnected(false);
+      setHidden(false);
+      return;
     }
 
     if (websocketConnection === 'reconnected') {
-      this.setState({
-        color: 'success',
-        label: 'Reconnected!',
-        hidden: false,
-      });
+      setColor('success');
+      setLabel('Reconnected!');
+      setHidden(false);
 
-      return setTimeout(() => this.setState(this.initialState), 1000);
+      return setTimeout(() => resetState(), 1000);
     }
-  };
+  }, [websocketConnection, resetState]);
 
-  componentDidUpdate(prevProps) {
-    const curr = this.props;
+  React.useEffect(() => {
+    window.addEventListener('offline', handleOnlineChange);
+    window.addEventListener('online', handleOnlineChange);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    if (prevProps.websocketConnection !== curr.websocketConnection) {
-      this.setState({
-        hidden: true,
-      });
+    // Only show the bar after a five second timeout
+    const timeoutId = setTimeout(() => {
+      setHidden(false);
+    }, 5000);
 
-      if (curr.websocketConnection === 'disconnected') {
-        return setTimeout(() => {
-          return this.handleWsChange();
-        }, 5000);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('offline', handleOnlineChange);
+      window.removeEventListener('online', handleOnlineChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [handleOnlineChange, handleVisibilityChange]);
+
+  React.useEffect(() => {
+    let timeoutId;
+
+    setHidden(true);
+
+    if (websocketConnection === 'disconnected') {
+      timeoutId = setTimeout(() => {
+        handleWsChange();
+      }, 5000);
+    } else {
+      handleWsChange();
+    }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
       }
+    };
+  }, [websocketConnection, handleWsChange]);
 
-      return this.handleWsChange();
-    }
+  if (isViewingMarketingPage(history, currentUser)) {
+    return null;
   }
 
-  render() {
-    const { history, currentUser } = this.props;
-    const { color, online, wsConnected, label, hidden } = this.state;
-
-    if (isViewingMarketingPage(history, currentUser)) {
-      return null;
-    }
-
-    if (hidden) return null;
-    // if online and connected to the websocket, we don't need anything
-    if (online && wsConnected) return null;
-    return <Bar color={color}>{label}</Bar>;
-  }
-}
+  if (hidden) return null;
+  // if online and connected to the websocket, we don't need anything
+  if (online && wsConnected) return null;
+  return <Bar color={color}>{label}</Bar>;
+};
 
 const map = state => ({
   websocketConnection: state.connectionStatus.websocketConnection,
