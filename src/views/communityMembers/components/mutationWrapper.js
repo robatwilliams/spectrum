@@ -11,43 +11,30 @@ type Props = {
   render: Function,
 };
 
-type State = {
-  isLoading: boolean,
-};
+const MutationWrapper = (props: Props) => {
+  const { mutation, variables, dispatch, render } = props;
+  const [isLoading, setIsLoading] = React.useState(false);
 
-class MutationWrapper extends React.Component<Props, State> {
-  initialState = { isLoading: false };
-  state = this.initialState;
-
-  init = () => {
-    if (!this.props.mutation) return;
-    this.setState({ isLoading: true });
-    return this.mutate();
-  };
-
-  terminate = () => {
-    return this.setState(this.initialState);
-  };
-
-  mutate = () => {
-    if (!this.props.mutation) return;
-    return this.props
-      .mutation(this.props.variables)
+  const mutate = React.useCallback(() => {
+    if (!mutation) return;
+    return mutation(variables)
       .then(() => {
-        this.props.dispatch(
-          addToastWithTimeout('success', 'Saved permissions')
-        );
-        return this.terminate();
+        dispatch(addToastWithTimeout('success', 'Saved permissions'));
+        setIsLoading(false);
       })
       .catch(err => {
-        this.props.dispatch(addToastWithTimeout('error', err.message));
-        return this.terminate();
+        dispatch(addToastWithTimeout('error', err.message));
+        setIsLoading(false);
       });
+  }, [mutation, variables, dispatch]);
+
+  const init = () => {
+    if (!mutation) return;
+    setIsLoading(true);
+    return mutate();
   };
 
-  render() {
-    return <div onClick={this.init}>{this.props.render(this.state)}</div>;
-  }
-}
+  return <div onClick={init}>{render({ isLoading })}</div>;
+};
 
 export default connect()(MutationWrapper);

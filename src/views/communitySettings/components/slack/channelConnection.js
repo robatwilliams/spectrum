@@ -31,62 +31,58 @@ type Props = {
   channelFilter?: string,
 };
 
-class SlackChannelConnection extends React.Component<Props> {
-  render() {
-    const { data, isLoading, channelFilter } = this.props;
+const SlackChannelConnection = (props: Props) => {
+  const { data, isLoading, channelFilter } = props;
 
-    if (data.community) {
-      let channels = data.community.channelConnection.edges.map(
-        e => e && e.node
-      );
-      if (channelFilter) {
-        channels = channels.filter(c => c && c.id === channelFilter);
-      }
-      const slackChannels = data.community.slackSettings.slackChannelList;
-
-      return (
-        <SectionCard>
-          <SectionTitleWithIcon>
-            <Icon glyph={'slack-colored'} size={32} />
-            Get conversation notifications in Slack
-          </SectionTitleWithIcon>
-          <SectionSubtitle>
-            Keep up with your community by sending notifications about new
-            conversations to individual channels in Slack.
-          </SectionSubtitle>
-
-          <ChannelListContainer>
-            {channels.map(channel => {
-              if (!channel) return null;
-
-              return (
-                <ChannelSlackManager
-                  key={channel.id}
-                  channel={channel}
-                  slackChannels={slackChannels}
-                />
-              );
-            })}
-          </ChannelListContainer>
-        </SectionCard>
-      );
+  if (data.community) {
+    let channels = data.community.channelConnection.edges.map(e => e && e.node);
+    if (channelFilter) {
+      channels = channels.filter(c => c && c.id === channelFilter);
     }
-
-    if (isLoading) {
-      return (
-        <SectionCard>
-          <Loading />
-        </SectionCard>
-      );
-    }
+    const slackChannels = data.community.slackSettings.slackChannelList;
 
     return (
       <SectionCard>
-        <ViewError />
+        <SectionTitleWithIcon>
+          <Icon glyph={'slack-colored'} size={32} />
+          Get conversation notifications in Slack
+        </SectionTitleWithIcon>
+        <SectionSubtitle>
+          Keep up with your community by sending notifications about new
+          conversations to individual channels in Slack.
+        </SectionSubtitle>
+
+        <ChannelListContainer>
+          {channels.map(channel => {
+            if (!channel) return null;
+
+            return (
+              <ChannelSlackManager
+                key={channel.id}
+                channel={channel}
+                slackChannels={slackChannels}
+              />
+            );
+          })}
+        </ChannelListContainer>
       </SectionCard>
     );
   }
-}
+
+  if (isLoading) {
+    return (
+      <SectionCard>
+        <Loading />
+      </SectionCard>
+    );
+  }
+
+  return (
+    <SectionCard>
+      <ViewError />
+    </SectionCard>
+  );
+};
 
 export default compose(
   connect(),
