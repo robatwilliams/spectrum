@@ -41,193 +41,170 @@ type Props = {
   },
 };
 
-type State = {
-  subscription: ?Function,
-};
+const ThreadsList = (props: Props) => {
+  const {
+    dmData,
+    activeThreadId,
+    currentUser,
+    isFetchingMore,
+    isLoading,
+  } = props;
+  const [subscription, setSubscription] = React.useState(null);
+  const prevPropsRef = React.useRef(props);
 
-class ThreadsList extends React.Component<Props, State> {
-  state = {
-    subscription: null,
-  };
+  React.useEffect(() => {
+    const sub = dmData.subscribeToUpdatedDirectMessageThreads();
+    setSubscription(sub);
 
-  subscribe = () => {
-    this.setState({
-      subscription: this.props.dmData.subscribeToUpdatedDirectMessageThreads(),
-    });
-  };
+    return () => {
+      if (sub) {
+        sub();
+      }
+    };
+  }, []);
 
-  unsubscribe = () => {
-    const { subscription } = this.state;
-    if (subscription) {
-      // This unsubscribes the subscription
-      subscription();
-    }
-  };
-
-  componentDidMount() {
-    this.subscribe();
-  }
-
-  componentDidUpdate(prev: Props) {
-    const curr = this.props;
+  React.useEffect(() => {
+    const curr = props;
+    const prev = prevPropsRef.current;
 
     const didReconnect = useConnectionRestored({ curr, prev });
     if (didReconnect && curr.dmData.refetch) {
       curr.dmData.refetch();
     }
-  }
 
-  componentWillUnmount() {
-    this.unsubscribe();
-  }
+    prevPropsRef.current = props;
+  });
 
-  shouldComponentUpdate(nextProps) {
-    const curr = this.props;
-    // fetching more
-    if (curr.dmData.networkStatus === 7 && nextProps.dmData.networkStatus === 3)
-      return false;
-    return true;
-  }
-
-  paginate = () => {
-    const { dmData, activeThreadId } = this.props;
+  const paginate = () => {
     // don't accidentally paginate the threadslist in the background on mobile
     if (window && window.innerWidth < 768 && activeThreadId) return;
     return dmData.fetchMore();
   };
 
-  onLoadMoreVisible = (isVisible: boolean) => {
-    if (this.props.isFetchingMore || !isVisible) return;
-    return this.paginate();
+  const onLoadMoreVisible = (isVisible: boolean) => {
+    if (isFetchingMore || !isVisible) return;
+    return paginate();
   };
 
-  render() {
-    const { currentUser, dmData, activeThreadId, isFetchingMore } = this.props;
+  if (!dmData) return null;
 
-    if (!dmData) return null;
+  const dmDataExists =
+    currentUser && dmData.user && dmData.user.directMessageThreadsConnection;
+  const threads =
+    dmDataExists &&
+    dmData.user.directMessageThreadsConnection.edges &&
+    dmData.user.directMessageThreadsConnection.edges.length > 0
+      ? dmData.user.directMessageThreadsConnection.edges
+          .map(thread => thread && thread.node)
+          .sort((a, b) => {
+            const x =
+              a && a.threadLastActive && new Date(a.threadLastActive).getTime();
+            const y =
+              b && b.threadLastActive && new Date(b.threadLastActive).getTime();
+            const val = parseInt(y, 10) - parseInt(x, 10);
+            return val;
+          })
+      : [];
 
-    const dmDataExists =
-      currentUser && dmData.user && dmData.user.directMessageThreadsConnection;
-    const threads =
-      dmDataExists &&
-      dmData.user.directMessageThreadsConnection.edges &&
-      dmData.user.directMessageThreadsConnection.edges.length > 0
-        ? dmData.user.directMessageThreadsConnection.edges
-            .map(thread => thread && thread.node)
-            .sort((a, b) => {
-              const x =
-                a &&
-                a.threadLastActive &&
-                new Date(a.threadLastActive).getTime();
-              const y =
-                b &&
-                b.threadLastActive &&
-                new Date(b.threadLastActive).getTime();
-              const val = parseInt(y, 10) - parseInt(x, 10);
-              return val;
-            })
-        : [];
+  const hasNextPage =
+    dmData.user &&
+    dmData.user.directMessageThreadsConnection &&
+    dmData.user.directMessageThreadsConnection.pageInfo &&
+    dmData.user.directMessageThreadsConnection.pageInfo.hasNextPage;
 
-    const hasNextPage =
-      dmData.user &&
-      dmData.user.directMessageThreadsConnection &&
-      dmData.user.directMessageThreadsConnection.pageInfo &&
-      dmData.user.directMessageThreadsConnection.pageInfo.hasNextPage;
+  const uniqueThreads = deduplicateChildren(threads, 'id');
 
-    const uniqueThreads = deduplicateChildren(threads, 'id');
-
-    if (!dmDataExists && dmData.loading) {
-      return (
-        <ThreadsListScrollContainer>
-          <DesktopTitlebar title={'Messages'} />
-          <LoadingDM />
-          <LoadingDM />
-          <LoadingDM />
-          <LoadingDM />
-          <LoadingDM />
-          <LoadingDM />
-          <LoadingDM />
-          <LoadingDM />
-          <LoadingDM />
-          <LoadingDM />
-          <LoadingDM />
-        </ThreadsListScrollContainer>
-      );
-    }
-
-    if (!uniqueThreads || uniqueThreads.length === 0) {
-      return (
-        <ThreadsListScrollContainer>
-          <DesktopTitlebar title={'Messages'} />
-          <NoCommunitySelected hideOnDesktop>
-            <div>
-              <NoCommunityHeading>No conversation selected</NoCommunityHeading>
-              <NoCommunitySubheading>
-                Choose from an existing conversation, or start a new one.
-              </NoCommunitySubheading>
-              <PrimaryOutlineButton
-                to={{
-                  pathname: '/new/message',
-                  state: { modal: true },
-                }}
-              >
-                New message
-              </PrimaryOutlineButton>
-            </div>
-          </NoCommunitySelected>
-        </ThreadsListScrollContainer>
-      );
-    }
-
-    const LoadingDMWithVisibility = () => (
-      <VisibilitySensor
-        active={!isFetchingMore}
-        delayedCall
-        partialVisibility
-        scrollCheck
-        intervalDelay={250}
-        onChange={this.onLoadMoreVisible}
-        offset={{
-          bottom: -250,
-        }}
-      >
-        <LoadingDM key={0} />
-      </VisibilitySensor>
-    );
-
+  if (!dmDataExists && dmData.loading) {
     return (
-      <React.Fragment>
-        <DesktopTitlebar
-          title={'Messages'}
-          rightAction={
-            <PrimaryOutlineButton
-              data-cy="compose-dm"
-              size={'small'}
-              to={{ pathname: '/new/message', state: { modal: true } }}
-            >
-              New
-            </PrimaryOutlineButton>
-          }
-        />
-        <ThreadsListScrollContainer>
-          {uniqueThreads.map(thread => {
-            if (!thread) return null;
-            return (
-              <ErrorBoundary key={thread.id}>
-                <DirectMessageListItem
-                  thread={thread}
-                  currentUser={currentUser}
-                  active={activeThreadId === thread.id}
-                />
-              </ErrorBoundary>
-            );
-          })}
-          {hasNextPage && <LoadingDMWithVisibility />}
-        </ThreadsListScrollContainer>
-      </React.Fragment>
+      <ThreadsListScrollContainer>
+        <DesktopTitlebar title={'Messages'} />
+        <LoadingDM />
+        <LoadingDM />
+        <LoadingDM />
+        <LoadingDM />
+        <LoadingDM />
+        <LoadingDM />
+        <LoadingDM />
+        <LoadingDM />
+        <LoadingDM />
+        <LoadingDM />
+        <LoadingDM />
+      </ThreadsListScrollContainer>
     );
   }
-}
+
+  if (!uniqueThreads || uniqueThreads.length === 0) {
+    return (
+      <ThreadsListScrollContainer>
+        <DesktopTitlebar title={'Messages'} />
+        <NoCommunitySelected hideOnDesktop>
+          <div>
+            <NoCommunityHeading>No conversation selected</NoCommunityHeading>
+            <NoCommunitySubheading>
+              Choose from an existing conversation, or start a new one.
+            </NoCommunitySubheading>
+            <PrimaryOutlineButton
+              to={{
+                pathname: '/new/message',
+                state: { modal: true },
+              }}
+            >
+              New message
+            </PrimaryOutlineButton>
+          </div>
+        </NoCommunitySelected>
+      </ThreadsListScrollContainer>
+    );
+  }
+
+  const LoadingDMWithVisibility = () => (
+    <VisibilitySensor
+      active={!isFetchingMore}
+      delayedCall
+      partialVisibility
+      scrollCheck
+      intervalDelay={250}
+      onChange={onLoadMoreVisible}
+      offset={{
+        bottom: -250,
+      }}
+    >
+      <LoadingDM key={0} />
+    </VisibilitySensor>
+  );
+
+  return (
+    <React.Fragment>
+      <DesktopTitlebar
+        title={'Messages'}
+        rightAction={
+          <PrimaryOutlineButton
+            data-cy="compose-dm"
+            size={'small'}
+            to={{ pathname: '/new/message', state: { modal: true } }}
+          >
+            New
+          </PrimaryOutlineButton>
+        }
+      />
+      <ThreadsListScrollContainer>
+        {uniqueThreads.map(thread => {
+          if (!thread) return null;
+          return (
+            <ErrorBoundary key={thread.id}>
+              <DirectMessageListItem
+                thread={thread}
+                currentUser={currentUser}
+                active={activeThreadId === thread.id}
+              />
+            </ErrorBoundary>
+          );
+        })}
+        {hasNextPage && <LoadingDMWithVisibility />}
+      </ThreadsListScrollContainer>
+    </React.Fragment>
+  );
+};
 
 const map = state => ({
   networkOnline: state.connectionStatus.networkOnline,
