@@ -29,88 +29,78 @@ type Props = {
   },
 };
 
-class Component extends React.Component<Props> {
-  render() {
-    const {
-      isLoading,
-      hasError,
-      queryVarIsChanging,
-      data,
-      currentUser,
-    } = this.props;
+const Component = (props: Props) => {
+  const { isLoading, hasError, queryVarIsChanging, data, currentUser } = props;
 
-    const isOwner = this.props.community.communityPermissions.isOwner;
+  const isOwner = props.community.communityPermissions.isOwner;
 
-    if (isLoading || queryVarIsChanging)
-      return (
-        <React.Fragment>
-          <SidebarSectionHeader>
-            <SidebarSectionHeading>Team</SidebarSectionHeading>
-          </SidebarSectionHeader>
-          <Loading style={{ padding: '32px' }} />
-        </React.Fragment>
-      );
-
-    if (hasError) return null;
-
-    const { community } = data;
-
-    const { edges: members } = community.members;
-    const nodes = members
-      .map(member => member && member.node)
-      .filter(node => node && (node.isOwner || node.isModerator))
-      .filter(Boolean)
-      .sort((a, b) => {
-        const bc = parseInt(b.reputation, 10);
-        const ac = parseInt(a.reputation, 10);
-
-        // sort same-reputation communities alphabetically
-        if (ac === bc) {
-          return a.user.name.toUpperCase() <= b.user.name.toUpperCase()
-            ? -1
-            : 1;
-        }
-
-        // otherwise sort by reputation
-        return bc <= ac ? -1 : 1;
-      });
-
+  if (isLoading || queryVarIsChanging)
     return (
       <React.Fragment>
         <SidebarSectionHeader>
           <SidebarSectionHeading>Team</SidebarSectionHeading>
-          {isOwner && (
-            <Tooltip content={'Manage team'}>
-              <span>
-                <WhiteIconButton to={`/${community.slug}/settings/members`}>
-                  <Icon glyph={'settings'} size={24} />
-                </WhiteIconButton>
-              </span>
-            </Tooltip>
-          )}
         </SidebarSectionHeader>
-
-        <List>
-          {nodes.map(({ user }) => (
-            <ErrorBoundary key={user.id}>
-              <UserListItem
-                userObject={user}
-                name={user.name}
-                username={user.username}
-                profilePhoto={user.profilePhoto}
-                isCurrentUser={currentUser && user.id === currentUser.id}
-                isOnline={user.isOnline}
-                avatarSize={40}
-                showHoverProfile={false}
-                messageButton={currentUser && user.id !== currentUser.id}
-              />
-            </ErrorBoundary>
-          ))}
-        </List>
+        <Loading style={{ padding: '32px' }} />
       </React.Fragment>
     );
-  }
-}
+
+  if (hasError) return null;
+
+  const { community } = data;
+
+  const { edges: members } = community.members;
+  const nodes = members
+    .map(member => member && member.node)
+    .filter(node => node && (node.isOwner || node.isModerator))
+    .filter(Boolean)
+    .sort((a, b) => {
+      const bc = parseInt(b.reputation, 10);
+      const ac = parseInt(a.reputation, 10);
+
+      // sort same-reputation communities alphabetically
+      if (ac === bc) {
+        return a.user.name.toUpperCase() <= b.user.name.toUpperCase() ? -1 : 1;
+      }
+
+      // otherwise sort by reputation
+      return bc <= ac ? -1 : 1;
+    });
+
+  return (
+    <React.Fragment>
+      <SidebarSectionHeader>
+        <SidebarSectionHeading>Team</SidebarSectionHeading>
+        {isOwner && (
+          <Tooltip content={'Manage team'}>
+            <span>
+              <WhiteIconButton to={`/${community.slug}/settings/members`}>
+                <Icon glyph={'settings'} size={24} />
+              </WhiteIconButton>
+            </span>
+          </Tooltip>
+        )}
+      </SidebarSectionHeader>
+
+      <List>
+        {nodes.map(({ user }) => (
+          <ErrorBoundary key={user.id}>
+            <UserListItem
+              userObject={user}
+              name={user.name}
+              username={user.username}
+              profilePhoto={user.profilePhoto}
+              isCurrentUser={currentUser && user.id === currentUser.id}
+              isOnline={user.isOnline}
+              avatarSize={40}
+              showHoverProfile={false}
+              messageButton={currentUser && user.id !== currentUser.id}
+            />
+          </ErrorBoundary>
+        ))}
+      </List>
+    </React.Fragment>
+  );
+};
 
 export const TeamMembersList = compose(
   withRouter,

@@ -24,80 +24,74 @@ type Props = {
   currentUser: ?Object,
 };
 
-class ConversationGrowth extends React.Component<Props> {
-  render() {
-    const {
-      data: { community },
-      isLoading,
-      currentUser,
-    } = this.props;
-    const title = 'Top members this week';
+const ConversationGrowth = (props: Props) => {
+  const {
+    data: { community },
+    isLoading,
+    currentUser,
+  } = props;
+  const title = 'Top members this week';
 
-    if (community) {
-      const sortedTopMembers = community.topMembers.slice().sort((a, b) => {
-        const bc = b && parseInt(b.reputation, 10);
-        const ac = a && parseInt(a.reputation, 10);
-        return bc && ac && bc <= ac ? -1 : 1;
-      });
+  if (community) {
+    const sortedTopMembers = community.topMembers.slice().sort((a, b) => {
+      const bc = b && parseInt(b.reputation, 10);
+      const ac = a && parseInt(a.reputation, 10);
+      return bc && ac && bc <= ac ? -1 : 1;
+    });
 
-      if (sortedTopMembers.length === 0) {
-        return (
-          <SectionCard>
-            <SectionTitle>{title}</SectionTitle>
-            <ViewError
-              small
-              emoji={'😭'}
-              heading={'Your community has been quiet this week'}
-              subheading={
-                'When people are posting new threads and joining conversations, the most active people will appear here.'
-              }
-            />
-          </SectionCard>
-        );
-      }
-
+    if (sortedTopMembers.length === 0) {
       return (
         <SectionCard>
           <SectionTitle>{title}</SectionTitle>
-          {sortedTopMembers.map(member => {
-            if (!member) return null;
-            return (
-              <UserListItemContainer key={member.user.id}>
-                <UserListItem
-                  userObject={member.user}
-                  id={member.user.id}
-                  name={member.user.name}
-                  username={member.user.username}
-                  description={member.user.description}
-                  isCurrentUser={
-                    currentUser && member.user.id === currentUser.id
-                  }
-                  isOnline={member.user.isOnline}
-                  profilePhoto={member.user.profilePhoto}
-                  avatarSize={40}
-                  showHoverProfile={false}
-                  messageButton={
-                    currentUser && member.user.id !== currentUser.id
-                  }
-                />
-              </UserListItemContainer>
-            );
-          })}
+          <ViewError
+            small
+            emoji={'😭'}
+            heading={'Your community has been quiet this week'}
+            subheading={
+              'When people are posting new threads and joining conversations, the most active people will appear here.'
+            }
+          />
         </SectionCard>
       );
     }
 
-    if (isLoading) {
-      return (
-        <SectionCard>
-          <Loading />
-        </SectionCard>
-      );
-    }
-
-    return null;
+    return (
+      <SectionCard>
+        <SectionTitle>{title}</SectionTitle>
+        {sortedTopMembers.map(member => {
+          if (!member) return null;
+          return (
+            <UserListItemContainer key={member.user.id}>
+              <UserListItem
+                userObject={member.user}
+                id={member.user.id}
+                name={member.user.name}
+                username={member.user.username}
+                description={member.user.description}
+                isCurrentUser={currentUser && member.user.id === currentUser.id}
+                isOnline={member.user.isOnline}
+                profilePhoto={member.user.profilePhoto}
+                avatarSize={40}
+                showHoverProfile={false}
+                messageButton={currentUser && member.user.id !== currentUser.id}
+              />
+            </UserListItemContainer>
+          );
+        })}
+      </SectionCard>
+    );
   }
-}
+
+  if (isLoading) {
+    return (
+      <SectionCard>
+        <Loading />
+      </SectionCard>
+    );
+  }
+
+  return null;
+};
 
 export default compose(
   withRouter,

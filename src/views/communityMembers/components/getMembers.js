@@ -17,22 +17,20 @@ type Props = {
   render: Function,
 };
 
-class CommunityMembers extends React.Component<Props> {
-  render() {
-    const {
-      data: { community, fetchMore },
-      isLoading,
-      isFetchingMore,
-    } = this.props;
+const CommunityMembers = (props: Props) => {
+  const {
+    data: { community, fetchMore },
+    isLoading,
+    isFetchingMore,
+  } = props;
 
-    return this.props.render({
-      community,
-      isLoading,
-      isFetchingMore,
-      fetchMore,
-    });
-  }
-}
+  return props.render({
+    community,
+    isLoading,
+    isFetchingMore,
+    fetchMore,
+  });
+};
 
 export default compose(
   getCommunityMembersQuery,
