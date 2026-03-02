@@ -36,30 +36,34 @@ type Props = {
   history: Object,
 };
 
-class ChannelSettings extends React.Component<Props> {
-  componentDidMount() {
-    const { dispatch } = this.props;
+const ChannelSettings = (props: Props) => {
+  const {
+    dispatch,
+    data,
+    match,
+    location,
+    isLoading,
+    togglePendingUser,
+    unblockUser,
+  } = props;
 
+  React.useEffect(() => {
     dispatch(
       setTitlebarProps({
         title: 'Settings',
       })
     );
-  }
+  }, [dispatch]);
 
-  togglePending = (userId, action) => {
-    const {
-      data: { channel },
-      dispatch,
-    } = this.props;
+  const togglePending = (userId, action) => {
+    const { channel } = data;
     const input = {
       channelId: channel.id,
       userId,
       action,
     };
 
-    this.props
-      .togglePendingUser(input)
+    togglePendingUser(input)
       .then(({ data }: ToggleChannelPendingUserType) => {
         // the mutation returns a channel object. if it exists,
         const { togglePendingUser } = data;
@@ -79,19 +83,15 @@ class ChannelSettings extends React.Component<Props> {
       });
   };
 
-  unblock = (userId: string) => {
-    const {
-      data: { channel },
-      dispatch,
-    } = this.props;
+  const unblock = (userId: string) => {
+    const { channel } = data;
 
     const input = {
       channelId: channel.id,
       userId,
     };
 
-    this.props
-      .unblockUser(input)
+    unblockUser(input)
       .then(({ data }: UnblockChannelBlockedUserType) => {
         const { unblockUser } = data;
         // the mutation returns a channel object. if it exists,
@@ -105,95 +105,88 @@ class ChannelSettings extends React.Component<Props> {
       });
   };
 
-  render() {
-    const {
-      data: { channel },
-      match,
-      location,
-      isLoading,
-    } = this.props;
-    const { communitySlug } = match.params;
+  const { channel } = data;
+  const { communitySlug } = match.params;
 
-    // this is hacky, but will tell us if we're viewing analytics or the root settings view
-    const pathname = location.pathname;
-    const lastIndex = pathname.lastIndexOf('/');
-    const activeTab = pathname.substr(lastIndex + 1);
+  // this is hacky, but will tell us if we're viewing analytics or the root settings view
+  const pathname = location.pathname;
+  const lastIndex = pathname.lastIndexOf('/');
+  const activeTab = pathname.substr(lastIndex + 1);
 
-    if (channel && channel.id) {
-      const { isModerator, isOwner } = channel.channelPermissions;
-      const userHasPermissions =
-        isOwner ||
-        isModerator ||
-        channel.community.communityPermissions.isOwner ||
-        channel.community.communityPermissions.isModerator;
+  if (channel && channel.id) {
+    const { isModerator, isOwner } = channel.channelPermissions;
+    const userHasPermissions =
+      isOwner ||
+      isModerator ||
+      channel.community.communityPermissions.isOwner ||
+      channel.community.communityPermissions.isModerator;
 
-      if (!userHasPermissions) {
-        return (
-          <React.Fragment>
-            <ViewError
-              heading={'You don’t have permission to manage this channel.'}
-              subheading={`Head back to the ${
-                channel.community.name
-              } community to get back on track.`}
-            >
-              <Upsell404Channel community={communitySlug} />
-            </ViewError>
-          </React.Fragment>
-        );
-      }
-
-      const ActiveView = () => {
-        switch (activeTab) {
-          case 'settings':
-            return (
-              <Overview
-                community={channel.community}
-                channel={channel}
-                communitySlug={communitySlug}
-                togglePending={this.togglePending}
-                unblock={this.unblock}
-              />
-            );
-          default:
-            return null;
-        }
-      };
-
-      const subheading = {
-        to: `/${channel.community.slug}/settings`,
-        label: `Return to ${channel.community.name} settings`,
-      };
-
+    if (!userHasPermissions) {
       return (
         <React.Fragment>
-          <Head
-            title={`${channel.name} settings`}
-            description={`Settings for the ${channel.name} channel in ${
+          <ViewError
+            heading={'You don’t have permission to manage this channel.'}
+            subheading={`Head back to the ${
               channel.community.name
-            }`}
-          />
-          <ViewGrid>
-            <View>
-              <Header
-                subheading={subheading}
-                heading={`${channel.name} Settings ${
-                  channel.isArchived ? '(Archived)' : ''
-                }`}
-              />
-              <ActiveView />
-            </View>
-          </ViewGrid>
+            } community to get back on track.`}
+          >
+            <Upsell404Channel community={communitySlug} />
+          </ViewError>
         </React.Fragment>
       );
     }
 
-    if (isLoading) {
-      return <LoadingView />;
-    }
+    const ActiveView = () => {
+      switch (activeTab) {
+        case 'settings':
+          return (
+            <Overview
+              community={channel.community}
+              channel={channel}
+              communitySlug={communitySlug}
+              togglePending={this.togglePending}
+              unblock={this.unblock}
+            />
+          );
+        default:
+          return null;
+      }
+    };
 
-    return <ErrorView />;
+    const subheading = {
+      to: `/${channel.community.slug}/settings`,
+      label: `Return to ${channel.community.name} settings`,
+    };
+
+    return (
+      <React.Fragment>
+        <Head
+          title={`${channel.name} settings`}
+          description={`Settings for the ${channel.name} channel in ${
+            channel.community.name
+          }`}
+        />
+        <ViewGrid>
+          <View>
+            <Header
+              subheading={subheading}
+              heading={`${channel.name} Settings ${
+                channel.isArchived ? '(Archived)' : ''
+              }`}
+            />
+            <ActiveView />
+          </View>
+        </ViewGrid>
+      </React.Fragment>
+    );
   }
-}
+
+  if (isLoading) {
+    return <LoadingView />;
+  }
+
+  return <ErrorView />;
+};
 
 export default compose(
   // $FlowIssue

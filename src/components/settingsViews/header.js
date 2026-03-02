@@ -17,35 +17,32 @@ type Props = {
   heading: string,
 };
 
-class Header extends React.Component<Props> {
-  render() {
-    const { avatar, subheading, heading } = this.props;
-    return (
-      <StyledHeader>
-        {avatar && avatar.community && (
-          <CommunityAvatar
-            community={avatar.community}
-            showHoverProfile={false}
-            size={48}
-          />
-        )}
-        {avatar && avatar.user && (
-          <UserAvatar
-            showOnlineStatus={false}
-            showHoverProfile={false}
-            user={avatar.user}
-            size={48}
-          />
-        )}
-        <HeaderText>
-          <Link to={subheading.to}>
-            <Subheading>{subheading.label}</Subheading>
-          </Link>
-          <Heading>{heading}</Heading>
-        </HeaderText>
-      </StyledHeader>
-    );
-  }
-}
+const Header = ({ avatar, subheading, heading }: Props) => {
+  return (
+    <StyledHeader>
+      {avatar && avatar.community && (
+        <CommunityAvatar
+          community={avatar.community}
+          showHoverProfile={false}
+          size={48}
+        />
+      )}
+      {avatar && avatar.user && (
+        <UserAvatar
+          showOnlineStatus={false}
+          showHoverProfile={false}
+          user={avatar.user}
+          size={48}
+        />
+      )}
+      <HeaderText>
+        <Link to={subheading.to}>
+          <Subheading>{subheading.label}</Subheading>
+        </Link>
+        <Heading>{heading}</Heading>
+      </HeaderText>
+    </StyledHeader>
+  );
+};
 
 export default Header;

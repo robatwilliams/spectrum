@@ -18,10 +18,10 @@ type Props = {
   dispatch: Dispatch<Object>,
 };
 
-class Channel extends React.Component<Props> {
-  initArchiveChannel = () => {
-    const { channel } = this.props;
+const Channel = (props: Props) => {
+  const { channel, dispatch } = props;
 
+  const initArchiveChannel = () => {
     const message = (
       <div>
         <p>
@@ -31,7 +31,7 @@ class Channel extends React.Component<Props> {
       </div>
     );
 
-    return this.props.dispatch(
+    return dispatch(
       openModal('DELETE_DOUBLE_CHECK_MODAL', {
         id: channel.id,
         entity: 'channel-archive',
@@ -41,62 +41,58 @@ class Channel extends React.Component<Props> {
     );
   };
 
-  initRestoreChannel = () => {
-    return this.props.dispatch(
+  const initRestoreChannel = () => {
+    return dispatch(
       openModal('RESTORE_CHANNEL_MODAL', {
-        channel: this.props.channel,
-        id: this.props.channel.community.id,
+        channel: channel,
+        id: channel.community.id,
       })
     );
   };
 
-  render() {
-    const { channel } = this.props;
-
-    if (!channel.isArchived) {
-      return (
-        <SectionCard>
-          <SectionTitle>Archive channel</SectionTitle>
-          {channel.isPrivate ? (
-            <SectionSubtitle>
-              Archiving a private channel will automatically remove the private
-              channel item from your subscription. The channel will then become
-              read-only and community members will no longer be able to start
-              new conversations.
-            </SectionSubtitle>
-          ) : (
-            <SectionSubtitle>
-              Archiving a channel will make it read-only and community members
-              will no longer be able to start new conversations.
-            </SectionSubtitle>
-          )}
-
-          <SectionCardFooter>
-            <OutlineButton onClick={this.initArchiveChannel}>
-              Archive Channel
-            </OutlineButton>
-          </SectionCardFooter>
-        </SectionCard>
-      );
-    } else {
-      return (
-        <SectionCard>
-          <SectionTitle>Restore channel</SectionTitle>
-
+  if (!channel.isArchived) {
+    return (
+      <SectionCard>
+        <SectionTitle>Archive channel</SectionTitle>
+        {channel.isPrivate ? (
           <SectionSubtitle>
-            The channel will be restored and channel members will be able to
-            start new conversations.
+            Archiving a private channel will automatically remove the private
+            channel item from your subscription. The channel will then become
+            read-only and community members will no longer be able to start new
+            conversations.
           </SectionSubtitle>
+        ) : (
+          <SectionSubtitle>
+            Archiving a channel will make it read-only and community members
+            will no longer be able to start new conversations.
+          </SectionSubtitle>
+        )}
 
-          <SectionCardFooter>
-            <OutlineButton onClick={this.initRestoreChannel}>
-              Restore Channel
-            </OutlineButton>
-          </SectionCardFooter>
-        </SectionCard>
-      );
-    }
+        <SectionCardFooter>
+          <OutlineButton onClick={initArchiveChannel}>
+            Archive Channel
+          </OutlineButton>
+        </SectionCardFooter>
+      </SectionCard>
+    );
+  } else {
+    return (
+      <SectionCard>
+        <SectionTitle>Restore channel</SectionTitle>
+
+        <SectionSubtitle>
+          The channel will be restored and channel members will be able to start
+          new conversations.
+        </SectionSubtitle>
+
+        <SectionCardFooter>
+          <OutlineButton onClick={initRestoreChannel}>
+            Restore Channel
+          </OutlineButton>
+        </SectionCardFooter>
+      </SectionCard>
+    );
   }
-}
+};
 
 export default compose(connect())(Channel);

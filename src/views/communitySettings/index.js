@@ -27,123 +27,122 @@ type Props = {
   ...$Exact<ContextRouter>,
 };
 
-class CommunitySettings extends React.Component<Props> {
-  componentDidMount() {
-    const { dispatch } = this.props;
+const CommunitySettings = (props: Props) => {
+  const { dispatch } = props;
+
+  React.useEffect(() => {
     dispatch(
       setTitlebarProps({
         title: 'Settings',
       })
     );
-  }
+  }, [dispatch]);
 
-  render() {
-    const {
-      data: { community },
-      location,
-      match,
-      isLoading,
-      history,
-    } = this.props;
+  const {
+    data: { community },
+    location,
+    match,
+    isLoading,
+    history,
+  } = props;
 
-    // this is hacky, but will tell us if we're viewing analytics or the root settings view
-    const pathname = location.pathname;
-    const lastIndex = pathname.lastIndexOf('/');
-    const activeTab = pathname.substr(lastIndex + 1);
-    const communitySlug = match.params.communitySlug;
+  // this is hacky, but will tell us if we're viewing analytics or the root settings view
+  const pathname = location.pathname;
+  const lastIndex = pathname.lastIndexOf('/');
+  const activeTab = pathname.substr(lastIndex + 1);
+  const communitySlug = match.params.communitySlug;
 
-    if (community && community.id) {
-      const canViewCommunitySettings =
-        community.communityPermissions.isOwner ||
-        community.communityPermissions.isModerator;
+  if (community && community.id) {
+    const canViewCommunitySettings =
+      community.communityPermissions.isOwner ||
+      community.communityPermissions.isModerator;
 
-      if (!canViewCommunitySettings) {
-        return <ErrorView />;
-      }
-
-      const subnavItems = [
-        {
-          to: `/${community.slug}/settings`,
-          label: 'Overview',
-          activeLabel: 'settings',
-        },
-        {
-          to: `/${community.slug}/settings/members`,
-          label: 'Members',
-          activeLabel: 'members',
-        },
-        {
-          to: `/${community.slug}/settings/analytics`,
-          label: 'Analytics',
-          activeLabel: 'analytics',
-        },
-      ];
-
-      const subheading = {
-        to: `/${community.slug}`,
-        label: `Return to ${community.name}`,
-      };
-
-      const avatar = {
-        profilePhoto: community.profilePhoto,
-        community,
-      };
-
-      let title = community.name + ' settings';
-
-      return (
-        <React.Fragment>
-          <Head title={title} />
-
-          <ViewGrid>
-            <View data-cy="community-settings">
-              <Header
-                avatar={avatar}
-                subheading={subheading}
-                heading={'Settings'}
-              />
-
-              <SegmentedControl>
-                {subnavItems.map(item => (
-                  <Segment
-                    key={item.label}
-                    to={item.to}
-                    isActive={activeTab === item.activeLabel}
-                  >
-                    {item.label}
-                  </Segment>
-                ))}
-              </SegmentedControl>
-
-              <Switch>
-                <Route path={`${match.url}/analytics`}>
-                  {() => <Analytics community={community} id={community.id} />}
-                </Route>
-                <Route path={`${match.url}/members`}>
-                  {() => <Members community={community} history={history} />}
-                </Route>
-                <Route path={`${match.url}`}>
-                  {() => (
-                    <Overview
-                      community={community}
-                      communitySlug={communitySlug}
-                    />
-                  )}
-                </Route>
-              </Switch>
-            </View>
-          </ViewGrid>
-        </React.Fragment>
-      );
+    if (!canViewCommunitySettings) {
+      return <ErrorView />;
     }
 
-    if (isLoading) {
-      return <LoadingView />;
-    }
+    const subnavItems = [
+      {
+        to: `/${community.slug}/settings`,
+        label: 'Overview',
+        activeLabel: 'settings',
+      },
+      {
+        to: `/${community.slug}/settings/members`,
+        label: 'Members',
+        activeLabel: 'members',
+      },
+      {
+        to: `/${community.slug}/settings/analytics`,
+        label: 'Analytics',
+        activeLabel: 'analytics',
+      },
+    ];
 
-    return <ErrorView />;
+    const subheading = {
+      to: `/${community.slug}`,
+      label: `Return to ${community.name}`,
+    };
+
+    const avatar = {
+      profilePhoto: community.profilePhoto,
+      community,
+    };
+
+    let title = community.name + ' settings';
+
+    return (
+      <React.Fragment>
+        <Head title={title} />
+
+        <ViewGrid>
+          <View data-cy="community-settings">
+            <Header
+              avatar={avatar}
+              subheading={subheading}
+              heading={'Settings'}
+            />
+
+            <SegmentedControl>
+              {subnavItems.map(item => (
+                <Segment
+                  key={item.label}
+                  to={item.to}
+                  isActive={activeTab === item.activeLabel}
+                >
+                  {item.label}
+                </Segment>
+              ))}
+            </SegmentedControl>
+
+            <Switch>
+              <Route path={`${match.url}/analytics`}>
+                {() => <Analytics community={community} id={community.id} />}
+              </Route>
+              <Route path={`${match.url}/members`}>
+                {() => <Members community={community} history={history} />}
+              </Route>
+              <Route path={`${match.url}`}>
+                {() => (
+                  <Overview
+                    community={community}
+                    communitySlug={communitySlug}
+                  />
+                )}
+              </Route>
+            </Switch>
+          </View>
+        </ViewGrid>
+      </React.Fragment>
+    );
   }
-}
+
+  if (isLoading) {
+    return <LoadingView />;
+  }
+
+  return <ErrorView />;
+};
 
 export default compose(
   connect(),
