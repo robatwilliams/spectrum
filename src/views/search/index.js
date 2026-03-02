@@ -16,44 +16,39 @@ const SearchThreadFeed = compose(
 type Props = {
   dispatch: Function,
 };
-type State = {
-  searchQueryString: ?string,
-};
-class Search extends React.Component<Props, State> {
-  state = { searchQueryString: '' };
 
-  componentDidMount() {
-    const { dispatch } = this.props;
-    return dispatch(
+const Search = (props: Props) => {
+  const { dispatch } = props;
+  const [searchQueryString, setSearchQueryString] = React.useState('');
+
+  React.useEffect(() => {
+    dispatch(
       setTitlebarProps({
         title: 'Search',
       })
     );
-  }
+  }, [dispatch]);
 
-  handleSubmit = (searchQueryString: string) => {
-    if (searchQueryString.length > 0) {
-      this.setState({ searchQueryString });
+  const handleSubmit = (queryString: string) => {
+    if (queryString.length > 0) {
+      setSearchQueryString(queryString);
     }
   };
 
-  render() {
-    const { searchQueryString } = this.state;
-    const searchFilter = { everythingFeed: true };
+  const searchFilter = { everythingFeed: true };
 
-    return (
-      <ViewGrid>
-        <SearchInput handleSubmit={this.handleSubmit} />
+  return (
+    <ViewGrid>
+      <SearchInput handleSubmit={handleSubmit} />
 
-        {searchQueryString && searchQueryString.length > 0 && searchFilter && (
-          <SearchThreadFeed
-            queryString={searchQueryString}
-            filter={searchFilter}
-          />
-        )}
-      </ViewGrid>
-    );
-  }
-}
+      {searchQueryString && searchQueryString.length > 0 && searchFilter && (
+        <SearchThreadFeed
+          queryString={searchQueryString}
+          filter={searchFilter}
+        />
+      )}
+    </ViewGrid>
+  );
+};
 
 export default compose(connect())(Search);

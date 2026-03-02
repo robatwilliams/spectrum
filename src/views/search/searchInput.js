@@ -4,71 +4,73 @@ import { SearchWrapper, SearchInput, ClearSearch, SearchForm } from './style';
 import Icon from 'src/components/icon';
 
 type Props = {};
-type State = {
-  isOpen: boolean,
-  value: string,
-  searchQueryString: string,
-};
-class SearchViewInput extends React.Component<Props, State> {
-  state = { isOpen: false, value: '', searchQueryString: '' };
 
-  open = () => {
-    this.setState({ isOpen: true });
-    this.searchInput.focus();
-  };
+const SearchViewInput = (props: Props) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [value, setValue] = React.useState('');
+  const [searchQueryString, setSearchQueryString] = React.useState('');
+  const searchInputRef = React.useRef(null);
 
-  close = () => {
-    if (this.state.value.length === 0) {
-      this.setState({ isOpen: false, searchQueryString: '' });
+  const open = () => {
+    setIsOpen(true);
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
     }
-    this.searchInput.blur();
   };
 
-  clearClose = () => {
-    this.setState({ value: '', searchQueryString: '' });
-    this.searchInput.focus();
+  const close = () => {
+    if (value.length === 0) {
+      setIsOpen(false);
+      setSearchQueryString('');
+    }
+    if (searchInputRef.current) {
+      searchInputRef.current.blur();
+    }
   };
 
-  onChange = e => {
-    this.setState({ value: e.target.value });
+  const clearClose = () => {
+    setValue('');
+    setSearchQueryString('');
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
   };
 
-  handleSubmit = e => {
+  const onChange = e => {
+    setValue(e.target.value);
+  };
+
+  const handleSubmit = e => {
     e.preventDefault();
-    const searchString = this.state.value.toLowerCase().trim();
-    this.props.handleSubmit(searchString);
+    const searchString = value.toLowerCase().trim();
+    props.handleSubmit(searchString);
   };
 
-  render() {
-    const { value, isOpen } = this.state;
-    const placeholder = 'Search for conversations...';
+  const placeholder = 'Search for conversations...';
 
-    return (
-      <SearchWrapper isOpen={isOpen} onClick={this.open}>
-        <Icon glyph={'search'} size={32} />
-        <ClearSearch
-          onClick={this.clearClose}
-          isVisible={isOpen && value.length > 0}
+  return (
+    <SearchWrapper isOpen={isOpen} onClick={open}>
+      <Icon glyph={'search'} size={32} />
+      <ClearSearch
+        onClick={clearClose}
+        isVisible={isOpen && value.length > 0}
+        isOpen={isOpen}
+      >
+        <span>&times;</span>
+      </ClearSearch>
+      <SearchForm onSubmit={handleSubmit}>
+        <SearchInput
           isOpen={isOpen}
-        >
-          <span>&times;</span>
-        </ClearSearch>
-        <SearchForm onSubmit={this.handleSubmit}>
-          <SearchInput
-            isOpen={isOpen}
-            onBlur={this.close}
-            onChange={this.onChange}
-            value={value}
-            placeholder={placeholder}
-            ref={input => {
-              this.searchInput = input;
-            }}
-            autoFocus={true}
-          />
-        </SearchForm>
-      </SearchWrapper>
-    );
-  }
-}
+          onBlur={close}
+          onChange={onChange}
+          value={value}
+          placeholder={placeholder}
+          ref={searchInputRef}
+          autoFocus={true}
+        />
+      </SearchForm>
+    </SearchWrapper>
+  );
+};
 
 export default compose()(SearchViewInput);
