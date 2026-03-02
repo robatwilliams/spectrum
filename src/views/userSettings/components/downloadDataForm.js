@@ -25,34 +25,32 @@ type Props = {
   user: Object,
 };
 
-class DownloadDataForm extends React.Component<Props> {
-  render() {
-    const { user } = this.props;
+const DownloadDataForm = (props: Props) => {
+  const { user } = props;
 
-    if (!user) return null;
+  if (!user) return null;
 
-    return (
-      <SectionCard data-cy="download-data-container">
-        <SectionTitle>Download my data</SectionTitle>
-        <SectionSubtitle>
-          You can download your personal data at any time.
-        </SectionSubtitle>
+  return (
+    <SectionCard data-cy="download-data-container">
+      <SectionTitle>Download my data</SectionTitle>
+      <SectionSubtitle>
+        You can download your personal data at any time.
+      </SectionSubtitle>
 
-        <SectionCardFooter>
-          <Link
-            href={
-              process.env.NODE_ENV === 'production'
-                ? '/api/user.json'
-                : 'http://localhost:3001/api/user.json'
-            }
-            download
-          >
-            Download my data
-          </Link>
-        </SectionCardFooter>
-      </SectionCard>
-    );
-  }
-}
+      <SectionCardFooter>
+        <Link
+          href={
+            process.env.NODE_ENV === 'production'
+              ? '/api/user.json'
+              : 'http://localhost:3001/api/user.json'
+          }
+          download
+        >
+          Download my data
+        </Link>
+      </SectionCardFooter>
+    </SectionCard>
+  );
+};
 
 export default DownloadDataForm;

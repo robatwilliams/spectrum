@@ -88,8 +88,17 @@ type Props = {
   user: GetCurrentUserSettingsType,
 };
 
-class EmailSettings extends React.Component<Props> {
-  handleChange = e => {
+const EmailSettings = (props: Props) => {
+  const {
+    updateUserEmail,
+    dispatch,
+    toggleNotificationSettings,
+    smallOnly,
+    largeOnly,
+    user,
+  } = props;
+
+  const handleChange = e => {
     let notificationType = e.target.id;
     let deliveryMethod = 'email';
     let input = {
@@ -97,104 +106,90 @@ class EmailSettings extends React.Component<Props> {
       notificationType,
     };
 
-    this.props
-      .toggleNotificationSettings(input)
+    toggleNotificationSettings(input)
       .then(() => {
-        return this.props.dispatch(
-          addToastWithTimeout('success', 'Settings saved!')
-        );
+        return dispatch(addToastWithTimeout('success', 'Settings saved!'));
       })
       .catch(err => {
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+        dispatch(addToastWithTimeout('error', err.message));
       });
   };
 
-  render() {
-    const {
-      user: {
-        settings: { notifications },
-      },
-      user,
-    } = this.props;
+  const {
+    settings: { notifications },
+  } = user;
 
-    const settings = parseNotificationTypes(notifications).filter(
-      notification => notification.hasOwnProperty('emailValue')
-    );
+  const settings = parseNotificationTypes(notifications).filter(notification =>
+    notification.hasOwnProperty('emailValue')
+  );
 
-    if (!user.email) {
-      return (
-        <SectionCard
-          smallOnly={this.props.smallOnly}
-          largeOnly={this.props.largeOnly}
-        >
-          <SectionTitle>Turn on email notifications</SectionTitle>
-          <ListContainer>
-            <Description>
-              You can customize your email notifications to keep up to date on
-              what’s important to you on Spectrum. Enter your email below and
-              we’ll send you a confirmation link.
-            </Description>
-
-            <UserEmailConfirmation user={user} />
-          </ListContainer>
-        </SectionCard>
-      );
-    }
-
+  if (!user.email) {
     return (
-      <SectionCard
-        smallOnly={this.props.smallOnly}
-        largeOnly={this.props.largeOnly}
-      >
-        <SectionTitle>Email Preferences</SectionTitle>
+      <SectionCard smallOnly={smallOnly} largeOnly={largeOnly}>
+        <SectionTitle>Turn on email notifications</SectionTitle>
         <ListContainer>
-          {settings.map((setting, i) => {
-            return (
-              <EmailListItem key={i}>
-                <Checkbox
-                  checked={setting.emailValue}
-                  onChange={this.handleChange}
-                  id={setting.type}
-                  align={setting.display}
-                >
-                  <CheckboxContent>
-                    {setting.label}
-                    {setting.type === 'newMessageInThreads' && (
-                      <Notice>
-                        <strong>Trying to mute a specific conversation?</strong>{' '}
-                        You can turn off email notifications for individual
-                        threads by clicking on the notification icon{' '}
-                        <InlineIcon>
-                          <Icon glyph="notification" size="16" />
-                        </InlineIcon>{' '}
-                        at the top of a post.
-                      </Notice>
-                    )}
+          <Description>
+            You can customize your email notifications to keep up to date on
+            what’s important to you on Spectrum. Enter your email below and
+            we’ll send you a confirmation link.
+          </Description>
 
-                    {setting.type === 'newThreadCreated' && (
-                      <Notice>
-                        You can turn off email notifications for individual
-                        channels by turning thread notifications off on in the
-                        sidebar of the individual channel’s page.
-                      </Notice>
-                    )}
-
-                    {setting.type === 'newMention' && (
-                      <Notice>
-                        If you mute a specific conversation, new @mentions will
-                        not send you an email.
-                      </Notice>
-                    )}
-                  </CheckboxContent>
-                </Checkbox>
-              </EmailListItem>
-            );
-          })}
+          <UserEmailConfirmation user={user} />
         </ListContainer>
       </SectionCard>
     );
   }
-}
+
+  return (
+    <SectionCard smallOnly={smallOnly} largeOnly={largeOnly}>
+      <SectionTitle>Email Preferences</SectionTitle>
+      <ListContainer>
+        {settings.map((setting, i) => {
+          return (
+            <EmailListItem key={i}>
+              <Checkbox
+                checked={setting.emailValue}
+                onChange={handleChange}
+                id={setting.type}
+                align={setting.display}
+              >
+                <CheckboxContent>
+                  {setting.label}
+                  {setting.type === 'newMessageInThreads' && (
+                    <Notice>
+                      <strong>Trying to mute a specific conversation?</strong>{' '}
+                      You can turn off email notifications for individual
+                      threads by clicking on the notification icon{' '}
+                      <InlineIcon>
+                        <Icon glyph="notification" size="16" />
+                      </InlineIcon>{' '}
+                      at the top of a post.
+                    </Notice>
+                  )}
+
+                  {setting.type === 'newThreadCreated' && (
+                    <Notice>
+                      You can turn off email notifications for individual
+                      channels by turning thread notifications off on in the
+                      sidebar of the individual channel’s page.
+                    </Notice>
+                  )}
+
+                  {setting.type === 'newMention' && (
+                    <Notice>
+                      If you mute a specific conversation, new @mentions will
+                      not send you an email.
+                    </Notice>
+                  )}
+                </CheckboxContent>
+              </Checkbox>
+            </EmailListItem>
+          );
+        })}
+      </ListContainer>
+    </SectionCard>
+  );
+};
 
 export default compose(
   toggleUserNotificationSettingsMutation,
