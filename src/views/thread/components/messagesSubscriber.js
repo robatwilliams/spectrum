@@ -33,89 +33,43 @@ type Props = {
   ...$Exact<ViewNetworkHandlerType>,
 };
 
-class Messages extends React.Component<Props> {
-  unsubscribe: Function;
+const Messages = (props: Props) => {
+  const {
+    data,
+    isLoading,
+    isFetchingMore,
+    hasError,
+    location,
+    loadPreviousPage,
+    loadNextPage,
+    subscribeToNewMessages,
+    onMessagesLoaded,
+  } = props;
+  const unsubscribeRef = React.useRef(null);
+  const prevDataRef = React.useRef(data);
+  const scrollActionRef = React.useRef(null);
 
-  componentDidMount() {
-    const thread = this.props.data.thread || this.props.thread;
-    // Scroll to bottom on mount if we got cached data as getSnapshotBeforeUpdate does not fire for mounts
+  // Set up subscription and initial scroll
+  React.useEffect(() => {
+    const thread = data.thread || props.thread;
+    // Scroll to bottom on mount if we got cached data
     if (thread && (thread.watercooler || thread.currentUserLastSeen)) {
       const elem = document.getElementById('main');
-      if (!elem) return;
-      elem.scrollTop = elem.scrollHeight;
-    }
-    this.unsubscribe = this.props.subscribeToNewMessages();
-  }
-
-  componentWillUnmount() {
-    if (this.unsubscribe) this.unsubscribe();
-  }
-
-  getSnapshotBeforeUpdate(prev) {
-    const curr = this.props;
-    // First load
-    if (
-      !prev.data.thread &&
-      curr.data.thread &&
-      (curr.data.thread.currentUserLastSeen || curr.data.thread.watercooler)
-    ) {
-      return {
-        type: 'bottom',
-      };
-    }
-    // New messages
-    if (
-      prev.data.thread &&
-      curr.data.thread &&
-      prev.data.thread.messageConnection.edges.length > 0 &&
-      curr.data.thread.messageConnection.edges.length > 0 &&
-      prev.data.thread.messageConnection.edges.length <
-        curr.data.thread.messageConnection.edges.length
-    ) {
-      const elem = document.getElementById('main');
-      if (!elem || !curr.data.thread) return null;
-
-      // If new messages were added at the top, persist the scroll position
-      if (
-        prev.data.thread.messageConnection.edges[0].node.id !==
-        curr.data.thread.messageConnection.edges[0].node.id
-      ) {
-        return {
-          type: 'persist',
-          values: {
-            top: elem.scrollTop,
-            height: elem.scrollHeight,
-          },
-        };
+      if (elem) {
+        elem.scrollTop = elem.scrollHeight;
       }
-
-      // If more than one new message was added at the bottom, stick to the current position
-      if (
-        prev.data.thread.messageConnection.edges.length + 1 <
-        curr.data.thread.messageConnection.edges.length
-      ) {
-        return null;
-      }
-
-      // If only one message came in and we are near the bottom when new messages come in, stick to the bottom
-      if (elem.scrollHeight < elem.scrollTop + elem.clientHeight + 400) {
-        return {
-          type: 'bottom',
-        };
-      }
-
-      // Otherwise stick to the current position
-      return null;
     }
-    return null;
-  }
+    unsubscribeRef.current = subscribeToNewMessages();
 
-  componentDidUpdate(prevProps, __, snapshot) {
-    const { onMessagesLoaded } = this.props;
-    // after the messages load, pass it back to the thread container so that
-    // it can populate @ mention suggestions
-    const prevData = prevProps.data;
-    const currData = this.props.data;
+    return () => {
+      if (unsubscribeRef.current) unsubscribeRef.current();
+    };
+  }, []);
+
+  // Track messages loaded callback
+  React.useEffect(() => {
+    const prevData = prevDataRef.current;
+    const currData = data;
     const wasLoading = prevData && prevData.loading;
     const hasPrevThread = prevData && prevData.thread;
     const hasCurrThread = currData && currData.thread;
@@ -125,6 +79,7 @@ class Messages extends React.Component<Props> {
     const currMessageConnection =
       // $FlowIssue
       hasCurrThread && currData.thread.messageConnection;
+
     // thread loaded for the first time
     if (!hasPrevThread && hasCurrThread && currMessageConnection) {
       if (currMessageConnection.edges.length > 0) {
@@ -145,102 +100,168 @@ class Messages extends React.Component<Props> {
       }
     }
 
-    if (snapshot) {
+    prevDataRef.current = data;
+  });
+
+  // Determine scroll action before DOM updates
+  React.useLayoutEffect(() => {
+    const prev = prevDataRef.current;
+    const curr = data;
+
+    // First load
+    if (
+      !prev.thread &&
+      curr.thread &&
+      (curr.thread.currentUserLastSeen || curr.thread.watercooler)
+    ) {
+      scrollActionRef.current = { type: 'bottom' };
+    }
+    // New messages
+    else if (
+      prev.thread &&
+      curr.thread &&
+      prev.thread.messageConnection.edges.length > 0 &&
+      curr.thread.messageConnection.edges.length > 0 &&
+      prev.thread.messageConnection.edges.length <
+        curr.thread.messageConnection.edges.length
+    ) {
+      const elem = document.getElementById('main');
+      if (!elem || !curr.thread) {
+        scrollActionRef.current = null;
+        return;
+      }
+
+      // If new messages were added at the top, persist the scroll position
+      if (
+        prev.thread.messageConnection.edges[0].node.id !==
+        curr.thread.messageConnection.edges[0].node.id
+      ) {
+        scrollActionRef.current = {
+          type: 'persist',
+          values: {
+            top: elem.scrollTop,
+            height: elem.scrollHeight,
+          },
+        };
+      }
+      // If more than one new message was added at the bottom, stick to the current position
+      else if (
+        prev.thread.messageConnection.edges.length + 1 <
+        curr.thread.messageConnection.edges.length
+      ) {
+        scrollActionRef.current = null;
+      }
+      // If only one message came in and we are near the bottom, stick to the bottom
+      else if (elem.scrollHeight < elem.scrollTop + elem.clientHeight + 400) {
+        scrollActionRef.current = { type: 'bottom' };
+      }
+      // Otherwise stick to the current position
+      else {
+        scrollActionRef.current = null;
+      }
+    } else {
+      scrollActionRef.current = null;
+    }
+  });
+
+  // Apply scroll action after DOM updates
+  React.useLayoutEffect(() => {
+    if (scrollActionRef.current) {
       const elem = document.getElementById('main');
       if (!elem) return;
-      switch (snapshot.type) {
+
+      switch (scrollActionRef.current.type) {
         case 'bottom': {
           elem.scrollTop = elem.scrollHeight;
-          return;
+          break;
         }
         case 'persist': {
-          elem.scrollTop =
-            elem.scrollHeight - snapshot.values.height + snapshot.values.top;
-          return;
+          const values = scrollActionRef.current.values;
+          if (values) {
+            elem.scrollTop = elem.scrollHeight - values.height + values.top;
+          }
+          break;
         }
         default: {
-          return;
+          break;
         }
       }
+      scrollActionRef.current = null;
     }
+  });
+
+  const { thread } = data;
+
+  if (thread && thread.messageConnection) {
+    const { messageConnection } = thread;
+    const { edges } = messageConnection;
+
+    if (edges.length === 0) return <NullMessages />;
+
+    const unsortedMessages = edges.map(message => message && message.node);
+    const sortedMessages = sortAndGroupMessages(unsortedMessages);
+
+    if (!sortedMessages || sortedMessages.length === 0) return <NullMessages />;
+
+    return (
+      <React.Fragment>
+        {messageConnection.pageInfo.hasPreviousPage && (
+          <NextPageButton
+            isFetchingMore={isFetchingMore}
+            fetchMore={loadPreviousPage}
+            automatic={!!thread.watercooler}
+            href={{
+              pathname: location.pathname,
+              search: queryString.stringify({
+                ...queryString.parse(location.search),
+                msgsbefore: messageConnection.edges[0].cursor,
+                msgsafter: undefined,
+              }),
+            }}
+          >
+            Show previous messages
+          </NextPageButton>
+        )}
+        <ChatMessages
+          thread={thread}
+          uniqueMessageCount={unsortedMessages.length}
+          messages={sortedMessages}
+          threadType={'story'}
+          isWatercooler={thread.watercooler}
+        />
+        {messageConnection.pageInfo.hasNextPage && (
+          <NextPageButton
+            isFetchingMore={isFetchingMore}
+            fetchMore={loadNextPage}
+            href={{
+              pathname: location.pathname,
+              search: queryString.stringify({
+                ...queryString.parse(location.search),
+                msgsafter:
+                  messageConnection.edges[messageConnection.edges.length - 1]
+                    .cursor,
+                msgsbefore: undefined,
+              }),
+            }}
+          >
+            Show more messages
+          </NextPageButton>
+        )}
+      </React.Fragment>
+    );
   }
 
-  render() {
-    const { data, isLoading, isFetchingMore, hasError } = this.props;
+  if (isLoading)
+    return (
+      <NullMessagesWrapper>
+        <Loading style={{ height: '80vh' }} />
+      </NullMessagesWrapper>
+    );
 
-    const { thread } = data;
-    if (thread && thread.messageConnection) {
-      const { messageConnection } = thread;
-      const { edges } = messageConnection;
+  if (hasError) return null;
 
-      if (edges.length === 0) return <NullMessages />;
-
-      const unsortedMessages = edges.map(message => message && message.node);
-      const sortedMessages = sortAndGroupMessages(unsortedMessages);
-
-      if (!sortedMessages || sortedMessages.length === 0)
-        return <NullMessages />;
-
-      return (
-        <React.Fragment>
-          {messageConnection.pageInfo.hasPreviousPage && (
-            <NextPageButton
-              isFetchingMore={isFetchingMore}
-              fetchMore={this.props.loadPreviousPage}
-              automatic={!!thread.watercooler}
-              href={{
-                pathname: this.props.location.pathname,
-                search: queryString.stringify({
-                  ...queryString.parse(this.props.location.search),
-                  msgsbefore: messageConnection.edges[0].cursor,
-                  msgsafter: undefined,
-                }),
-              }}
-            >
-              Show previous messages
-            </NextPageButton>
-          )}
-          <ChatMessages
-            thread={thread}
-            uniqueMessageCount={unsortedMessages.length}
-            messages={sortedMessages}
-            threadType={'story'}
-            isWatercooler={thread.watercooler}
-          />
-          {messageConnection.pageInfo.hasNextPage && (
-            <NextPageButton
-              isFetchingMore={isFetchingMore}
-              fetchMore={this.props.loadNextPage}
-              href={{
-                pathname: this.props.location.pathname,
-                search: queryString.stringify({
-                  ...queryString.parse(this.props.location.search),
-                  msgsafter:
-                    messageConnection.edges[messageConnection.edges.length - 1]
-                      .cursor,
-                  msgsbefore: undefined,
-                }),
-              }}
-            >
-              Show more messages
-            </NextPageButton>
-          )}
-        </React.Fragment>
-      );
-    }
-
-    if (isLoading)
-      return (
-        <NullMessagesWrapper>
-          <Loading style={{ height: '80vh' }} />
-        </NullMessagesWrapper>
-      );
-
-    if (hasError) return null;
-
-    return null;
-  }
-}
+  return null;
+};
 
 export default compose(
   withRouter,
