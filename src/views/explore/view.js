@@ -110,51 +110,50 @@ type CategoryListProps = {
   },
   isLoading: boolean,
 };
-class CategoryList extends React.Component<CategoryListProps> {
-  render() {
-    const {
-      data: { communities },
-      title,
-      slugs,
-      isLoading,
-    } = this.props;
 
-    if (communities) {
-      let filteredCommunities = communities;
-      if (slugs) {
-        filteredCommunities = communities.filter(c => {
-          if (!c) return null;
-          if (slugs.indexOf(c.slug) > -1) return c;
-          return null;
-        });
-      }
+const CategoryList = (props: CategoryListProps) => {
+  const {
+    data: { communities },
+    title,
+    slugs,
+    isLoading,
+  } = props;
 
-      return (
-        <ListWithTitle>
-          {title ? <ListTitle>{title}</ListTitle> : null}
-          <ListWrapper>
-            {filteredCommunities.map(
-              (community, i) =>
-                community && (
-                  <ErrorBoundary key={i}>
-                    <ProfileCardWrapper>
-                      <CommunityProfileCard community={community} />
-                    </ProfileCardWrapper>
-                  </ErrorBoundary>
-                )
-            )}
-          </ListWrapper>
-        </ListWithTitle>
-      );
+  if (communities) {
+    let filteredCommunities = communities;
+    if (slugs) {
+      filteredCommunities = communities.filter(c => {
+        if (!c) return null;
+        if (slugs.indexOf(c.slug) > -1) return c;
+        return null;
+      });
     }
 
-    if (isLoading) {
-      return <Loading style={{ padding: '64px 32px', minHeight: '100vh' }} />;
-    }
-
-    return <ErrorView />;
+    return (
+      <ListWithTitle>
+        {title ? <ListTitle>{title}</ListTitle> : null}
+        <ListWrapper>
+          {filteredCommunities.map(
+            (community, i) =>
+              community && (
+                <ErrorBoundary key={i}>
+                  <ProfileCardWrapper>
+                    <CommunityProfileCard community={community} />
+                  </ProfileCardWrapper>
+                </ErrorBoundary>
+              )
+          )}
+        </ListWrapper>
+      </ListWithTitle>
+    );
   }
-}
+
+  if (isLoading) {
+    return <Loading style={{ padding: '64px 32px', minHeight: '100vh' }} />;
+  }
+
+  return <ErrorView />;
+};
 
 export const Category = compose(
   withCurrentUser,

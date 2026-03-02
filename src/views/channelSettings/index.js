@@ -53,7 +53,7 @@ const ChannelSettings = (props: Props) => {
         title: 'Settings',
       })
     );
-  }, [dispatch]);
+  }, []);
 
   const togglePending = (userId, action) => {
     const { channel } = data;

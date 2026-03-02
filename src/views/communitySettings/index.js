@@ -36,7 +36,7 @@ const CommunitySettings = (props: Props) => {
         title: 'Settings',
       })
     );
-  }, [dispatch]);
+  }, []);
 
   const {
     data: { community },
