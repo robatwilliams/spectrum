@@ -68,31 +68,36 @@ type State = {
   webPushPromptLoading: boolean,
 };
 
-class NotificationsPure extends React.Component<Props, State> {
-  constructor() {
-    super();
+const NotificationsPure = (props: Props) => {
+  const {
+    dispatch,
+    currentUser,
+    data,
+    isLoading,
+    hasError,
+    isFetchingMore,
+    networkOnline,
+    websocketConnection,
+  } = props;
+  const [showWebPushPrompt, setShowWebPushPrompt] = React.useState(false);
+  const [webPushPromptLoading, setWebPushPromptLoading] = React.useState(false);
+  const prevPropsRef = React.useRef(props);
 
-    this.state = {
-      showWebPushPrompt: false,
-      webPushPromptLoading: false,
-    };
-  }
-
-  markAllNotificationsSeen = () => {
-    this.props.dispatch(updateNotificationsCount('notifications', 0));
-    this.props.markAllNotificationsSeen &&
-      this.props.markAllNotificationsSeen().catch(err => {
+  const markAllNotificationsSeenHandler = React.useCallback(() => {
+    dispatch(updateNotificationsCount('notifications', 0));
+    props.markAllNotificationsSeen &&
+      props.markAllNotificationsSeen().catch(err => {
         console.error('Error marking all notifications seen: ', err);
       });
-  };
+  }, [dispatch, props]);
 
-  componentDidMount() {
-    const { dispatch } = this.props;
+  // Setup titlebar on mount
+  React.useEffect(() => {
     dispatch(
       setTitlebarProps({
         title: 'Notifications',
         rightAction: (
-          <OutlineButton onClick={() => this.markAllNotificationsSeen()}>
+          <OutlineButton onClick={markAllNotificationsSeenHandler}>
             Mark all seen
           </OutlineButton>
         ),
@@ -106,17 +111,13 @@ class NotificationsPure extends React.Component<Props, State> {
           result === 'denied' ||
           (result !== 'prompt' && result !== 'granted')
         ) {
-          this.setState({
-            showWebPushPrompt: false,
-          });
+          setShowWebPushPrompt(false);
           return;
         }
 
         WebPushManager.getSubscription()
           .then(subscription => {
-            this.setState({
-              showWebPushPrompt: !subscription,
-            });
+            setShowWebPushPrompt(!subscription);
             return;
           })
           .catch(err => {
@@ -126,314 +127,288 @@ class NotificationsPure extends React.Component<Props, State> {
       .catch(err => {
         console.error('Error getting permission state:', err);
       });
-  }
+  }, [dispatch, markAllNotificationsSeenHandler]);
 
-  shouldComponentUpdate(nextProps: Props) {
-    const curr = this.props;
-    if (curr.networkOnline !== nextProps.networkOnline) return true;
-    if (curr.websocketConnection !== nextProps.websocketConnection) return true;
-    // fetching more
-    if (curr.data.networkStatus === 7 && nextProps.data.networkStatus === 3)
-      return false;
-    return true;
-  }
-
-  componentDidUpdate(prev: Props) {
-    const curr = this.props;
+  // Handle reconnection
+  React.useEffect(() => {
+    const prev = prevPropsRef.current;
+    const curr = props;
     const didReconnect = useConnectionRestored({ curr, prev });
     if (didReconnect && curr.data.refetch) {
       curr.data.refetch();
     }
-  }
+    prevPropsRef.current = props;
+  });
 
-  subscribeToWebPush = () => {
-    this.setState({
-      webPushPromptLoading: true,
-    });
+  const subscribeToWebPushHandler = React.useCallback(() => {
+    setWebPushPromptLoading(true);
     WebPushManager.subscribe()
       .then(subscription => {
-        this.setState({
-          webPushPromptLoading: false,
-          showWebPushPrompt: false,
-        });
-        return this.props.subscribeToWebPush(subscription);
+        setWebPushPromptLoading(false);
+        setShowWebPushPrompt(false);
+        return props.subscribeToWebPush(subscription);
       })
       .catch(err => {
-        this.setState({
-          webPushPromptLoading: false,
-        });
+        setWebPushPromptLoading(false);
         console.error(err);
-        return this.props.dispatch(
+        return dispatch(
           addToastWithTimeout(
             'error',
             "Oops, we couldn't enable browser notifications for you. Please try again!"
           )
         );
       });
+  }, [props, dispatch]);
+
+  const dismissWebPushRequest = () => {
+    setShowWebPushPrompt(false);
   };
 
-  dismissWebPushRequest = () => {
-    this.setState({
-      showWebPushPrompt: false,
-    });
-  };
-
-  markSingleNotificationSeen = (id: string) => {
-    const { markSingleNotificationSeen } = this.props;
-    return markSingleNotificationSeen(id).catch(err => {
+  const markSingleNotificationSeenHandler = (id: string) => {
+    return props.markSingleNotificationSeen(id).catch(err => {
       // ignore errors for now
     });
   };
 
-  render() {
-    const {
-      currentUser,
-      data,
-      isLoading,
-      hasError,
-      isFetchingMore,
-    } = this.props;
+  const { title, description } = generateMetaInfo({
+    type: 'notifications',
+  });
 
-    const { title, description } = generateMetaInfo({
-      type: 'notifications',
-    });
-
-    if (data.notifications && data.notifications.edges.length > 0) {
-      let notifications = data.notifications.edges
-        .map(notification => parseNotification(notification.node))
-        .filter(
-          notification => notification.context.type !== 'DIRECT_MESSAGE_THREAD'
-        );
-
-      notifications = deduplicateChildren(notifications, 'id');
-      notifications = sortByDate(notifications, 'modifiedAt', 'desc');
-      return (
-        <React.Fragment>
-          <Head title={title} description={description} />
-          <ViewGrid>
-            <StyledSingleColumn>
-              <div>
-                <StickyHeader>
-                  {!isDesktopApp() && this.state.showWebPushPrompt && (
-                    <OutlineButton
-                      onClick={this.subscribeToWebPush}
-                      isLoading={this.state.webPushPromptLoading}
-                      css={{ marginRight: '16px' }}
-                    >
-                      {isLoading ? 'Enabling...' : 'Enable push notifications'}
-                    </OutlineButton>
-                  )}
-                  <PrimaryButton
-                    disabled={notifications.every(
-                      notification => notification.isSeen
-                    )}
-                    onClick={() => this.markAllNotificationsSeen()}
-                  >
-                    Mark all seen
-                  </PrimaryButton>
-                </StickyHeader>
-                {notifications.map(notification => {
-                  switch (notification.event) {
-                    case 'MESSAGE_CREATED': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <NewMessageNotification
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    case 'REACTION_CREATED': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <NewReactionNotification
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    case 'THREAD_REACTION_CREATED': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <NewThreadReactionNotification
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    case 'CHANNEL_CREATED': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <NewChannelNotification
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    case 'USER_JOINED_COMMUNITY': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <NewUserInCommunityNotification
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    case 'THREAD_CREATED': {
-                      // deprecated - we no longer show this notification type in-app
-                      return null;
-                    }
-                    case 'COMMUNITY_INVITE': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <CommunityInviteNotification
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    case 'MENTION_MESSAGE': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <MentionMessageNotification
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    case 'MENTION_THREAD': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <MentionThreadNotification
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    case 'PRIVATE_CHANNEL_REQUEST_SENT': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <PrivateChannelRequestSent
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    case 'PRIVATE_CHANNEL_REQUEST_APPROVED': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <PrivateChannelRequestApproved
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    case 'PRIVATE_COMMUNITY_REQUEST_SENT': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <PrivateCommunityRequestSent
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    case 'PRIVATE_COMMUNITY_REQUEST_APPROVED': {
-                      return (
-                        <ErrorBoundary key={notification.id}>
-                          <PrivateCommunityRequestApproved
-                            notification={notification}
-                            currentUser={currentUser}
-                            markSingleNotificationSeen={
-                              this.markSingleNotificationSeen
-                            }
-                          />
-                        </ErrorBoundary>
-                      );
-                    }
-                    default: {
-                      return null;
-                    }
-                  }
-                })}
-
-                {data.hasNextPage && (
-                  <NextPageButton
-                    isFetchingMore={isFetchingMore}
-                    fetchMore={data.fetchMore}
-                    bottomOffset={-100}
-                  >
-                    Load more notifications
-                  </NextPageButton>
-                )}
-              </div>
-            </StyledSingleColumn>
-          </ViewGrid>
-        </React.Fragment>
+  if (data.notifications && data.notifications.edges.length > 0) {
+    let notifications = data.notifications.edges
+      .map(notification => parseNotification(notification.node))
+      .filter(
+        notification => notification.context.type !== 'DIRECT_MESSAGE_THREAD'
       );
-    }
 
-    if (isLoading) {
-      return <LoadingView />;
-    }
-
-    if (hasError) {
-      return <ErrorView />;
-    }
-
-    // no issues loading, but the user doesnt have notifications yet
+    notifications = deduplicateChildren(notifications, 'id');
+    notifications = sortByDate(notifications, 'modifiedAt', 'desc');
     return (
-      <ErrorView
-        emoji="😙"
-        heading="No notifications...yet"
-        subheading="Looks like you’re new around here! When you start receiving notifications about conversations on Spectrum, they'll show up here."
-      />
+      <React.Fragment>
+        <Head title={title} description={description} />
+        <ViewGrid>
+          <StyledSingleColumn>
+            <div>
+              <StickyHeader>
+                {!isDesktopApp() && showWebPushPrompt && (
+                  <OutlineButton
+                    onClick={subscribeToWebPushHandler}
+                    isLoading={webPushPromptLoading}
+                    css={{ marginRight: '16px' }}
+                  >
+                    {isLoading ? 'Enabling...' : 'Enable push notifications'}
+                  </OutlineButton>
+                )}
+                <PrimaryButton
+                  disabled={notifications.every(
+                    notification => notification.isSeen
+                  )}
+                  onClick={markAllNotificationsSeenHandler}
+                >
+                  Mark all seen
+                </PrimaryButton>
+              </StickyHeader>
+              {notifications.map(notification => {
+                switch (notification.event) {
+                  case 'MESSAGE_CREATED': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <NewMessageNotification
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  case 'REACTION_CREATED': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <NewReactionNotification
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  case 'THREAD_REACTION_CREATED': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <NewThreadReactionNotification
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  case 'CHANNEL_CREATED': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <NewChannelNotification
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  case 'USER_JOINED_COMMUNITY': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <NewUserInCommunityNotification
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  case 'THREAD_CREATED': {
+                    // deprecated - we no longer show this notification type in-app
+                    return null;
+                  }
+                  case 'COMMUNITY_INVITE': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <CommunityInviteNotification
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  case 'MENTION_MESSAGE': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <MentionMessageNotification
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  case 'MENTION_THREAD': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <MentionThreadNotification
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  case 'PRIVATE_CHANNEL_REQUEST_SENT': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <PrivateChannelRequestSent
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  case 'PRIVATE_CHANNEL_REQUEST_APPROVED': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <PrivateChannelRequestApproved
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  case 'PRIVATE_COMMUNITY_REQUEST_SENT': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <PrivateCommunityRequestSent
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  case 'PRIVATE_COMMUNITY_REQUEST_APPROVED': {
+                    return (
+                      <ErrorBoundary key={notification.id}>
+                        <PrivateCommunityRequestApproved
+                          notification={notification}
+                          currentUser={currentUser}
+                          markSingleNotificationSeen={
+                            markSingleNotificationSeenHandler
+                          }
+                        />
+                      </ErrorBoundary>
+                    );
+                  }
+                  default: {
+                    return null;
+                  }
+                }
+              })}
+
+              {data.hasNextPage && (
+                <NextPageButton
+                  isFetchingMore={isFetchingMore}
+                  fetchMore={data.fetchMore}
+                  bottomOffset={-100}
+                >
+                  Load more notifications
+                </NextPageButton>
+              )}
+            </div>
+          </StyledSingleColumn>
+        </ViewGrid>
+      </React.Fragment>
     );
   }
-}
+
+  if (isLoading) {
+    return <LoadingView />;
+  }
+
+  if (hasError) {
+    return <ErrorView />;
+  }
+
+  // no issues loading, but the user doesnt have notifications yet
+  return (
+    <ErrorView
+      emoji="😙"
+      heading="No notifications...yet"
+      subheading="Looks like you’re new around here! When you start receiving notifications about conversations on Spectrum, they'll show up here."
+    />
+  );
+};
 
 const map = state => ({
   networkOnline: state.connectionStatus.networkOnline,
