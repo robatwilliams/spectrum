@@ -26,36 +26,37 @@ type CommunityProps = {
   showHoverProfile?: boolean,
 };
 
-export class CommunityListItem extends React.Component<CommunityProps> {
-  render() {
-    const { community, showDescription, children, reputation } = this.props;
-
-    return (
-      <Wrapper>
-        <Row>
-          <CommunityAvatar
-            community={community}
-            size={32}
-            showHoverProfile={false}
-            isClickable={false}
-          />
-          <Col style={{ marginLeft: '12px' }}>
-            <Heading>{community.name}</Heading>
-            {/* greater than -1 because we want to pass the 0 to the component so it returns null */}
-            {typeof reputation === 'number' && reputation > -1 && (
-              <Meta>
-                {/* $FlowIssue */}
-                <Reputation size={'default'} reputation={reputation} />
-              </Meta>
-            )}
-          </Col>
-          <ActionContainer className={'action'}>{children}</ActionContainer>
-        </Row>
-        {showDescription && <Description>{community.description}</Description>}
-      </Wrapper>
-    );
-  }
-}
+export const CommunityListItem = ({
+  community,
+  showDescription,
+  children,
+  reputation,
+}: CommunityProps) => {
+  return (
+    <Wrapper>
+      <Row>
+        <CommunityAvatar
+          community={community}
+          size={32}
+          showHoverProfile={false}
+          isClickable={false}
+        />
+        <Col style={{ marginLeft: '12px' }}>
+          <Heading>{community.name}</Heading>
+          {/* greater than -1 because we want to pass the 0 to the component so it returns null */}
+          {typeof reputation === 'number' && reputation > -1 && (
+            <Meta>
+              {/* $FlowIssue */}
+              <Reputation size={'default'} reputation={reputation} />
+            </Meta>
+          )}
+        </Col>
+        <ActionContainer className={'action'}>{children}</ActionContainer>
+      </Row>
+      {showDescription && <Description>{community.description}</Description>}
+    </Wrapper>
+  );
+};
 
 type CardProps = {
   isClickable?: boolean,

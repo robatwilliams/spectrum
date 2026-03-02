@@ -23,45 +23,41 @@ type Props = {
   markSingleNotificationSeen: Function,
 };
 
-export class PrivateChannelRequestApproved extends React.Component<Props> {
-  render() {
-    const {
-      notification,
-      currentUser,
-      markSingleNotificationSeen,
-    } = this.props;
+export const PrivateChannelRequestApproved = ({
+  notification,
+  currentUser,
+  markSingleNotificationSeen,
+}: Props) => {
+  const actors = parseActors(notification.actors, currentUser, true);
+  const event = parseEvent(notification.event);
+  const date = parseNotificationDate(notification.modifiedAt);
+  const context = parseContext(notification.context);
+  const channel = notification.entities[0].payload;
 
-    const actors = parseActors(notification.actors, currentUser, true);
-    const event = parseEvent(notification.event);
-    const date = parseNotificationDate(notification.modifiedAt);
-    const context = parseContext(notification.context);
-    const channel = notification.entities[0].payload;
-
-    return (
-      <NotificationCard
-        onClick={() => markSingleNotificationSeen(notification.id)}
-        isSeen={notification.isSeen}
-      >
-        <CardLink
-          to={`/${notification.context.payload.slug}/${
-            notification.entities[0].payload.slug
-          }`}
-        />
-        <CardContent>
-          <ApprovedContext>
-            <Icon glyph="member-add" />
-            <ActorsRow actors={actors.asObjects} />
-          </ApprovedContext>
-        </CardContent>
-        <Content>
-          <TextContent pointer={false}>
-            {' '}
-            {actors.asString} {event} the{' '}
-            <Link to={`/${context.slug}/${channel.slug}`}>{channel.name}</Link>{' '}
-            channel in {context.asString} {date}{' '}
-          </TextContent>
-        </Content>
-      </NotificationCard>
-    );
-  }
-}
+  return (
+    <NotificationCard
+      onClick={() => markSingleNotificationSeen(notification.id)}
+      isSeen={notification.isSeen}
+    >
+      <CardLink
+        to={`/${notification.context.payload.slug}/${
+          notification.entities[0].payload.slug
+        }`}
+      />
+      <CardContent>
+        <ApprovedContext>
+          <Icon glyph="member-add" />
+          <ActorsRow actors={actors.asObjects} />
+        </ApprovedContext>
+      </CardContent>
+      <Content>
+        <TextContent pointer={false}>
+          {' '}
+          {actors.asString} {event} the{' '}
+          <Link to={`/${context.slug}/${channel.slug}`}>{channel.name}</Link>{' '}
+          channel in {context.asString} {date}{' '}
+        </TextContent>
+      </Content>
+    </NotificationCard>
+  );
+};

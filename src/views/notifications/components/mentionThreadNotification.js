@@ -47,46 +47,34 @@ const ThreadCreated = compose(
   However, because this notification fetches thread data, we will get community info back from the response! I use a slightly hacky component state + props to bubble the community name up from the ThreadCreated component whenever the data fetches, then use that to set local component state to show the community name in the notification.
 */
 
-export class MentionThreadNotification extends React.Component<Props, State> {
-  constructor() {
-    super();
+export const MentionThreadNotification = ({
+  notification,
+  currentUser,
+  markSingleNotificationSeen,
+}: Props) => {
+  const actors = parseActors(notification.actors, currentUser, false);
+  const date = parseNotificationDate(notification.modifiedAt);
+  const context = parseContext(notification.context, currentUser);
 
-    this.state = {
-      communityName: '',
-    };
-  }
-
-  render() {
-    const {
-      notification,
-      currentUser,
-      markSingleNotificationSeen,
-    } = this.props;
-
-    const actors = parseActors(notification.actors, currentUser, false);
-    const date = parseNotificationDate(notification.modifiedAt);
-    const context = parseContext(notification.context, currentUser);
-
-    return (
-      <SegmentedNotificationCard
-        onClick={() => markSingleNotificationSeen(notification.id)}
-        isSeen={notification.isSeen}
-      >
-        <ThreadContext>
-          <SpecialContext>
-            <Icon glyph="mention" />
-            <TextContent pointer={true}>
-              {actors.asObjects[0].name} mentioned you in {context.asString}{' '}
-              {date}
-            </TextContent>
-          </SpecialContext>
-        </ThreadContext>
-        <ContentWash>
-          <AttachmentsWash>
-            <ThreadCreated id={notification.context.id} />
-          </AttachmentsWash>
-        </ContentWash>
-      </SegmentedNotificationCard>
-    );
-  }
-}
+  return (
+    <SegmentedNotificationCard
+      onClick={() => markSingleNotificationSeen(notification.id)}
+      isSeen={notification.isSeen}
+    >
+      <ThreadContext>
+        <SpecialContext>
+          <Icon glyph="mention" />
+          <TextContent pointer={true}>
+            {actors.asObjects[0].name} mentioned you in {context.asString}{' '}
+            {date}
+          </TextContent>
+        </SpecialContext>
+      </ThreadContext>
+      <ContentWash>
+        <AttachmentsWash>
+          <ThreadCreated id={notification.context.id} />
+        </AttachmentsWash>
+      </ContentWash>
+    </SegmentedNotificationCard>
+  );
+};

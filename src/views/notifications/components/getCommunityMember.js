@@ -10,16 +10,14 @@ type Props = {
   data: Object,
 };
 
-class GetCommunityMember extends React.Component<Props> {
-  render() {
-    if (!this.props.data.communityMember) {
-      return this.props.render({ communityMember: null });
-    }
-
-    return this.props.render({
-      communityMember: this.props.data.communityMember,
-    });
+const GetCommunityMember = ({ data, render }: Props) => {
+  if (!data.communityMember) {
+    return render({ communityMember: null });
   }
-}
+
+  return render({
+    communityMember: data.communityMember,
+  });
+};
 
 export default compose(getCommunityMemberQuery)(GetCommunityMember);

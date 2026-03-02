@@ -29,89 +29,85 @@ type Props = {
   blockPendingCommunityMember: Function,
 };
 
-class PrivateCommunityRequestSentComponent extends React.Component<Props> {
-  render() {
-    const {
-      notification,
-      currentUser,
-      approvePendingCommunityMember,
-      blockPendingCommunityMember,
-      markSingleNotificationSeen,
-    } = this.props;
+const PrivateCommunityRequestSentComponent = ({
+  notification,
+  currentUser,
+  approvePendingCommunityMember,
+  blockPendingCommunityMember,
+  markSingleNotificationSeen,
+}: Props) => {
+  const actors = parseActors(notification.actors, currentUser, true);
+  const event = parseEvent(notification.event);
+  const date = parseNotificationDate(notification.modifiedAt);
 
-    const actors = parseActors(notification.actors, currentUser, true);
-    const event = parseEvent(notification.event);
-    const date = parseNotificationDate(notification.modifiedAt);
+  const input = {
+    communityId: notification.context.id,
+    userId: notification.actors[0].id,
+  };
 
-    const input = {
-      communityId: notification.context.id,
-      userId: notification.actors[0].id,
-    };
-
-    return (
-      <SegmentedNotificationCard
-        onClick={() => markSingleNotificationSeen(notification.id)}
-        isSeen={notification.isSeen}
+  return (
+    <SegmentedNotificationCard
+      onClick={() => markSingleNotificationSeen(notification.id)}
+      isSeen={notification.isSeen}
+    >
+      <Link
+        to={`/${
+          notification.context.payload.slug
+        }/settings/members?filter=pending`}
       >
-        <Link
-          to={`/${
-            notification.context.payload.slug
-          }/settings/members?filter=pending`}
-        >
-          <CardContent>
-            <RequestContext style={{ padding: '0 16px' }}>
-              <Icon glyph="person" />
-              <ActorsRow actors={actors.asObjects} />
-            </RequestContext>
-          </CardContent>
-          <Content style={{ padding: '0 16px 16px' }}>
-            <TextContent pointer={false}>
-              {' '}
-              {actors.asString} {event} the{' '}
-              <Link to={`/${notification.context.payload.slug}`}>
-                {notification.context.payload.name}
-              </Link>{' '}
-              community {date}{' '}
-            </TextContent>
-          </Content>
-        </Link>
-        <GetCommunityMember
-          userId={input.userId}
-          communityId={input.communityId}
-          render={({ communityMember }) => {
-            if (!communityMember || !communityMember.isPending) return null;
-            return (
-              <ContentWash>
-                <AttachmentsWash>
-                  <ButtonsRow>
-                    <MutationWrapper
-                      mutation={blockPendingCommunityMember}
-                      variables={{ input: input }}
-                      render={({ isLoading }) => (
-                        <OutlineButton loading={isLoading} glyph={'minus'}>
-                          Block
-                        </OutlineButton>
-                      )}
-                    />
-                    <MutationWrapper
-                      mutation={approvePendingCommunityMember}
-                      variables={{ input: input }}
-                      render={({ isLoading }) => (
-                        <Button loading={isLoading} glyph={'plus'}>
-                          Approve
-                        </Button>
-                      )}
-                    />
-                  </ButtonsRow>
-                </AttachmentsWash>
-              </ContentWash>
-            );
-          }}
-        />
-      </SegmentedNotificationCard>
-    );
-  }
-}
+        <CardContent>
+          <RequestContext style={{ padding: '0 16px' }}>
+            <Icon glyph="person" />
+            <ActorsRow actors={actors.asObjects} />
+          </RequestContext>
+        </CardContent>
+        <Content style={{ padding: '0 16px 16px' }}>
+          <TextContent pointer={false}>
+            {' '}
+            {actors.asString} {event} the{' '}
+            <Link to={`/${notification.context.payload.slug}`}>
+              {notification.context.payload.name}
+            </Link>{' '}
+            community {date}{' '}
+          </TextContent>
+        </Content>
+      </Link>
+      <GetCommunityMember
+        userId={input.userId}
+        communityId={input.communityId}
+        render={({ communityMember }) => {
+          if (!communityMember || !communityMember.isPending) return null;
+          return (
+            <ContentWash>
+              <AttachmentsWash>
+                <ButtonsRow>
+                  <MutationWrapper
+                    mutation={blockPendingCommunityMember}
+                    variables={{ input: input }}
+                    render={({ isLoading }) => (
+                      <OutlineButton loading={isLoading} glyph={'minus'}>
+                        Block
+                      </OutlineButton>
+                    )}
+                  />
+                  <MutationWrapper
+                    mutation={approvePendingCommunityMember}
+                    variables={{ input: input }}
+                    render={({ isLoading }) => (
+                      <Button loading={isLoading} glyph={'plus'}>
+                        Approve
+                      </Button>
+                    )}
+                  />
+                </ButtonsRow>
+              </AttachmentsWash>
+            </ContentWash>
+          );
+        }}
+      />
+    </SegmentedNotificationCard>
+  );
+};
 
 export const PrivateCommunityRequestSent = compose(
   approvePendingCommunityMember,
