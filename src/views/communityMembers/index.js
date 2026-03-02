@@ -26,48 +26,46 @@ type Props = {
   history: Object,
 };
 
-class CommunityMembersSettings extends React.Component<Props> {
-  render() {
-    const { community, history } = this.props;
+const CommunityMembersSettings = (props: Props) => {
+  const { community, history } = props;
 
-    if (community && community.id) {
-      return (
-        <SectionsContainer>
-          <Column>
+  if (community && community.id) {
+    return (
+      <SectionsContainer>
+        <Column>
+          <ErrorBoundary fallbackComponent={SettingsFallback}>
+            <CommunityMembers
+              history={history}
+              id={community.id}
+              community={community}
+            />
+          </ErrorBoundary>
+        </Column>
+
+        <Column>
+          <ErrorBoundary fallbackComponent={SettingsFallback}>
+            <SlackConnection type={'import-only'} id={community.id} />
+          </ErrorBoundary>
+
+          {community.isPrivate && (
             <ErrorBoundary fallbackComponent={SettingsFallback}>
-              <CommunityMembers
-                history={history}
-                id={community.id}
-                community={community}
-              />
+              <JoinTokenSettings id={community.id} community={community} />
             </ErrorBoundary>
-          </Column>
+          )}
 
-          <Column>
-            <ErrorBoundary fallbackComponent={SettingsFallback}>
-              <SlackConnection type={'import-only'} id={community.id} />
-            </ErrorBoundary>
-
-            {community.isPrivate && (
-              <ErrorBoundary fallbackComponent={SettingsFallback}>
-                <JoinTokenSettings id={community.id} community={community} />
-              </ErrorBoundary>
-            )}
-
-            <ErrorBoundary fallbackComponent={SettingsFallback}>
-              <SectionCard>
-                <SectionTitle>Invite by email</SectionTitle>
-                <CommunityInvitationForm id={community.id} />
-              </SectionCard>
-            </ErrorBoundary>
-          </Column>
-        </SectionsContainer>
-      );
-    }
-
-    return <ErrorView />;
+          <ErrorBoundary fallbackComponent={SettingsFallback}>
+            <SectionCard>
+              <SectionTitle>Invite by email</SectionTitle>
+              <CommunityInvitationForm id={community.id} />
+            </SectionCard>
+          </ErrorBoundary>
+        </Column>
+      </SectionsContainer>
+    );
   }
-}
+
+  return <ErrorView />;
+};
 
 export default compose(
   withCurrentUser,
