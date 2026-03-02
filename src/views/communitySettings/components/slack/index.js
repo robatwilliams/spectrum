@@ -25,77 +25,76 @@ type Props = {
   channelFilter?: string,
 };
 
-export class Slack extends React.Component<Props> {
-  render() {
-    const {
-      isLoading,
-      hasError,
-      data,
-      type,
-      isOnboarding,
-      channelFilter,
-    } = this.props;
+export const Slack = (props: Props) => {
+  const {
+    isLoading,
+    hasError,
+    data,
+    type,
+    isOnboarding,
+    channelFilter,
+  } = props;
 
-    if (
-      data.community &&
-      (data.community.communityPermissions.isOwner ||
-        data.community.communityPermissions.isModerator)
-    ) {
-      const { slackSettings } = data.community;
+  if (
+    data.community &&
+    (data.community.communityPermissions.isOwner ||
+      data.community.communityPermissions.isModerator)
+  ) {
+    const { slackSettings } = data.community;
 
-      if (!slackSettings || !slackSettings.isConnected) {
-        return (
-          <ConnectSlack
-            community={data.community}
-            isOnboarding={isOnboarding}
-          />
-        );
-      }
-
-      if (type === 'import-only') {
-        return (
-          <SendInvitations id={data.community.id} community={data.community} />
-        );
-      }
-
-      if (type === 'bot-only') {
-        return (
-          <ChannelConnection
-            id={data.community.id}
-            channelFilter={channelFilter}
-          />
-        );
-      }
-
+    if (!slackSettings || !slackSettings.isConnected) {
       return (
-        <React.Fragment>
-          <ChannelConnection
-            id={data.community.id}
-            channelFilter={channelFilter}
-          />
-          <SendInvitations community={data.community} />
-        </React.Fragment>
+        <ConnectSlack community={data.community} isOnboarding={isOnboarding} />
       );
     }
 
-    if (isLoading) {
+    if (type === 'import-only') {
       return (
-        <SectionCard>
-          <Loading />
-        </SectionCard>
+        <SendInvitations id={data.community.id} community={data.community} />
       );
     }
 
-    if (hasError) {
+    if (type === 'bot-only') {
       return (
-        <SectionCard>
-          <ViewError />
-        </SectionCard>
+        <ChannelConnection
+          id={data.community.id}
+          channelFilter={channelFilter}
+        />
       );
     }
 
-    return null;
+    return (
+      <React.Fragment>
+        <ChannelConnection
+          id={data.community.id}
+          channelFilter={channelFilter}
+        />
+        <SendInvitations community={data.community} />
+      </React.Fragment>
+    );
   }
-}
 
-export default compose(connect(), getSlackSettings, viewNetworkHandler)(Slack);
+  if (isLoading) {
+    return (
+      <SectionCard>
+        <Loading />
+      </SectionCard>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <SectionCard>
+        <ViewError />
+      </SectionCard>
+    );
+  }
+
+  return null;
+};
+
+export default compose(
+  connect(),
+  getSlackSettings,
+  viewNetworkHandler
+)(Slack);
