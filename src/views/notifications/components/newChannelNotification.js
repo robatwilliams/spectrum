@@ -67,38 +67,37 @@ type Props = {
   markSingleNotificationSeen: Function,
 };
 
-export class NewChannelNotification extends React.Component<Props> {
-  render() {
-    const { notification, markSingleNotificationSeen } = this.props;
+export const NewChannelNotification = ({
+  notification,
+  markSingleNotificationSeen,
+}: Props) => {
+  const date = parseNotificationDate(notification.modifiedAt);
+  const context = parseContext(notification.context);
+  const newChannelCount =
+    notification.entities.length > 1
+      ? `${notification.entities.length} new channels were`
+      : 'A new channel was';
 
-    const date = parseNotificationDate(notification.modifiedAt);
-    const context = parseContext(notification.context);
-    const newChannelCount =
-      notification.entities.length > 1
-        ? `${notification.entities.length} new channels were`
-        : 'A new channel was';
-
-    return (
-      <SegmentedNotificationCard
-        onClick={() => markSingleNotificationSeen(notification.id)}
-        isSeen={notification.isSeen}
-      >
-        <CreatedContext>
-          <Icon glyph="community" />
-          <TextContent pointer={true}>
-            {newChannelCount} created in {context.asString} {date}
-          </TextContent>
-        </CreatedContext>
-        <ContentWash>
-          <AttachmentsWash>
-            {notification.entities.map(channel => {
-              return (
-                <NewChannel key={channel.payload.id} id={channel.payload.id} />
-              );
-            })}
-          </AttachmentsWash>
-        </ContentWash>
-      </SegmentedNotificationCard>
-    );
-  }
-}
+  return (
+    <SegmentedNotificationCard
+      onClick={() => markSingleNotificationSeen(notification.id)}
+      isSeen={notification.isSeen}
+    >
+      <CreatedContext>
+        <Icon glyph="community" />
+        <TextContent pointer={true}>
+          {newChannelCount} created in {context.asString} {date}
+        </TextContent>
+      </CreatedContext>
+      <ContentWash>
+        <AttachmentsWash>
+          {notification.entities.map(channel => {
+            return (
+              <NewChannel key={channel.payload.id} id={channel.payload.id} />
+            );
+          })}
+        </AttachmentsWash>
+      </ContentWash>
+    </SegmentedNotificationCard>
+  );
+};

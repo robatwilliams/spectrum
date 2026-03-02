@@ -16,41 +16,38 @@ type Props = {
   currentUser: Object,
   markSingleNotificationSeen: Function,
 };
-export class NewUserInCommunityNotification extends React.Component<Props> {
-  render() {
-    const {
-      notification,
-      currentUser,
-      markSingleNotificationSeen,
-    } = this.props;
 
-    const actors = parseActors(notification.actors, currentUser, true);
-    const event = parseEvent(notification.event);
-    const date = parseNotificationDate(notification.modifiedAt);
-    const context = parseContext(notification.context);
+export const NewUserInCommunityNotification = ({
+  notification,
+  currentUser,
+  markSingleNotificationSeen,
+}: Props) => {
+  const actors = parseActors(notification.actors, currentUser, true);
+  const event = parseEvent(notification.event);
+  const date = parseNotificationDate(notification.modifiedAt);
+  const context = parseContext(notification.context);
 
-    if (!actors.asString || !actors.asObjects || actors.asObjects.length === 0)
-      return null;
+  if (!actors.asString || !actors.asObjects || actors.asObjects.length === 0)
+    return null;
 
-    return (
-      <NotificationCard
-        onClick={() => markSingleNotificationSeen(notification.id)}
-        isSeen={notification.isSeen}
-      >
-        <CardLink to={`/${notification.context.payload.slug}`} />
-        <CardContent>
-          <JoinContext>
-            <Icon glyph="member-add" />
-            <ActorsRow actors={actors.asObjects} />
-          </JoinContext>
-        </CardContent>
-        <Content>
-          <TextContent pointer={true}>
-            {' '}
-            {actors.asString} {event} {context.asString} {date}{' '}
-          </TextContent>
-        </Content>
-      </NotificationCard>
-    );
-  }
-}
+  return (
+    <NotificationCard
+      onClick={() => markSingleNotificationSeen(notification.id)}
+      isSeen={notification.isSeen}
+    >
+      <CardLink to={`/${notification.context.payload.slug}`} />
+      <CardContent>
+        <JoinContext>
+          <Icon glyph="member-add" />
+          <ActorsRow actors={actors.asObjects} />
+        </JoinContext>
+      </CardContent>
+      <Content>
+        <TextContent pointer={true}>
+          {' '}
+          {actors.asString} {event} {context.asString} {date}{' '}
+        </TextContent>
+      </Content>
+    </NotificationCard>
+  );
+};
