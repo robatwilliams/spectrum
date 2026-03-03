@@ -46,23 +46,26 @@ export default (props: Props) => {
     isEditing,
   } = props;
 
-  const onClick = (show: boolean) => {
+  const onClick = async (show: boolean) => {
     setShowPreview(show);
 
     if (show) {
       setPreviewBody(null);
-      fetch('https://convert.spectrum.chat/from', {
-        method: 'POST',
-        body,
-      })
-        .then(res => {
-          if (res.status < 200 || res.status >= 300)
-            throw new Error('Oops, something went wrong');
-          return res.json();
-        })
-        .then(json => {
-          setPreviewBody(json);
+      try {
+        const res = await fetch('https://convert.spectrum.chat/from', {
+          method: 'POST',
+          body,
         });
+
+        if (res.status < 200 || res.status >= 300)
+          throw new Error('Oops, something went wrong');
+
+        const json = await res.json();
+        setPreviewBody(json);
+      } catch (err) {
+        // Silently fail preview
+        console.error(err);
+      }
     }
   };
 

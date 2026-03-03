@@ -33,16 +33,22 @@ const EditingChatInput = (props: Props) => {
   React.useEffect(() => {
     if (props.message.messageType === 'text') return;
 
-    setText(null);
-    fetch('https://convert.spectrum.chat/to', {
-      method: 'POST',
-      body: props.message.content.body,
-    })
-      .then(res => res.text())
-      .then(md => {
+    const convertMessage = async () => {
+      setText(null);
+      try {
+        const res = await fetch('https://convert.spectrum.chat/to', {
+          method: 'POST',
+          body: props.message.content.body,
+        });
+        const md = await res.text();
         setText(md);
         input && input.focus();
-      });
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    convertMessage();
   }, [props.message.id]);
 
   const onChange = e => {
@@ -79,7 +85,7 @@ const EditingChatInput = (props: Props) => {
     );
   };
 
-  const submit = () => {
+  const submit = async () => {
     const { message, editMessage, dispatch } = props;
     const messageId = message.id;
 
@@ -97,26 +103,27 @@ const EditingChatInput = (props: Props) => {
 
     setSaving(true);
 
-    editMessage(input)
-      .then(({ data: { editMessage } }) => {
-        setSaving(false);
+    try {
+      const {
+        data: { editMessage: editedMessage },
+      } = await editMessage(input);
+      setSaving(false);
 
-        if (editMessage && editMessage !== null) {
-          props.cancelEdit();
-          return dispatch(addToastWithTimeout('success', 'Saved!'));
-        } else {
-          return dispatch(
-            addToastWithTimeout(
-              'error',
-              "We weren't able to save these changes. Try again?"
-            )
-          );
-        }
-      })
-      .catch(err => {
-        setSaving(false);
-        dispatch(addToastWithTimeout('error', err.message));
-      });
+      if (editedMessage && editedMessage !== null) {
+        props.cancelEdit();
+        dispatch(addToastWithTimeout('success', 'Saved!'));
+      } else {
+        dispatch(
+          addToastWithTimeout(
+            'error',
+            "We weren't able to save these changes. Try again?"
+          )
+        );
+      }
+    } catch (err) {
+      setSaving(false);
+      dispatch(addToastWithTimeout('error', err.message));
+    }
   };
 
   return (

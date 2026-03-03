@@ -208,19 +208,18 @@ const ChatInput = (props: Props) => {
     if (mediaFile) {
       setIsSendingMediaMessage(true);
       scrollToBottom();
-      await sendMessage({
-        file: mediaFile,
-        body: '{"blocks":[],"entityMap":{}}',
-      })
-        .then(() => {
-          setIsSendingMediaMessage(false);
-          setMediaPreview(null);
-          setAttachedMediaFile(null);
-        })
-        .catch(err => {
-          setIsSendingMediaMessage(false);
-          props.dispatch(addToastWithTimeout('error', err.message));
+      try {
+        await sendMessage({
+          file: mediaFile,
+          body: '{"blocks":[],"entityMap":{}}',
         });
+        setIsSendingMediaMessage(false);
+        setMediaPreview(null);
+        setAttachedMediaFile(null);
+      } catch (err) {
+        setIsSendingMediaMessage(false);
+        props.dispatch(addToastWithTimeout('error', err.message));
+      }
     }
 
     if (text.length === 0) return;

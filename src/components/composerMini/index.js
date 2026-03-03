@@ -102,7 +102,7 @@ const MiniComposer = ({
     });
   };
 
-  const uploadFiles = files => {
+  const uploadFiles = async files => {
     const currentBodyEditor = bodyEditor.current;
     if (!currentBodyEditor || !files[0]) return;
 
@@ -119,30 +119,27 @@ const MiniComposer = ({
     currentBodyEditor.selectionEnd = caretPos;
     currentBodyEditor.focus();
 
-    return uploadImage({
-      image: files[0],
-      type: 'threads',
-    })
-      .then(({ data }) => {
-        setIsLoading(false);
-        setBody(
-          bodyRef.current.replace(
-            uploading,
-            `![${files[0].name}](${data.uploadImage})`
-          )
-        );
-      })
-      .catch(err => {
-        console.error(err);
-        setIsLoading(false);
-        setBody(bodyRef.current.replace(uploading, ''));
-        dispatch(
-          addToastWithTimeout(
-            'error',
-            `Uploading image failed - ${err.message}`
-          )
-        );
+    try {
+      const { data } = await uploadImage({
+        image: files[0],
+        type: 'threads',
       });
+
+      setIsLoading(false);
+      setBody(
+        bodyRef.current.replace(
+          uploading,
+          `![${files[0].name}](${data.uploadImage})`
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      setIsLoading(false);
+      setBody(bodyRef.current.replace(uploading, ''));
+      dispatch(
+        addToastWithTimeout('error', `Uploading image failed - ${err.message}`)
+      );
+    }
   };
 
   const handleCancel = () => {
@@ -165,7 +162,7 @@ const MiniComposer = ({
     );
   };
 
-  const publish = () => {
+  const publish = async () => {
     if (!title.trim() || (!fixedChannelId && !selectedChannelId)) {
       return;
     }
@@ -184,23 +181,22 @@ const MiniComposer = ({
       },
     };
 
-    publishThread(thread)
-      .then(async ({ data }) => {
-        setIsLoading(false);
-        dispatch(addToastWithTimeout('success', 'Thread published!'));
-        await storeDraftThread({ title: '', body: '' });
-        await setBody('');
-        await setTitle('');
-        await setExpanded(false);
-        return history.push({
-          pathname: getThreadLink(data.publishThread),
-          state: { modal: true },
-        });
-      })
-      .catch(err => {
-        setIsLoading(false);
-        dispatch(addToastWithTimeout('error', err.message));
+    try {
+      const { data } = await publishThread(thread);
+      setIsLoading(false);
+      dispatch(addToastWithTimeout('success', 'Thread published!'));
+      await storeDraftThread({ title: '', body: '' });
+      await setBody('');
+      await setTitle('');
+      await setExpanded(false);
+      history.push({
+        pathname: getThreadLink(data.publishThread),
+        state: { modal: true },
       });
+    } catch (err) {
+      setIsLoading(false);
+      dispatch(addToastWithTimeout('error', err.message));
+    }
   };
 
   const { pathname, search } = getComposerLink({
