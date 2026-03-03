@@ -8,8 +8,8 @@ const channel = data.channels[0];
 const owner = data.users.find(({ username }) => username === 'mxstbr');
 const noPermissionUser = data.users.find(({ username }) => username === 'bryn');
 
-afterEach(() => {
-  return db
+afterEach(async () => {
+  await db
     .table('channels')
     .filter({ slug: channel.slug })
     .update({ ...channel })
@@ -42,15 +42,16 @@ it('should edit a channel if user is owner', async () => {
     user: owner,
   };
 
-  expect.assertions(4);
+  expect.assertions(6);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
-  expect(result.data.editChannel.name).toEqual(variables.input.name);
-  expect(result.data.editChannel.slug).toEqual(variables.input.slug);
-  expect(result.data.editChannel.description).toEqual(
-    variables.input.description
-  );
+  
+  expect(result.errors).toBeUndefined();
+  expect(result.data.editChannel).toBeDefined();
+  expect(result.data.editChannel.name).toBe(variables.input.name);
+  expect(result.data.editChannel.slug).toBe(variables.input.slug);
+  expect(result.data.editChannel.description).toBe(variables.input.description);
+  expect(result.data.editChannel.isPrivate).toBe(variables.input.isPrivate);
 });
 
 it('should not edit a channel if user is not owner', async () => {
@@ -69,10 +70,13 @@ it('should not edit a channel if user is not owner', async () => {
     user: noPermissionUser,
   };
 
-  expect.assertions(1);
+  expect.assertions(3);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.editChannel).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toMatch(/permission/i);
 });
 
 it('should not edit a channel if user is not signed in', async () => {
@@ -87,8 +91,11 @@ it('should not edit a channel if user is not signed in', async () => {
     },
   `;
 
-  expect.assertions(1);
+  expect.assertions(3);
 
   const result = await request(query, { variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.editChannel).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toBeDefined();
 });

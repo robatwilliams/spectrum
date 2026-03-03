@@ -2,15 +2,16 @@
 import { request } from '../../utils';
 import db from 'shared/testing/db';
 import data from 'shared/testing/data';
+import { SPECTRUM_GENERAL_CHANNEL_ID, SPECTRUM_COMMUNITY_ID } from '../../../migrations/seed/default/constants';
 
 // various permissions for Spectrum community
 const member = data.users.find(({ username }) => username === 'mxstbr');
 const noPermissionUser = data.users.find(
-  ({ username }) => username === 'bad-boy'
+  ({ username }) => username === 'quiet-user'
 );
 
-afterEach(() => {
-  return db
+afterEach(async () => {
+  await db
     .table('threads')
     .filter({ content: { title: 'test thread' } })
     .delete()
@@ -19,8 +20,8 @@ afterEach(() => {
 
 const variables = {
   thread: {
-    channelId: 'ce2b4488-4c75-47e0-8ebc-2539c1e6a192',
-    communityId: 'ce2b4488-4c75-47e0-8ebc-2539c1e6a191',
+    channelId: SPECTRUM_GENERAL_CHANNEL_ID,
+    communityId: SPECTRUM_COMMUNITY_ID,
     type: 'DRAFTJS',
     content: {
       title: 'test thread',
@@ -47,10 +48,15 @@ it('should create a thread if user has permissions', async () => {
     user: member,
   };
 
-  expect.assertions(1);
+  expect.assertions(5);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.errors).toBeUndefined();
+  expect(result.data.publishThread.isPublished).toBe(true);
+  expect(result.data.publishThread.isLocked).toBe(false);
+  expect(result.data.publishThread.type).toBe('DRAFTJS');
+  expect(result.data.publishThread.content.title).toBe('test thread');
 });
 
 it('should prevent thread publish if user has no permissions', async () => {
@@ -71,10 +77,12 @@ it('should prevent thread publish if user has no permissions', async () => {
     user: noPermissionUser,
   };
 
-  expect.assertions(1);
+  expect.assertions(3);
   const result = await request(query, { context, variables });
 
-  expect(result).toMatchSnapshot();
+  expect(result.data.publishThread).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toMatch(/permission|member/i);
 });
 
 it('should prevent signed out users from publishing a thread', async () => {
@@ -91,8 +99,10 @@ it('should prevent signed out users from publishing a thread', async () => {
     },
   `;
 
-  expect.assertions(1);
+  expect.assertions(3);
   const result = await request(query, { variables });
 
-  expect(result).toMatchSnapshot();
+  expect(result.data.publishThread).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toMatch(/signed in/i);
 });

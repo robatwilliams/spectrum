@@ -6,8 +6,8 @@ import data from 'shared/testing/data';
 // various permissions for Spectrum community
 const user = data.users.find(({ username }) => username === 'mxstbr');
 
-afterEach(() => {
-  return db
+afterEach(async () => {
+  await db
     .table('communities')
     .filter({ slug: 'test-community' })
     .delete()
@@ -49,10 +49,15 @@ it('should create a community', async () => {
 
   const context = { user };
 
-  expect.assertions(1);
+  expect.assertions(5);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.errors).toBeUndefined();
+  expect(result.data.createCommunity).toBeDefined();
+  expect(result.data.createCommunity.name).toBe(variables.input.name);
+  expect(result.data.createCommunity.slug).toBe(variables.input.slug);
+  expect(result.data.createCommunity.description).toBe(variables.input.description);
 });
 
 it('should prevent denyListed community slug', async () => {
@@ -68,10 +73,13 @@ it('should prevent denyListed community slug', async () => {
 
   const context = { user };
 
-  expect.assertions(1);
+  expect.assertions(3);
 
   const result = await request(query, { context, variables: denyListed });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.createCommunity).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toMatch(/not available/i);
 });
 
 it('should prevent signed out users from creating a community', async () => {
@@ -87,10 +95,13 @@ it('should prevent signed out users from creating a community', async () => {
 
   const context = {};
 
-  expect.assertions(1);
+  expect.assertions(3);
 
   const result = await request(query, { context, variables: denyListed });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.createCommunity).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toMatch(/signed in/i);
 });
 
 it('should prevent a community being created without a slug', async () => {
@@ -106,8 +117,11 @@ it('should prevent a community being created without a slug', async () => {
 
   const context = { user };
 
-  expect.assertions(1);
+  expect.assertions(3);
 
   const result = await request(query, { context, variables: noslug });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.createCommunity).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toBeDefined();
 });

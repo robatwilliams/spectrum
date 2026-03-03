@@ -7,10 +7,10 @@ const defaultThread = data.threads[0];
 const owner = data.users.find(({ username }) => username === 'mxstbr');
 const member = data.users.find(({ username }) => username === 'brian');
 const noPermissionUser = data.users.find(
-  ({ username }) => username === 'bad-boy'
+  ({ username }) => username === 'quiet-user'
 );
 
-// before each test, makre sure the thread exists to test deletion
+// before each test, make sure the thread exists to test deletion
 beforeEach(async () => {
   const threadExists = await db
     .table('threads')
@@ -18,7 +18,7 @@ beforeEach(async () => {
     .run();
 
   if (threadExists.deletedAt) {
-    return db
+    await db
       .table('threads')
       .get(defaultThread.id)
       .update({
@@ -43,10 +43,16 @@ it('should be able to delete self-published thread', async () => {
     user: member,
   };
 
-  expect.assertions(1);
+  expect.assertions(3);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.errors).toBeUndefined();
+  expect(result.data.deleteThread).toBe(true);
+  
+  // Verify thread is marked as deleted
+  const deletedThread = await db.table('threads').get(defaultThread.id).run();
+  expect(deletedThread.deletedAt).toBeDefined();
 });
 
 it('should be able to delete thread if user owns community', async () => {
@@ -60,10 +66,16 @@ it('should be able to delete thread if user owns community', async () => {
     user: owner,
   };
 
-  expect.assertions(1);
+  expect.assertions(3);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.errors).toBeUndefined();
+  expect(result.data.deleteThread).toBe(true);
+  
+  // Verify thread is marked as deleted
+  const deletedThread = await db.table('threads').get(defaultThread.id).run();
+  expect(deletedThread.deletedAt).toBeDefined();
 });
 
 it("should not delete thread if user doesn't have permissions", async () => {
@@ -77,10 +89,13 @@ it("should not delete thread if user doesn't have permissions", async () => {
     user: noPermissionUser,
   };
 
-  expect.assertions(1);
+  expect.assertions(3);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.deleteThread).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toMatch(/permission/i);
 });
 
 it('should not delete thread if user is not signed in', async () => {
@@ -94,8 +109,12 @@ it('should not delete thread if user is not signed in', async () => {
     user: null,
   };
 
-  expect.assertions(1);
+  expect.assertions(3);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.deleteThread).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toBeDefined();
+});
 });

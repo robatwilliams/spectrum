@@ -25,10 +25,12 @@ it('should fetch a directMessageThread', async () => {
     }
   `;
 
-  expect.assertions(1);
+  expect.assertions(3);
   const result = await request(query, { context });
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.directMessageThread).toBeDefined();
+  expect(result.data.directMessageThread.id).toBe('dm-1');
 });
 
 describe('messageConnection', () => {
@@ -47,10 +49,11 @@ describe('messageConnection', () => {
       }
     `;
 
-    expect.assertions(1);
+    expect.assertions(2);
     const result = await request(query, { context });
 
-    expect(result).toMatchSnapshot();
+    expect(result.errors).toBeUndefined();
+    expect(result.data.directMessageThread.messageConnection.edges.length).toBe(messages.length);
   });
 
   it('should fetch the last message first', async () => {

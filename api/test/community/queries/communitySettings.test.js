@@ -15,11 +15,12 @@ it('should fetch a communitys settings', async () => {
     }
   `;
 
-  expect.assertions(2);
+  expect.assertions(3);
   const result = await request(query);
 
   const { data: { community } } = result;
 
+  expect(result.errors).toBeUndefined();
+  expect(community.brandedLogin).toBeDefined();
   expect(community.brandedLogin.isEnabled).toEqual(false);
-  expect(result).toMatchSnapshot();
 });

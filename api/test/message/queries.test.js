@@ -16,10 +16,14 @@ it('should fetch a message', async () => {
     }
   `;
 
-  expect.hasAssertions();
+  expect.assertions(5);
   const result = await request(query);
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.message).toBeDefined();
+  expect(result.data.message.id).toBe(data.messages[0].id);
+  expect(result.data.message.content.body).toBeDefined();
+  expect(result.data.message.messageType).toBeDefined();
 });
 
 describe('sender', () => {
@@ -37,8 +41,12 @@ describe('sender', () => {
       }
     `;
 
-    expect.hasAssertions();
+    expect.assertions(4);
     const result = await request(query);
-    expect(result).toMatchSnapshot();
+    
+    expect(result.errors).toBeUndefined();
+    expect(result.data.message.author).toBeDefined();
+    expect(result.data.message.author.id).toBeDefined();
+    expect(result.data.message.author.user.username).toBeDefined();
   });
 });

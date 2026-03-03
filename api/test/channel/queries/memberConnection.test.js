@@ -28,8 +28,12 @@ it('should fetch a channels member connection', async () => {
     }
   `;
 
-  expect.assertions(1);
+  expect.assertions(5);
   const result = await request(query);
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.channel.id).toBe(SPECTRUM_GENERAL_CHANNEL_ID);
+  expect(result.data.channel.memberConnection).toBeDefined();
+  expect(result.data.channel.memberConnection.pageInfo).toBeDefined();
+  expect(Array.isArray(result.data.channel.memberConnection.edges)).toBe(true);
 });

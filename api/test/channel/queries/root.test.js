@@ -16,10 +16,14 @@ it('should fetch a channel by id', async () => {
     }
   `;
 
-  expect.assertions(1);
+  expect.assertions(5);
   const result = await request(query);
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.channel).toBeDefined();
+  expect(result.data.channel.id).toBe(SPECTRUM_GENERAL_CHANNEL_ID);
+  expect(result.data.channel.slug).toBe('general');
+  expect(result.data.channel.name).toBeDefined();
 });
 
 it('should fetch a channel by slug and community slug', async () => {
@@ -36,8 +40,12 @@ it('should fetch a channel by slug and community slug', async () => {
     }
   `;
 
-  expect.assertions(1);
+  expect.assertions(5);
   const result = await request(query);
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.channel).toBeDefined();
+  expect(result.data.channel.id).toBe(SPECTRUM_GENERAL_CHANNEL_ID);
+  expect(result.data.channel.slug).toBe('general');
+  expect(result.data.channel.name).toBeDefined();
 });

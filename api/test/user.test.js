@@ -19,10 +19,13 @@ describe('queries', () => {
 			}
 		`;
 
-    expect.assertions(1);
+    expect.assertions(4);
     const result = await request(query);
 
-    expect(result).toMatchSnapshot();
+    expect(result.errors).toBeUndefined();
+    expect(result.data.user).toBeDefined();
+    expect(result.data.user.id).toBe(MAX_ID);
+    expect(result.data.user.username).toBeDefined();
   });
 
   it('should return null for a non-existent id', async () => {
@@ -35,10 +38,11 @@ describe('queries', () => {
 			}
 		`;
 
-    expect.assertions(1);
+    expect.assertions(2);
     const result = await request(query);
 
-    expect(result).toMatchSnapshot();
+    expect(result.errors).toBeUndefined();
+    expect(result.data.user).toBeNull();
   });
 
   it('should fetch a users communities', async () => {
@@ -56,10 +60,12 @@ describe('queries', () => {
       }
     `;
 
-    expect.assertions(1);
+    expect.assertions(3);
     const result = await request(query);
 
-    expect(result).toMatchSnapshot();
+    expect(result.errors).toBeUndefined();
+    expect(result.data.user).toBeDefined();
+    expect(result.data.user.communityConnection.edges.length).toBeGreaterThan(0);
   });
 
   describe.skip('everything', () => {

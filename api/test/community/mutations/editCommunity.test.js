@@ -8,8 +8,8 @@ const community = data.communities[0];
 const owner = data.users.find(({ username }) => username === 'mxstbr');
 const member = data.users.find(({ username }) => username === 'bryn');
 
-afterEach(() => {
-  return db
+afterEach(async () => {
+  await db
     .table('communities')
     .filter({ slug: 'spectrum' })
     .update({
@@ -39,14 +39,14 @@ it('should edit a community name and description', async () => {
 
   const context = { user: owner };
 
-  expect.assertions(3);
+  expect.assertions(4);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
-  expect(result.data.editCommunity.name).toEqual(variables.input.name);
-  expect(result.data.editCommunity.description).toEqual(
-    variables.input.description
-  );
+  
+  expect(result.errors).toBeUndefined();
+  expect(result.data.editCommunity).toBeDefined();
+  expect(result.data.editCommunity.name).toBe(variables.input.name);
+  expect(result.data.editCommunity.description).toBe(variables.input.description);
 });
 
 it('should prevent community from being edited by a non owner', async () => {
@@ -61,10 +61,13 @@ it('should prevent community from being edited by a non owner', async () => {
 
   const context = { user: member };
 
-  expect.assertions(1);
+  expect.assertions(3);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.editCommunity).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toMatch(/permission/i);
 });
 
 it('should prevent community from being edited by a non user', async () => {
@@ -77,8 +80,11 @@ it('should prevent community from being edited by a non user', async () => {
     },
   `;
 
-  expect.assertions(1);
+  expect.assertions(3);
 
   const result = await request(query, { variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.editCommunity).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toBeDefined();
 });

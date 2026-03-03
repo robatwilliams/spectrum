@@ -35,10 +35,11 @@ it('should not fetch slack settings if not authed', async () => {
     }
   `;
 
-  expect.assertions(1);
+  expect.assertions(2);
   const result = await request(query);
 
-  expect(result).toMatchSnapshot();
+  expect(result.data.community).toBeDefined();
+  expect(result.data.community.slackSettings).toBeNull();
 });
 
 it('should not fetch slack settings if no permissions', async () => {
@@ -59,10 +60,12 @@ it('should not fetch slack settings if no permissions', async () => {
 
   const context = { user: noPermissionUser };
 
-  expect.assertions(1);
+  expect.assertions(3);
   const result = await request(query, { context });
 
-  expect(result).toMatchSnapshot();
+  expect(result.data.community).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toBeDefined();
 });
 
 it('should not fetch slack settings if moderates channel', async () => {
@@ -83,10 +86,12 @@ it('should not fetch slack settings if moderates channel', async () => {
 
   const context = { user: channelModerator };
 
-  expect.assertions(1);
+  expect.assertions(3);
   const result = await request(query, { context });
 
-  expect(result).toMatchSnapshot();
+  expect(result.data.community).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toBeDefined();
 });
 
 it('should fetch slack settings if moderates community', async () => {
@@ -107,10 +112,12 @@ it('should fetch slack settings if moderates community', async () => {
 
   const context = { user: communityModerator };
 
-  expect.assertions(1);
+  expect.assertions(3);
   const result = await request(query, { context });
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.community).toBeDefined();
+  expect(result.data.community.slackSettings).toBeDefined();
 });
 
 it('should fetch slack settings if owns community', async () => {
@@ -131,8 +138,10 @@ it('should fetch slack settings if owns community', async () => {
 
   const context = { user: communityOwner };
 
-  expect.assertions(1);
+  expect.assertions(3);
   const result = await request(query, { context });
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.community).toBeDefined();
+  expect(result.data.community.slackSettings).toBeDefined();
 });

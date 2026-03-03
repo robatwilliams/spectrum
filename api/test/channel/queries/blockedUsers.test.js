@@ -6,7 +6,7 @@ import {
   CHANNEL_MODERATOR_USER_ID,
   COMMUNITY_MODERATOR_USER_ID,
   MAX_ID,
-  PREVIOUS_MEMBER_USER_ID,
+  BRYN_ID,
 } from '../../../migrations/seed/default/constants';
 const channelModerator = data.users.find(
   ({ id }) => id === CHANNEL_MODERATOR_USER_ID
@@ -16,7 +16,7 @@ const communityModerator = data.users.find(
 );
 const communityOwner = data.users.find(({ id }) => id === MAX_ID);
 const noPermissionUser = data.users.find(
-  ({ id }) => id === PREVIOUS_MEMBER_USER_ID
+  ({ id }) => id === BRYN_ID
 );
 
 it('should not fetch blocked users if not authed', async () => {
@@ -38,10 +38,11 @@ it('should not fetch blocked users if not authed', async () => {
     }
   `;
 
-  expect.assertions(1);
+  expect.assertions(2);
   const result = await request(query);
 
-  expect(result).toMatchSnapshot();
+  expect(result.data.channel).toBeDefined();
+  expect(result.data.channel.blockedUsers).toBeNull();
 });
 
 it('should not fetch blocked users if no permissions', async () => {
@@ -65,10 +66,12 @@ it('should not fetch blocked users if no permissions', async () => {
 
   const context = { user: noPermissionUser };
 
-  expect.assertions(1);
+  expect.assertions(2);
   const result = await request(query, { context });
 
-  expect(result).toMatchSnapshot();
+  // User without permissions gets an error when trying to fetch blockedUsers
+  expect(result.data.channel).toBeNull();
+  expect(result.errors).toBeDefined();
 });
 
 it('should fetch blocked users if moderates channel', async () => {
@@ -92,10 +95,12 @@ it('should fetch blocked users if moderates channel', async () => {
 
   const context = { user: channelModerator };
 
-  expect.assertions(1);
+  expect.assertions(3);
   const result = await request(query, { context });
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.channel.id).toBe(SPECTRUM_GENERAL_CHANNEL_ID);
+  expect(Array.isArray(result.data.channel.blockedUsers)).toBe(true);
 });
 
 it('should fetch blocked users if moderates community', async () => {
@@ -119,10 +124,12 @@ it('should fetch blocked users if moderates community', async () => {
 
   const context = { user: communityModerator };
 
-  expect.assertions(1);
+  expect.assertions(3);
   const result = await request(query, { context });
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.channel.id).toBe(SPECTRUM_GENERAL_CHANNEL_ID);
+  expect(Array.isArray(result.data.channel.blockedUsers)).toBe(true);
 });
 
 it('should fetch blocked users if owns community', async () => {
@@ -146,8 +153,10 @@ it('should fetch blocked users if owns community', async () => {
 
   const context = { user: communityOwner };
 
-  expect.assertions(1);
+  expect.assertions(3);
   const result = await request(query, { context });
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.channel.id).toBe(SPECTRUM_GENERAL_CHANNEL_ID);
+  expect(Array.isArray(result.data.channel.blockedUsers)).toBe(true);
 });

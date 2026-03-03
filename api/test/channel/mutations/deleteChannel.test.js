@@ -2,7 +2,7 @@
 import { request } from '../../utils';
 import db from 'shared/testing/db';
 import data from 'shared/testing/data';
-import { MAX_ID, BRYN_ID, DATE } from '../../../migrations/seed/default';
+import { MAX_ID, BRYN_ID, DATE, SPECTRUM_COMMUNITY_ID } from '../../../migrations/seed/default/constants';
 
 const generalChannelId = data.channels[0].id;
 const owner = data.users.find(({ username }) => username === 'mxstbr');
@@ -11,7 +11,7 @@ const defaultChannelId = 'ce2b4488-4c75-47e0-8ebc-2539c';
 const DEFAULT_CHANNELS = [
   {
     id: defaultChannelId,
-    communityId: 'ce2b4488-4c75-47e0-8ebc-2539c1e6a191',
+    communityId: SPECTRUM_COMMUNITY_ID,
     createdAt: new Date(),
     name: 'Default',
     description: 'Default chatter',
@@ -48,7 +48,7 @@ const DEFAULT_THREADS = [
     createdAt: new Date(DATE),
     creatorId: MAX_ID,
     channelId: defaultChannelId,
-    communityId: 'ce2b4488-4c75-47e0-8ebc-2539c1e6a191',
+    communityId: SPECTRUM_COMMUNITY_ID,
     isPublished: true,
     isLocked: false,
     type: 'DRAFTJS',
@@ -64,7 +64,7 @@ const DEFAULT_THREADS = [
     createdAt: new Date(DATE + 1),
     creatorId: MAX_ID,
     channelId: defaultChannelId,
-    communityId: 'ce2b4488-4c75-47e0-8ebc-2539c1e6a191',
+    communityId: SPECTRUM_COMMUNITY_ID,
     isPublished: true,
     isLocked: false,
     type: 'DRAFTJS',
@@ -80,7 +80,7 @@ const DEFAULT_THREADS = [
     createdAt: new Date(DATE + 2),
     creatorId: BRYN_ID,
     channelId: defaultChannelId,
-    communityId: 'ce2b4488-4c75-47e0-8ebc-2539c1e6a191',
+    communityId: SPECTRUM_COMMUNITY_ID,
     isPublished: true,
     isLocked: false,
     type: 'DRAFTJS',
@@ -126,9 +126,16 @@ const populateTables = () =>
       .run(),
   ]);
 
-// after each test just rest the database
-beforeEach(() => cleanTables().then(() => populateTables()));
-afterEach(() => cleanTables().then(() => populateTables()));
+// after each test just reset the database
+beforeEach(async () => {
+  await cleanTables();
+  await populateTables();
+});
+
+afterEach(async () => {
+  await cleanTables();
+  await populateTables();
+});
 
 const variables = {
   channelId: defaultChannelId,
@@ -145,10 +152,17 @@ it('should delete a channel if user is owner', async () => {
     user: owner,
   };
 
-  expect.assertions(1);
+  expect.assertions(4);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.errors).toBeUndefined();
+  expect(result.data.deleteChannel).toBeTruthy();
+  
+  // Verify channel is marked as deleted in database
+  const deletedChannel = await db.table('channels').get(defaultChannelId).run();
+  expect(deletedChannel.deletedAt).toBeDefined();
+  expect(deletedChannel.deletedAt).toBeInstanceOf(Date);
 });
 
 it('should not delete a channel if user is not owner', async () => {
@@ -162,10 +176,17 @@ it('should not delete a channel if user is not owner', async () => {
     user: noPermissionUser,
   };
 
-  expect.assertions(1);
+  expect.assertions(4);
 
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.deleteChannel).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toMatch(/permission/i);
+  
+  // Verify channel was NOT deleted in database
+  const channel = await db.table('channels').get(defaultChannelId).run();
+  expect(channel.deletedAt).toBeUndefined();
 });
 
 it('should not delete a channel if user is not signed in', async () => {
@@ -175,10 +196,17 @@ it('should not delete a channel if user is not signed in', async () => {
     }
   `;
 
-  expect.assertions(1);
+  expect.assertions(4);
 
   const result = await request(query, { variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.deleteChannel).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toBeDefined();
+  
+  // Verify channel was NOT deleted in database
+  const channel = await db.table('channels').get(defaultChannelId).run();
+  expect(channel.deletedAt).toBeUndefined();
 });
 
 it('should not delete the general channel', async () => {
@@ -192,7 +220,7 @@ it('should not delete the general channel', async () => {
     user: owner,
   };
 
-  expect.assertions(1);
+  expect.assertions(4);
 
   const result = await request(query, {
     context,
@@ -200,7 +228,14 @@ it('should not delete the general channel', async () => {
       channelId: generalChannelId,
     },
   });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.data.deleteChannel).toBeNull();
+  expect(result.errors).toBeDefined();
+  expect(result.errors[0].message).toMatch(/general channel can't be deleted/i);
+  
+  // Verify general channel was NOT deleted in database
+  const channel = await db.table('channels').get(generalChannelId).run();
+  expect(channel.deletedAt).toBeUndefined();
 });
 
 it('should delete all threads in the deleted channel', async () => {
@@ -220,10 +255,20 @@ it('should delete all threads in the deleted channel', async () => {
     user: owner,
   };
 
-  expect.assertions(2);
+  expect.assertions(5);
+  
   const result = await request(query, { context, variables });
-  expect(result).toMatchSnapshot();
+  
+  expect(result.errors).toBeUndefined();
+  expect(result.data.deleteChannel).toBeTruthy();
+  
+  // Verify all threads in the channel are marked as deleted
   const threads = await getThreadsInChannel();
-  const filtered = threads.filter(t => t.deletedAt !== null).length;
-  expect(threads).toHaveLength(filtered);
+  expect(threads.length).toBeGreaterThan(0);
+  const allDeleted = threads.every(t => t.deletedAt !== null);
+  expect(allDeleted).toBe(true);
+  
+  // Verify channel itself is deleted
+  const deletedChannel = await db.table('channels').get(defaultChannelId).run();
+  expect(deletedChannel.deletedAt).toBeDefined();
 });

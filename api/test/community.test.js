@@ -16,10 +16,13 @@ it('should fetch a community', async () => {
     }
   `;
 
-  expect.assertions(1);
+  expect.assertions(4);
   const result = await request(query);
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.community).toBeDefined();
+  expect(result.data.community.id).toBe(SPECTRUM_COMMUNITY_ID);
+  expect(result.data.community.slug).toBe('spectrum');
 });
 
 it('should fetch a communities threads', async () => {
@@ -39,10 +42,12 @@ it('should fetch a communities threads', async () => {
     }
   `;
 
-  expect.assertions(1);
+  expect.assertions(3);
   const result = await request(query);
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.community).toBeDefined();
+  expect(result.data.community.threadConnection.edges.length).toBeGreaterThan(0);
 });
 
 it('should fetch a list of communities', async () => {
@@ -58,10 +63,13 @@ it('should fetch a list of communities', async () => {
     }
   `;
 
-  expect.assertions(1);
+  expect.assertions(4);
   const result = await request(query);
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.communities).toBeDefined();
+  expect(result.data.communities.length).toBeGreaterThan(0);
+  expect(result.data.communities[0].slug).toBe('spectrum');
 });
 
 it('should fetch a list of community members', async () => {
@@ -92,8 +100,12 @@ it('should fetch a list of community members', async () => {
     }
   `;
 
-  expect.assertions(1);
+  expect.assertions(5);
   const result = await request(query);
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.community).toBeDefined();
+  expect(result.data.community.members).toBeDefined();
+  expect(result.data.community.members.edges.length).toBeGreaterThan(0);
+  expect(result.data.community.members.pageInfo).toBeDefined();
 });

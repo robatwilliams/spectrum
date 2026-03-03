@@ -37,8 +37,8 @@ describe('story', () => {
     },
   };
 
-  afterEach(() => {
-    return Promise.all([
+  afterEach(async () => {
+    await Promise.all([
       db
         .table('messages')
         .filter({ content: { body: newMessage.content.body } })
@@ -89,8 +89,8 @@ describe('directMessageThread', () => {
     },
   };
 
-  afterEach(() => {
-    return Promise.all([
+  afterEach(async () => {
+    await Promise.all([
       db
         .table('messages')
         .filter({ content: { body: newMessage.content.body } })

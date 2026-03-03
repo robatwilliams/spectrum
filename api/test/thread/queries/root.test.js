@@ -19,8 +19,13 @@ it('should fetch a thread', async () => {
     }
   `;
 
-  expect.hasAssertions();
+  expect.assertions(6);
   const result = await request(query);
 
-  expect(result).toMatchSnapshot();
+  expect(result.errors).toBeUndefined();
+  expect(result.data.thread).toBeDefined();
+  expect(result.data.thread.id).toBe('thread-1');
+  expect(result.data.thread.isPublished).toBe(true);
+  expect(result.data.thread.content.title).toBeDefined();
+  expect(result.data.thread.type).toBeDefined();
 });

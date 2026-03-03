@@ -27,12 +27,13 @@ describe('messageConnection', () => {
       }
     `;
 
-    expect.hasAssertions();
+    expect.assertions(2);
     const result = await request(query);
+    
+    expect(result.errors).toBeUndefined();
     expect(result.data.thread.messageConnection.edges).toHaveLength(
       messages.length
     );
-    expect(result).toMatchSnapshot();
   });
 
   it('should fetch the first message first', async () => {
