@@ -41,7 +41,7 @@ class UserEmailConfirmation extends React.Component<Props, State> {
     return this.mutate();
   };
 
-  mutate = () => {
+  mutate = async () => {
     const { email } = this.state;
 
     if (!email || email.length === 0 || !isEmail(email)) {
@@ -51,24 +51,22 @@ class UserEmailConfirmation extends React.Component<Props, State> {
       });
     }
 
-    return this.props
-      .updateUserEmail(email)
-      .then(() => {
-        this.props.dispatch(
-          addToastWithTimeout('success', `Confirmation email sent to ${email}`)
-        );
-        return this.setState({
-          isLoading: false,
-          emailError: '',
-        });
-      })
-      .catch(err => {
-        this.props.dispatch(addToastWithTimeout('error', err.message));
-        return this.setState({
-          isLoading: false,
-          emailError: err.message,
-        });
+    try {
+      await this.props.updateUserEmail(email);
+      this.props.dispatch(
+        addToastWithTimeout('success', `Confirmation email sent to ${email}`)
+      );
+      this.setState({
+        isLoading: false,
+        emailError: '',
       });
+    } catch (err) {
+      this.props.dispatch(addToastWithTimeout('error', err.message));
+      this.setState({
+        isLoading: false,
+        emailError: err.message,
+      });
+    }
   };
 
   handleEmailChange = e => {

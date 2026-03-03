@@ -33,25 +33,23 @@ class RestoreChannelModal extends React.Component<Props, State> {
     this.props.dispatch(closeModal());
   };
 
-  restore = (e: any) => {
+  restore = async (e: any) => {
     e.preventDefault();
     const { channel, dispatch } = this.props;
 
-    return this.props
-      .restoreChannel({ channelId: channel.id })
-      .then(() => {
-        dispatch(addToastWithTimeout('success', 'Channel restored'));
-        this.setState({
-          isLoading: false,
-        });
-        return this.close();
-      })
-      .catch(err => {
-        dispatch(addToastWithTimeout('error', err.message));
-        this.setState({
-          isLoading: false,
-        });
+    try {
+      await this.props.restoreChannel({ channelId: channel.id });
+      dispatch(addToastWithTimeout('success', 'Channel restored'));
+      this.setState({
+        isLoading: false,
       });
+      this.close();
+    } catch (err) {
+      dispatch(addToastWithTimeout('error', err.message));
+      this.setState({
+        isLoading: false,
+      });
+    }
   };
 
   render() {

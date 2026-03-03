@@ -291,7 +291,7 @@ class ComposerWithData extends React.Component<Props, State> {
     this.uploadFiles(evt.target.files);
   };
 
-  uploadFiles = files => {
+  uploadFiles = async files => {
     const uploading = `![Uploading ${files[0].name}...]()`;
     let caretPos = this.bodyEditor.selectionStart;
 
@@ -311,44 +311,40 @@ class ComposerWithData extends React.Component<Props, State> {
       }
     );
 
-    return this.props
-      .uploadImage({
+    try {
+      const { data } = await this.props.uploadImage({
         image: files[0],
         type: 'threads',
-      })
-      .then(({ data }) => {
-        this.setState({
-          isLoading: false,
-        });
-        this.changeBody({
-          target: {
-            value: this.state.body.replace(
-              uploading,
-              `![${files[0].name}](${data.uploadImage})`
-            ),
-          },
-        });
-      })
-      .catch(err => {
-        console.error({ err });
-        this.setState({
-          isLoading: false,
-        });
-        this.changeBody({
-          target: {
-            value: this.state.body.replace(uploading, ''),
-          },
-        });
-        this.props.dispatch(
-          addToastWithTimeout(
-            'error',
-            `Uploading image failed - ${err.message}`
-          )
-        );
       });
+
+      this.setState({
+        isLoading: false,
+      });
+      this.changeBody({
+        target: {
+          value: this.state.body.replace(
+            uploading,
+            `![${files[0].name}](${data.uploadImage})`
+          ),
+        },
+      });
+    } catch (err) {
+      console.error({ err });
+      this.setState({
+        isLoading: false,
+      });
+      this.changeBody({
+        target: {
+          value: this.state.body.replace(uploading, ''),
+        },
+      });
+      this.props.dispatch(
+        addToastWithTimeout('error', `Uploading image failed - ${err.message}`)
+      );
+    }
   };
 
-  publishThread = () => {
+  publishThread = async () => {
     // if no title and no channel is set, don't allow a thread to be published
     if (
       !this.state.title ||
@@ -415,39 +411,35 @@ class ComposerWithData extends React.Component<Props, State> {
     this.persistBodyToLocalStorage();
     this.persistTitleToLocalStorage();
 
-    this.props
-      .publishThread(thread)
+    try {
       // after the mutation occurs, it will either return an error or the new
       // thread that was published
-      .then(({ data }) => {
-        this.clearEditorStateAfterPublish();
+      const { data } = await this.props.publishThread(thread);
 
-        // stop the loading spinner on the publish button
-        this.setState({
-          isLoading: false,
-          postWasPublished: true,
-          title: '',
-          body: '',
-        });
+      this.clearEditorStateAfterPublish();
 
-        // redirect the user to the thread
-        // if they are in the inbox, select it
-        this.props.dispatch(
-          addToastWithTimeout('success', 'Thread published!')
-        );
-        if (this.props.location.pathname === '/new/thread') {
-          this.props.history.replace(getThreadLink(data.publishThread));
-        } else {
-          this.props.history.push(getThreadLink(data.publishThread));
-        }
-        return;
-      })
-      .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+      // stop the loading spinner on the publish button
+      this.setState({
+        isLoading: false,
+        postWasPublished: true,
+        title: '',
+        body: '',
       });
+
+      // redirect the user to the thread
+      // if they are in the inbox, select it
+      this.props.dispatch(addToastWithTimeout('success', 'Thread published!'));
+      if (this.props.location.pathname === '/new/thread') {
+        this.props.history.replace(getThreadLink(data.publishThread));
+      } else {
+        this.props.history.push(getThreadLink(data.publishThread));
+      }
+    } catch (err) {
+      this.setState({
+        isLoading: false,
+      });
+      this.props.dispatch(addToastWithTimeout('error', err.message));
+    }
   };
 
   setSelectedCommunity = (id: string) => {

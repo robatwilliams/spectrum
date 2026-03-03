@@ -49,7 +49,7 @@ class BanUserModal extends React.Component<Props, State> {
     });
   };
 
-  submit = e => {
+  submit = async e => {
     e.preventDefault();
     const { reason } = this.state;
     const { user, dispatch, banUser } = this.props;
@@ -67,18 +67,15 @@ class BanUserModal extends React.Component<Props, State> {
       reason,
     };
 
-    banUser(input)
-      .then(() => {
-        this.setState({ isLoading: false });
-        this.close();
-        return dispatch(
-          addToastWithTimeout('success', 'User has been banned.')
-        );
-      })
-      .catch(err => {
-        this.setState({ isLoading: false });
-        return dispatch(addToastWithTimeout('error', err.toString()));
-      });
+    try {
+      await banUser(input);
+      this.setState({ isLoading: false });
+      this.close();
+      dispatch(addToastWithTimeout('success', 'User has been banned.'));
+    } catch (err) {
+      this.setState({ isLoading: false });
+      dispatch(addToastWithTimeout('error', err.toString()));
+    }
   };
 
   render() {

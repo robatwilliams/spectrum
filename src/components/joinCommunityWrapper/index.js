@@ -29,7 +29,7 @@ const JoinCommunity = (props: Props) => {
   } = props;
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const addMember = () => {
+  const addMember = async () => {
     if (!currentUser || !currentUser.id) {
       return dispatch(openModal('LOGIN_MODAL'));
     }
@@ -38,22 +38,22 @@ const JoinCommunity = (props: Props) => {
 
     setIsLoading(true);
 
-    return addCommunityMember({ input })
-      .then(({ data }: AddCommunityMemberType) => {
-        const { addCommunityMember: community } = data;
-        dispatch(
-          addToastWithTimeout(
-            'success',
-            `Welcome to the ${community.name} community!`
-          )
-        );
-
-        return setIsLoading(false);
-      })
-      .catch(err => {
-        dispatch(addToastWithTimeout('error', err.message));
-        return setIsLoading(false);
+    try {
+      const { data }: AddCommunityMemberType = await addCommunityMember({
+        input,
       });
+      const { addCommunityMember: joinedCommunity } = data;
+      dispatch(
+        addToastWithTimeout(
+          'success',
+          `Welcome to the ${joinedCommunity.name} community!`
+        )
+      );
+      setIsLoading(false);
+    } catch (err) {
+      dispatch(addToastWithTimeout('error', err.message));
+      setIsLoading(false);
+    }
   };
 
   const cy = currentUser

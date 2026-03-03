@@ -30,7 +30,7 @@ const JoinChannel = (props: Props) => {
   } = props;
   const [isLoading, setIsLoading] = React.useState(false);
 
-  const join = (e: any) => {
+  const join = async (e: any) => {
     e && e.preventDefault() && e.stopPropogation();
 
     if (!currentUser || !currentUser.id) {
@@ -39,19 +39,24 @@ const JoinChannel = (props: Props) => {
 
     setIsLoading(true);
 
-    return toggleChannelSubscription({ channelId: channel.id })
-      .then(({ data }: ToggleChannelSubscriptionType) => {
-        const { toggleChannelSubscription: channel } = data;
-        dispatch(
-          addToastWithTimeout('success', `Joined the ${channel.name} channel!`)
-        );
-
-        return setIsLoading(false);
-      })
-      .catch(err => {
-        dispatch(addToastWithTimeout('error', err.message));
-        return setIsLoading(false);
+    try {
+      const {
+        data,
+      }: ToggleChannelSubscriptionType = await toggleChannelSubscription({
+        channelId: channel.id,
       });
+      const { toggleChannelSubscription: joinedChannel } = data;
+      dispatch(
+        addToastWithTimeout(
+          'success',
+          `Joined the ${joinedChannel.name} channel!`
+        )
+      );
+      setIsLoading(false);
+    } catch (err) {
+      dispatch(addToastWithTimeout('error', err.message));
+      setIsLoading(false);
+    }
   };
 
   const { channelPermissions } = channel;

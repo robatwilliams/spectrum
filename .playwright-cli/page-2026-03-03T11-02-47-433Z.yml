@@ -1,0 +1,152 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - img "announcement" [ref=e6]
+      - paragraph [ref=e12]:
+        - text: Spectrum has updated its
+        - link "Privacy Statement" [ref=e13] [cursor=pointer]:
+          - /url: https://help.github.com/en/github/site-policy/github-privacy-statement
+        - text: ", and"
+        - link "Terms of Service" [ref=e14] [cursor=pointer]:
+          - /url: https://help.github.com/en/github/site-policy/github-terms-of-service
+        - text: .
+    - generic [ref=e15] [cursor=pointer]: ×
+  - main [ref=e18]:
+    - generic [ref=e19]:
+      - generic [ref=e21]:
+        - link "announcement" [ref=e22] [cursor=pointer]:
+          - /url: /about
+          - img "announcement" [ref=e24]
+        - link "Features" [ref=e36] [cursor=pointer]:
+          - /url: /features
+        - link "Apps" [ref=e37] [cursor=pointer]:
+          - /url: /apps
+        - link "Support" [ref=e38] [cursor=pointer]:
+          - /url: /support
+        - link "Log in" [ref=e39] [cursor=pointer]:
+          - /url: /login
+        - link "Sign up" [ref=e41] [cursor=pointer]:
+          - /url: /new/user
+          - button "Sign up" [ref=e42]
+      - generic [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e46]:
+            - heading "The community platform for the future." [level=2] [ref=e47]
+            - paragraph [ref=e48]: The internet was built for communities.
+            - paragraph [ref=e49]: But, as the web has changed and improved radically, community software has hardly improved since the heyday of messageboards and IRC.
+            - paragraph [ref=e50]: Spectrum makes it easy to grow safe, successful online communities that are built to last.
+            - generic [ref=e51]:
+              - link "Join Spectrum" [ref=e52] [cursor=pointer]:
+                - /url: /login
+                - button "Join Spectrum" [ref=e53]
+              - link "Create your community" [ref=e54] [cursor=pointer]:
+                - /url: /new/community
+                - button "Create your community" [ref=e55]
+          - generic:
+            - img "announcement"
+        - generic [ref=e56]:
+          - generic [ref=e58]:
+            - heading "Grow together" [level=2] [ref=e59]
+            - paragraph [ref=e60]: By building on Spectrum, communities become easily discoverable through search, curation, and even other community members.
+            - paragraph [ref=e61]: It also means no more managing multiple logins or playing whack-a-mole with different notifications and preferences. Everyone wins!
+            - link "Explore communities" [ref=e63] [cursor=pointer]:
+              - /url: /explore
+              - button "Explore communities" [ref=e64]
+          - generic:
+            - img "announcement"
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - heading "Find a community for you!" [level=2] [ref=e68]
+            - paragraph [ref=e69]: Try searching for topics like “crypto” or for products like “React”!
+            - generic [ref=e71]:
+              - img "announcement" [ref=e73]
+              - textbox "Search for communities or topics..." [ref=e76]
+          - generic:
+            - img "announcement"
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - generic [ref=e79]:
+              - img "conversation screenshot"
+            - generic [ref=e80]:
+              - heading "Real-time messaging with long-term value" [level=2] [ref=e81]
+              - paragraph [ref=e82]: Conversations on Spectrum are real-time chat, just like your favorite messaging app. But on Spectrum, conversations continue to provide value to more and more people over time.
+              - paragraph [ref=e83]: Every conversation gets a unique link to make it easy for people to discover, share, or save for later.
+              - link "Check out a conversation" [ref=e85] [cursor=pointer]:
+                - /url: /thread/764331db-16dd-4fc4-a2c5-aabd735a64a9
+                - button "Check out a conversation" [ref=e86]
+          - generic:
+            - img "announcement"
+        - generic [ref=e89]:
+          - heading "You’re gonna love Spectrum." [level=2] [ref=e90]
+          - generic [ref=e91]:
+            - generic [ref=e92]:
+              - generic [ref=e93]:
+                - separator [ref=e94]
+                - img "announcement" [ref=e96]
+                - separator [ref=e100]
+              - paragraph [ref=e101]: okay, honestly Spectrum is the best thing that happened to me regarding social interaction in 2017
+              - link "Alexander Traykov @Traykov" [ref=e102] [cursor=pointer]:
+                - /url: /users/traykov
+                - text: Alexander Traykov
+                - generic [ref=e103]: "@Traykov"
+            - generic [ref=e104]:
+              - generic [ref=e105]:
+                - separator [ref=e106]
+                - img "announcement" [ref=e108]
+                - separator [ref=e112]
+              - paragraph [ref=e113]: Spectrum will take the place that Reddit used to have a long time ago for communities (especially tech) to freely share ideas and interact. Except realtime and trolling-free
+              - link "Guillermo Rauch @rauchg" [ref=e114] [cursor=pointer]:
+                - /url: /users/rauchg
+                - text: Guillermo Rauch
+                - generic [ref=e115]: "@rauchg"
+            - generic [ref=e116]:
+              - generic [ref=e117]:
+                - separator [ref=e118]
+                - img "announcement" [ref=e120]
+                - separator [ref=e124]
+              - paragraph [ref=e125]: Spectrum is definitely a product worth looking out for. Huge fan and been lovely to be a part of the unique communities.
+              - link "Tayler O’Dea @tayler-m-odea" [ref=e126] [cursor=pointer]:
+                - /url: /users/tayler-m-odea
+                - text: Tayler O’Dea
+                - generic [ref=e127]: "@tayler-m-odea"
+          - generic [ref=e128]:
+            - link "Join Spectrum" [ref=e129] [cursor=pointer]:
+              - /url: /login
+              - button "Join Spectrum" [ref=e130]
+            - link "Explore communities" [ref=e131] [cursor=pointer]:
+              - /url: /explore
+              - button "Explore communities" [ref=e132]
+        - generic [ref=e134]:
+          - generic [ref=e135]:
+            - link "announcement" [ref=e136] [cursor=pointer]:
+              - /url: /
+              - img "announcement" [ref=e138]
+            - generic [ref=e150]:
+              - link "announcement" [ref=e151] [cursor=pointer]:
+                - /url: https://github.com/withspectrum
+                - img "announcement" [ref=e153]
+              - link "announcement" [ref=e156] [cursor=pointer]:
+                - /url: https://twitter.com/withspectrum
+                - img "announcement" [ref=e158]
+          - generic [ref=e161]:
+            - generic [ref=e162]: Apps
+            - link "Mac" [ref=e163] [cursor=pointer]:
+              - /url: /apps
+          - generic [ref=e164]:
+            - generic [ref=e165]: Support
+            - link "Community" [ref=e166] [cursor=pointer]:
+              - /url: /spectrum
+            - link "Bug reports" [ref=e167] [cursor=pointer]:
+              - /url: /spectrum/hugs-n-bugs
+            - link "Feature requests" [ref=e168] [cursor=pointer]:
+              - /url: /spectrum/feature-requests
+            - link "Email support" [ref=e169] [cursor=pointer]:
+              - /url: mailto:hi@spectrum.chat
+          - generic [ref=e170]:
+            - generic [ref=e171]: Safety
+            - link "Code of Conduct" [ref=e172] [cursor=pointer]:
+              - /url: https://github.com/withspectrum/code-of-conduct
+            - link "Privacy Statement" [ref=e173] [cursor=pointer]:
+              - /url: https://help.github.com/en/github/site-policy/github-privacy-statement
+            - link "Terms of Service" [ref=e174] [cursor=pointer]:
+              - /url: https://help.github.com/en/github/site-policy/github-terms-of-service

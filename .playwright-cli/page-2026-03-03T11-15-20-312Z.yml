@@ -1,0 +1,45 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - img "announcement" [ref=e6]
+      - paragraph [ref=e12]:
+        - text: Spectrum has updated its
+        - link "Privacy Statement" [ref=e13] [cursor=pointer]:
+          - /url: https://help.github.com/en/github/site-policy/github-privacy-statement
+        - text: ", and"
+        - link "Terms of Service" [ref=e14] [cursor=pointer]:
+          - /url: https://help.github.com/en/github/site-policy/github-terms-of-service
+        - text: .
+    - generic [ref=e15] [cursor=pointer]: ×
+  - generic [ref=e16]:
+    - generic [ref=e18]:
+      - link "announcement" [ref=e20] [cursor=pointer]:
+        - /url: /about
+        - img "announcement" [ref=e23]
+      - link "announcement" [ref=e27] [cursor=pointer]:
+        - /url: /features
+        - img "announcement" [ref=e30]
+      - link "announcement" [ref=e37] [cursor=pointer]:
+        - /url: /support
+        - img "announcement" [ref=e40]
+      - link "announcement" [ref=e44] [cursor=pointer]:
+        - /url: /apps
+        - img "announcement" [ref=e47]
+      - link "announcement" [ref=e51] [cursor=pointer]:
+        - /url: /explore
+        - img "announcement" [ref=e54]
+      - link "announcement" [ref=e63] [cursor=pointer]:
+        - /url: /login
+        - img "announcement" [ref=e66]
+    - main [ref=e71]:
+      - generic [ref=e73]:
+        - img "Oops" [ref=e74]: 😣
+        - heading "We ran into trouble loading this page" [level=3] [ref=e75]
+        - paragraph [ref=e76]: You may be trying to view something that is deleted, or Spectrum is just having a hiccup. If you think something has gone wrong, please contact us.
+        - generic [ref=e77]:
+          - link "Contact us" [ref=e78] [cursor=pointer]:
+            - /url: mailto:hi@spectrum.chat
+            - button "Contact us" [ref=e79]
+          - link "Go home" [ref=e80] [cursor=pointer]:
+            - /url: /
+            - button "Go home" [ref=e81]

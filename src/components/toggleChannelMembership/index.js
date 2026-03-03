@@ -39,54 +39,55 @@ class ToggleChannelMembership extends React.Component<Props, State> {
     });
   };
 
-  toggleSubscription = () => {
+  toggleSubscription = async () => {
     const { channel } = this.props;
 
     this.setState({
       isLoading: true,
     });
 
-    this.props
-      .toggleChannelSubscription({ channelId: channel.id })
-      .then(({ data }: ToggleChannelSubscriptionType) => {
-        this.setState({
-          isLoading: false,
-        });
+    try {
+      const {
+        data,
+      }: ToggleChannelSubscriptionType = await this.props.toggleChannelSubscription(
+        { channelId: channel.id }
+      );
 
-        const { toggleChannelSubscription } = data;
-
-        const isMember = toggleChannelSubscription.channelPermissions.isMember;
-        const isPending =
-          toggleChannelSubscription.channelPermissions.isPending;
-        let str = '';
-        if (isPending) {
-          str = `Requested to join ${toggleChannelSubscription.name} in ${
-            toggleChannelSubscription.community.name
-          }`;
-        }
-
-        if (!isPending && isMember) {
-          str = `Joined ${toggleChannelSubscription.name} in ${
-            toggleChannelSubscription.community.name
-          }!`;
-        }
-
-        if (!isPending && !isMember) {
-          str = `Left the channel ${toggleChannelSubscription.name} in ${
-            toggleChannelSubscription.community.name
-          }.`;
-        }
-
-        const type = isMember || isPending ? 'success' : 'neutral';
-        this.props.dispatch(addToastWithTimeout(type, str));
-        return;
-      })
-      .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+      this.setState({
+        isLoading: false,
       });
+
+      const { toggleChannelSubscription } = data;
+
+      const isMember = toggleChannelSubscription.channelPermissions.isMember;
+      const isPending = toggleChannelSubscription.channelPermissions.isPending;
+      let str = '';
+      if (isPending) {
+        str = `Requested to join ${toggleChannelSubscription.name} in ${
+          toggleChannelSubscription.community.name
+        }`;
+      }
+
+      if (!isPending && isMember) {
+        str = `Joined ${toggleChannelSubscription.name} in ${
+          toggleChannelSubscription.community.name
+        }!`;
+      }
+
+      if (!isPending && !isMember) {
+        str = `Left the channel ${toggleChannelSubscription.name} in ${
+          toggleChannelSubscription.community.name
+        }.`;
+      }
+
+      const type = isMember || isPending ? 'success' : 'neutral';
+      this.props.dispatch(addToastWithTimeout(type, str));
+    } catch (err) {
+      this.setState({
+        isLoading: false,
+      });
+      this.props.dispatch(addToastWithTimeout('error', err.message));
+    }
   };
 
   render() {

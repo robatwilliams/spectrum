@@ -54,19 +54,22 @@ class UserHoverProfileWrapper extends React.Component<Props, State> {
     this._isMounted = false;
   }
 
-  handleMouseEnter = () => {
+  handleMouseEnter = async () => {
     const { username, client } = this.props;
 
     if (!this._isMounted) return;
 
-    client
-      .query({
+    try {
+      await client.query({
         query: getUserByUsernameQuery,
         variables: { username },
-      })
-      .then(() => {
-        if (!this._isMounted) return;
       });
+
+      if (!this._isMounted) return;
+    } catch (err) {
+      // Silently fail prefetch
+      if (!this._isMounted) return;
+    }
 
     const ref = setTimeout(() => {
       if (this._isMounted) {

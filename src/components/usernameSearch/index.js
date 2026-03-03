@@ -94,7 +94,7 @@ class UsernameSearch extends React.Component<Props, State> {
     }
   };
 
-  search = (username: string) => {
+  search = async (username: string) => {
     // username in state could not be the same as username argument here
     // so dont make a call with previous username
     if (!this.isUsernameValid(this.state.username)) return;
@@ -104,38 +104,39 @@ class UsernameSearch extends React.Component<Props, State> {
       isSearching: true,
     });
 
-    // check the db to see if this channel slug exists
-    this.props.client
-      .query({
+    try {
+      // check the db to see if this channel slug exists
+      const {
+        data: { user },
+      }: { data: { user: GetUserType } } = await this.props.client.query({
         query: getUserByUsernameQuery,
         variables: {
           username,
         },
-      })
-      .then(({ data: { user } }: { data: { user: GetUserType } }) => {
-        if (user && user.id) {
-          this.props.onValidationResult({
-            error: 'That username has already been taken.',
-            success: '',
-            username,
-          });
-        } else {
-          this.props.onValidationResult({
-            error: '',
-            success: 'That username is available!',
-            username,
-          });
-        }
-        this.setState({
-          isSearching: false,
-        });
-      })
-      .catch(err => {
-        this.props.onError && this.props.onError(err);
-        this.setState({
-          isSearching: false,
-        });
       });
+
+      if (user && user.id) {
+        this.props.onValidationResult({
+          error: 'That username has already been taken.',
+          success: '',
+          username,
+        });
+      } else {
+        this.props.onValidationResult({
+          error: '',
+          success: 'That username is available!',
+          username,
+        });
+      }
+      this.setState({
+        isSearching: false,
+      });
+    } catch (err) {
+      this.props.onError && this.props.onError(err);
+      this.setState({
+        isSearching: false,
+      });
+    }
   };
 
   render() {

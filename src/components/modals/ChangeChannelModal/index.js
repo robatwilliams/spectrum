@@ -40,7 +40,7 @@ class ChangeChannelModal extends React.Component<Props, State> {
 
   setActiveChannel = e => this.setState({ activeChannel: e.target.value });
 
-  saveNewChannel = () => {
+  saveNewChannel = async () => {
     const { activeChannel } = this.state;
     const {
       thread: { id },
@@ -51,29 +51,29 @@ class ChangeChannelModal extends React.Component<Props, State> {
       isLoading: true,
     });
 
-    return this.props
-      .moveThread({ threadId: id, channelId: activeChannel })
-      .then(({ data }: MoveThreadType) => {
-        const { moveThread } = data;
-        if (moveThread) {
-          dispatch(
-            addToastWithTimeout('success', 'Channel changed successfully.')
-          );
-          this.setState({
-            isLoading: false,
-          });
-          this.closeModal();
-        }
-        return;
-      })
-      .catch(err => {
-        dispatch(
-          addToastWithTimeout(
-            'error',
-            `We weren't able to change channels. ${err.message}`
-          )
-        );
+    try {
+      const { data }: MoveThreadType = await this.props.moveThread({
+        threadId: id,
+        channelId: activeChannel,
       });
+      const { moveThread } = data;
+      if (moveThread) {
+        dispatch(
+          addToastWithTimeout('success', 'Channel changed successfully.')
+        );
+        this.setState({
+          isLoading: false,
+        });
+        this.closeModal();
+      }
+    } catch (err) {
+      dispatch(
+        addToastWithTimeout(
+          'error',
+          `We weren't able to change channels. ${err.message}`
+        )
+      );
+    }
   };
 
   render() {

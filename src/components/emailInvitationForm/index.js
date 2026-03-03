@@ -82,7 +82,7 @@ class EmailInvitationForm extends React.Component<Props, State> {
 
   getUniqueEmails = array => array.filter((x, i, a) => a.indexOf(x) === i);
 
-  sendInvitations = () => {
+  sendInvitations = async () => {
     const {
       contacts,
       hasCustomMessage,
@@ -119,56 +119,56 @@ class EmailInvitationForm extends React.Component<Props, State> {
       );
     }
 
-    sendEmailInvites({
-      id: this.props.id,
-      contacts: validContacts,
-      customMessage,
-    })
-      .then(() => {
-        this.setState({
-          isLoading: false,
-          contacts: [
-            {
-              email: '',
-              firstName: '',
-              lastName: '',
-              error: false,
-            },
-            {
-              email: '',
-              firstName: '',
-              lastName: '',
-              error: false,
-            },
-            {
-              email: '',
-              firstName: '',
-              lastName: '',
-              error: false,
-            },
-          ],
-          hasCustomMessage: false,
-          customMessageString: '',
-          customMessageError: false,
-        });
-
-        return dispatch(
-          addToastWithTimeout(
-            'success',
-            `Invitations sent to ${
-              validContacts.length > 1
-                ? `${validContacts.length} people`
-                : `${validContacts.length} person`
-            }!`
-          )
-        );
-      })
-      .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
-        dispatch(addToastWithTimeout('error', err.message));
+    try {
+      await sendEmailInvites({
+        id: this.props.id,
+        contacts: validContacts,
+        customMessage,
       });
+
+      this.setState({
+        isLoading: false,
+        contacts: [
+          {
+            email: '',
+            firstName: '',
+            lastName: '',
+            error: false,
+          },
+          {
+            email: '',
+            firstName: '',
+            lastName: '',
+            error: false,
+          },
+          {
+            email: '',
+            firstName: '',
+            lastName: '',
+            error: false,
+          },
+        ],
+        hasCustomMessage: false,
+        customMessageString: '',
+        customMessageError: false,
+      });
+
+      dispatch(
+        addToastWithTimeout(
+          'success',
+          `Invitations sent to ${
+            validContacts.length > 1
+              ? `${validContacts.length} people`
+              : `${validContacts.length} person`
+          }!`
+        )
+      );
+    } catch (err) {
+      this.setState({
+        isLoading: false,
+      });
+      dispatch(addToastWithTimeout('error', err.message));
+    }
   };
 
   handleChange = (e, i, key) => {

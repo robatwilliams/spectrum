@@ -1,7 +1,7 @@
 ---
 applyTo: '**'
 ---
-The terminal id of the dev server is: 3a6a977e-d234-42ed-ab57-a50326ad8eac
+The terminal id of the dev server is: 6ebb14ba-6d34-4fb3-9e27-9066bf6b8ea6
 
 Use the terminal output of the dev server for visibility of problems, and to verify your changes. To be absolutely clear, that means you check its output for problems your changes have caused.
 

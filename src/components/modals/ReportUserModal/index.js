@@ -49,7 +49,7 @@ class ReportUserModal extends React.Component<Props, State> {
     });
   };
 
-  submit = e => {
+  submit = async e => {
     e.preventDefault();
     const { reason } = this.state;
     const { user, dispatch } = this.props;
@@ -68,22 +68,20 @@ class ReportUserModal extends React.Component<Props, State> {
       reason,
     };
 
-    this.props
-      .reportUser(input)
-      .then(() => {
-        this.setState({ isLoading: false });
-        this.close();
-        return dispatch(
-          addToastWithTimeout(
-            'success',
-            'Your report has been sent to the Spectrum team. Thank you!'
-          )
-        );
-      })
-      .catch(err => {
-        this.setState({ isLoading: false });
-        return dispatch(addToastWithTimeout('error', err.toString()));
-      });
+    try {
+      await this.props.reportUser(input);
+      this.setState({ isLoading: false });
+      this.close();
+      dispatch(
+        addToastWithTimeout(
+          'success',
+          'Your report has been sent to the Spectrum team. Thank you!'
+        )
+      );
+    } catch (err) {
+      this.setState({ isLoading: false });
+      dispatch(addToastWithTimeout('error', err.toString()));
+    }
   };
 
   render() {

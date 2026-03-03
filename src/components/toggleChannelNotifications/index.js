@@ -39,37 +39,39 @@ class ToggleChannelNotifications extends React.Component<Props, State> {
     });
   };
 
-  toggleNotifications = () => {
+  toggleNotifications = async () => {
     const { channel } = this.props;
 
     this.setState({
       isLoading: true,
     });
 
-    this.props
-      .toggleChannelNotifications(channel.id)
-      .then(({ data }: ToggleChannelNotificationsType) => {
-        this.setState({
-          isLoading: false,
-        });
+    try {
+      const {
+        data,
+      }: ToggleChannelNotificationsType = await this.props.toggleChannelNotifications(
+        channel.id
+      );
 
-        const { toggleChannelNotifications } = data;
-
-        const value =
-          toggleChannelNotifications.channelPermissions.receiveNotifications;
-        const type = value ? 'success' : 'neutral';
-        const str = value
-          ? 'Channel notifications enabled!'
-          : 'Channel notifications disabled.';
-        this.props.dispatch(addToastWithTimeout(type, str));
-        return;
-      })
-      .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
-        this.props.dispatch(addToastWithTimeout('error', err.message));
+      this.setState({
+        isLoading: false,
       });
+
+      const { toggleChannelNotifications } = data;
+
+      const value =
+        toggleChannelNotifications.channelPermissions.receiveNotifications;
+      const type = value ? 'success' : 'neutral';
+      const str = value
+        ? 'Channel notifications enabled!'
+        : 'Channel notifications disabled.';
+      this.props.dispatch(addToastWithTimeout(type, str));
+    } catch (err) {
+      this.setState({
+        isLoading: false,
+      });
+      this.props.dispatch(addToastWithTimeout('error', err.message));
+    }
   };
 
   render() {

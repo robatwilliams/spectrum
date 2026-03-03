@@ -28,57 +28,58 @@ class JoinChannel extends React.Component<Props, State> {
 
   login = () => this.props.dispatch(openModal('LOGIN_MODAL'));
 
-  toggleSubscription = () => {
+  toggleSubscription = async () => {
     const { channel, dispatch } = this.props;
 
     this.setState({
       isLoading: true,
     });
 
-    this.props
-      .toggleChannelSubscription({ channelId: channel.id })
-      .then(({ data }: ToggleChannelSubscriptionType) => {
-        const { toggleChannelSubscription } = data;
+    try {
+      const {
+        data,
+      }: ToggleChannelSubscriptionType = await this.props.toggleChannelSubscription(
+        { channelId: channel.id }
+      );
+      const { toggleChannelSubscription } = data;
 
-        this.setState({
-          isLoading: false,
-        });
-
-        const {
-          isMember,
-          isPending,
-        } = toggleChannelSubscription.channelPermissions;
-
-        let str = '';
-        if (isPending) {
-          str = `Requested to join ${toggleChannelSubscription.name} in ${
-            toggleChannelSubscription.name
-          }`;
-        }
-
-        if (!isPending && isMember) {
-          str = `Joined ${toggleChannelSubscription.name} in ${
-            toggleChannelSubscription.name
-          }!`;
-        }
-
-        if (!isPending && !isMember) {
-          str = `Left the channel ${toggleChannelSubscription.name} in ${
-            toggleChannelSubscription.name
-          }.`;
-        }
-
-        const type = isMember || isPending ? 'success' : 'neutral';
-        dispatch(addToastWithTimeout(type, str));
-        return;
-      })
-      .catch(err => {
-        this.setState({
-          isLoading: false,
-        });
-
-        dispatch(addToastWithTimeout('error', err.message));
+      this.setState({
+        isLoading: false,
       });
+
+      const {
+        isMember,
+        isPending,
+      } = toggleChannelSubscription.channelPermissions;
+
+      let str = '';
+      if (isPending) {
+        str = `Requested to join ${toggleChannelSubscription.name} in ${
+          toggleChannelSubscription.name
+        }`;
+      }
+
+      if (!isPending && isMember) {
+        str = `Joined ${toggleChannelSubscription.name} in ${
+          toggleChannelSubscription.name
+        }!`;
+      }
+
+      if (!isPending && !isMember) {
+        str = `Left the channel ${toggleChannelSubscription.name} in ${
+          toggleChannelSubscription.name
+        }.`;
+      }
+
+      const type = isMember || isPending ? 'success' : 'neutral';
+      dispatch(addToastWithTimeout(type, str));
+    } catch (err) {
+      this.setState({
+        isLoading: false,
+      });
+
+      dispatch(addToastWithTimeout('error', err.message));
+    }
   };
 
   render() {

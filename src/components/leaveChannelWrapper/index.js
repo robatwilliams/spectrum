@@ -24,24 +24,26 @@ const LeaveChannel = (props: Props) => {
   const onMouseEnter = () => setHover(true);
   const onMouseLeave = () => setHover(false);
 
-  const leave = (e: any) => {
+  const leave = async (e: any) => {
     e && e.preventDefault() && e.stopPropogation();
 
     setIsLoading(true);
 
-    return toggleChannelSubscription({ channelId: channel.id })
-      .then(({ data }: ToggleChannelSubscriptionType) => {
-        const { toggleChannelSubscription: channel } = data;
-        dispatch(
-          addToastWithTimeout('neutral', `Left the ${channel.name} channel!`)
-        );
-
-        return setIsLoading(false);
-      })
-      .catch(err => {
-        dispatch(addToastWithTimeout('error', err.message));
-        return setIsLoading(false);
+    try {
+      const {
+        data,
+      }: ToggleChannelSubscriptionType = await toggleChannelSubscription({
+        channelId: channel.id,
       });
+      const { toggleChannelSubscription: leftChannel } = data;
+      dispatch(
+        addToastWithTimeout('neutral', `Left the ${leftChannel.name} channel!`)
+      );
+      setIsLoading(false);
+    } catch (err) {
+      dispatch(addToastWithTimeout('error', err.message));
+      setIsLoading(false);
+    }
   };
 
   return (
