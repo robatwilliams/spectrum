@@ -18,7 +18,9 @@ it('should fetch a communitys settings', async () => {
   expect.assertions(3);
   const result = await request(query);
 
-  const { data: { community } } = result;
+  const {
+    data: { community },
+  } = result;
 
   expect(result.errors).toBeUndefined();
   expect(community.brandedLogin).toBeDefined();

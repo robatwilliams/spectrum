@@ -15,9 +15,7 @@ const communityModerator = data.users.find(
   ({ id }) => id === COMMUNITY_MODERATOR_USER_ID
 );
 const communityOwner = data.users.find(({ id }) => id === MAX_ID);
-const noPermissionUser = data.users.find(
-  ({ id }) => id === BRYN_ID
-);
+const noPermissionUser = data.users.find(({ id }) => id === BRYN_ID);
 
 it('should not fetch blocked users if not authed', async () => {
   const query = /* GraphQL */ `

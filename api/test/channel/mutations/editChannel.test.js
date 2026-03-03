@@ -29,13 +29,13 @@ const variables = {
 it('should edit a channel if user is owner', async () => {
   const query = /* GraphQL */ `
     mutation editChannel($input: EditChannelInput!) {
-      editChannel (input: $input) {
+      editChannel(input: $input) {
         name
         slug
         description
         isPrivate
       }
-    },
+    }
   `;
 
   const context = {
@@ -45,7 +45,7 @@ it('should edit a channel if user is owner', async () => {
   expect.assertions(6);
 
   const result = await request(query, { context, variables });
-  
+
   expect(result.errors).toBeUndefined();
   expect(result.data.editChannel).toBeDefined();
   expect(result.data.editChannel.name).toBe(variables.input.name);
@@ -57,13 +57,13 @@ it('should edit a channel if user is owner', async () => {
 it('should not edit a channel if user is not owner', async () => {
   const query = /* GraphQL */ `
     mutation editChannel($input: EditChannelInput!) {
-      editChannel (input: $input) {
+      editChannel(input: $input) {
         name
         slug
         description
         isPrivate
       }
-    },
+    }
   `;
 
   const context = {
@@ -73,7 +73,7 @@ it('should not edit a channel if user is not owner', async () => {
   expect.assertions(3);
 
   const result = await request(query, { context, variables });
-  
+
   expect(result.data.editChannel).toBeNull();
   expect(result.errors).toBeDefined();
   expect(result.errors[0].message).toMatch(/permission/i);
@@ -82,19 +82,19 @@ it('should not edit a channel if user is not owner', async () => {
 it('should not edit a channel if user is not signed in', async () => {
   const query = /* GraphQL */ `
     mutation editChannel($input: EditChannelInput!) {
-      editChannel (input: $input) {
+      editChannel(input: $input) {
         name
         slug
         description
         isPrivate
       }
-    },
+    }
   `;
 
   expect.assertions(3);
 
   const result = await request(query, { variables });
-  
+
   expect(result.data.editChannel).toBeNull();
   expect(result.errors).toBeDefined();
   expect(result.errors[0].message).toBeDefined();

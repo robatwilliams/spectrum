@@ -30,13 +30,13 @@ describe('queries', () => {
 
   it('should return null for a non-existent id', async () => {
     const query = /* GraphQL */ `
-			{
-				user(id: "non-existent") {
-					id
+      {
+        user(id: "non-existent") {
+          id
           username
-				}
-			}
-		`;
+        }
+      }
+    `;
 
     expect.assertions(2);
     const result = await request(query);
@@ -65,7 +65,9 @@ describe('queries', () => {
 
     expect(result.errors).toBeUndefined();
     expect(result.data.user).toBeDefined();
-    expect(result.data.user.communityConnection.edges.length).toBeGreaterThan(0);
+    expect(result.data.user.communityConnection.edges.length).toBeGreaterThan(
+      0
+    );
   });
 
   describe.skip('everything', () => {

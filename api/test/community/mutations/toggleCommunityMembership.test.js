@@ -68,7 +68,7 @@ const getUsersCommunities = (userId: string, communityId: string) =>
 it('should join a community', async () => {
   const query = /* GraphQL */ `
     mutation toggleCommunityMembership($communityId: ID!) {
-      toggleCommunityMembership (communityId: $communityId) {
+      toggleCommunityMembership(communityId: $communityId) {
         id
         communityPermissions {
           isMember
@@ -86,7 +86,7 @@ it('should join a community', async () => {
 
   expect.assertions(5);
   const result = await request(query, { context, variables });
-  
+
   expect(result.errors).toBeUndefined();
   expect(result.data.toggleCommunityMembership.id).toBe(community.id);
   expect(
@@ -103,7 +103,7 @@ it('should join a community', async () => {
 it('should leave a community', async () => {
   const query = /* GraphQL */ `
     mutation toggleCommunityMembership($communityId: ID!) {
-      toggleCommunityMembership (communityId: $communityId) {
+      toggleCommunityMembership(communityId: $communityId) {
         id
         communityPermissions {
           isMember
@@ -121,13 +121,13 @@ it('should leave a community', async () => {
 
   expect.assertions(4);
   const result = await request(query, { context, variables });
-  
+
   expect(result.errors).toBeUndefined();
   expect(result.data.toggleCommunityMembership.id).toBe(community.id);
   expect(
     result.data.toggleCommunityMembership.communityPermissions.isMember
   ).toBe(false);
-  
+
   // Verify in database that user is no longer a member
   const usersCommunities = await getUsersCommunities(member.id, community.id);
   expect(usersCommunities[0].isMember).toBe(false);
@@ -136,7 +136,7 @@ it('should leave a community', async () => {
 it('should join all default channels when joining a community', async () => {
   const query = /* GraphQL */ `
     mutation toggleCommunityMembership($communityId: ID!) {
-      toggleCommunityMembership (communityId: $communityId) {
+      toggleCommunityMembership(communityId: $communityId) {
         id
         communityPermissions {
           isMember
@@ -154,12 +154,12 @@ it('should join all default channels when joining a community', async () => {
 
   expect.assertions(4);
   const result = await request(query, { context, variables });
-  
+
   expect(result.errors).toBeUndefined();
   expect(
     result.data.toggleCommunityMembership.communityPermissions.isMember
   ).toBe(true);
-  
+
   // Verify user was added to default channels
   const usersChannels = await getUsersChannels(nonMember.id);
   expect(usersChannels.length).toBeGreaterThan(0);
@@ -170,7 +170,7 @@ it('should join all default channels when joining a community', async () => {
 it('should leave all channels when leaving a community', async () => {
   const query = /* GraphQL */ `
     mutation toggleCommunityMembership($communityId: ID!) {
-      toggleCommunityMembership (communityId: $communityId) {
+      toggleCommunityMembership(communityId: $communityId) {
         id
         communityPermissions {
           isMember
@@ -195,16 +195,18 @@ it('should leave all channels when leaving a community', async () => {
 
   expect.assertions(5);
   const result = await request(query, { context, variables });
-  
+
   expect(result.errors).toBeUndefined();
   expect(
     result.data.toggleCommunityMembership.communityPermissions.isMember
   ).toBe(false);
-  
+
   // Verify user was removed from all channels in this community
   const usersChannels = await getUsersChannels(member.id);
   expect(usersChannels.length).toBeGreaterThan(0);
-  const channelsInCommunity = usersChannels.filter(uc => channelIdsInCommunity.includes(uc.channelId));
+  const channelsInCommunity = usersChannels.filter(uc =>
+    channelIdsInCommunity.includes(uc.channelId)
+  );
   expect(channelsInCommunity.length).toBeGreaterThan(0);
   const allNotMember = channelsInCommunity.every(c => !c.isMember);
   expect(allNotMember).toBe(true);
@@ -213,7 +215,7 @@ it('should leave all channels when leaving a community', async () => {
 it('should prevent a blocked user from joining a community', async () => {
   const query = /* GraphQL */ `
     mutation toggleCommunityMembership($communityId: ID!) {
-      toggleCommunityMembership (communityId: $communityId) {
+      toggleCommunityMembership(communityId: $communityId) {
         id
         communityPermissions {
           isMember
@@ -231,7 +233,7 @@ it('should prevent a blocked user from joining a community', async () => {
 
   expect.assertions(3);
   const result = await request(query, { context, variables });
-  
+
   expect(result.data.toggleCommunityMembership).toBeNull();
   expect(result.errors).toBeDefined();
   expect(result.errors[0].message).toMatch(/permission/i);
@@ -240,7 +242,7 @@ it('should prevent a blocked user from joining a community', async () => {
 it('should prevent community owner from leaving community', async () => {
   const query = /* GraphQL */ `
     mutation toggleCommunityMembership($communityId: ID!) {
-      toggleCommunityMembership (communityId: $communityId) {
+      toggleCommunityMembership(communityId: $communityId) {
         id
         communityPermissions {
           isMember
@@ -258,7 +260,7 @@ it('should prevent community owner from leaving community', async () => {
 
   expect.assertions(3);
   const result = await request(query, { context, variables });
-  
+
   expect(result.data.toggleCommunityMembership).toBeNull();
   expect(result.errors).toBeDefined();
   expect(result.errors[0].message).toMatch(/owner.*can't.*join or leave/i);
@@ -267,7 +269,7 @@ it('should prevent community owner from leaving community', async () => {
 it('should only have one usersCommunities record after joining a community', async () => {
   const query = /* GraphQL */ `
     mutation toggleCommunityMembership($communityId: ID!) {
-      toggleCommunityMembership (communityId: $communityId) {
+      toggleCommunityMembership(communityId: $communityId) {
         id
         communityPermissions {
           isMember
@@ -285,12 +287,12 @@ it('should only have one usersCommunities record after joining a community', asy
 
   expect.assertions(4);
   const result = await request(query, { context, variables });
-  
+
   expect(result.errors).toBeUndefined();
   expect(
     result.data.toggleCommunityMembership.communityPermissions.isMember
   ).toBe(true);
-  
+
   // Verify exactly one usersCommunities record exists
   const usersCommunities = await getUsersCommunities(
     nonMember.id,
@@ -303,7 +305,7 @@ it('should only have one usersCommunities record after joining a community', asy
 it('should only have one usersCommunities record after leaving a community', async () => {
   const query = /* GraphQL */ `
     mutation toggleCommunityMembership($communityId: ID!) {
-      toggleCommunityMembership (communityId: $communityId) {
+      toggleCommunityMembership(communityId: $communityId) {
         id
         communityPermissions {
           isMember
@@ -321,12 +323,12 @@ it('should only have one usersCommunities record after leaving a community', asy
 
   expect.assertions(4);
   const result = await request(query, { context, variables });
-  
+
   expect(result.errors).toBeUndefined();
   expect(
     result.data.toggleCommunityMembership.communityPermissions.isMember
   ).toBe(false);
-  
+
   // Verify exactly one usersCommunities record exists
   const usersCommunities = await getUsersCommunities(member.id, community.id);
   expect(usersCommunities).toHaveLength(1);

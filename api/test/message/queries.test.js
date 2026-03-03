@@ -43,7 +43,7 @@ describe('sender', () => {
 
     expect.assertions(4);
     const result = await request(query);
-    
+
     expect(result.errors).toBeUndefined();
     expect(result.data.message.author).toBeDefined();
     expect(result.data.message.author.id).toBeDefined();

@@ -53,7 +53,9 @@ describe('messageConnection', () => {
     const result = await request(query, { context });
 
     expect(result.errors).toBeUndefined();
-    expect(result.data.directMessageThread.messageConnection.edges.length).toBe(messages.length);
+    expect(result.data.directMessageThread.messageConnection.edges.length).toBe(
+      messages.length
+    );
   });
 
   it('should fetch the last message first', async () => {

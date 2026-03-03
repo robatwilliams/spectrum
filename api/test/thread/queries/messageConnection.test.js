@@ -29,7 +29,7 @@ describe('messageConnection', () => {
 
     expect.assertions(2);
     const result = await request(query);
-    
+
     expect(result.errors).toBeUndefined();
     expect(result.data.thread.messageConnection.edges).toHaveLength(
       messages.length

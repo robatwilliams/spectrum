@@ -30,11 +30,11 @@ const variables = {
 it('should edit a community name and description', async () => {
   const query = /* GraphQL */ `
     mutation editCommunity($input: EditCommunityInput!) {
-      editCommunity (input: $input) {
+      editCommunity(input: $input) {
         name
         description
       }
-    },
+    }
   `;
 
   const context = { user: owner };
@@ -42,21 +42,23 @@ it('should edit a community name and description', async () => {
   expect.assertions(4);
 
   const result = await request(query, { context, variables });
-  
+
   expect(result.errors).toBeUndefined();
   expect(result.data.editCommunity).toBeDefined();
   expect(result.data.editCommunity.name).toBe(variables.input.name);
-  expect(result.data.editCommunity.description).toBe(variables.input.description);
+  expect(result.data.editCommunity.description).toBe(
+    variables.input.description
+  );
 });
 
 it('should prevent community from being edited by a non owner', async () => {
   const query = /* GraphQL */ `
     mutation editCommunity($input: EditCommunityInput!) {
-      editCommunity (input: $input) {
+      editCommunity(input: $input) {
         name
         description
       }
-    },
+    }
   `;
 
   const context = { user: member };
@@ -64,7 +66,7 @@ it('should prevent community from being edited by a non owner', async () => {
   expect.assertions(3);
 
   const result = await request(query, { context, variables });
-  
+
   expect(result.data.editCommunity).toBeNull();
   expect(result.errors).toBeDefined();
   expect(result.errors[0].message).toMatch(/permission/i);
@@ -73,17 +75,17 @@ it('should prevent community from being edited by a non owner', async () => {
 it('should prevent community from being edited by a non user', async () => {
   const query = /* GraphQL */ `
     mutation editCommunity($input: EditCommunityInput!) {
-      editCommunity (input: $input) {
+      editCommunity(input: $input) {
         name
         description
       }
-    },
+    }
   `;
 
   expect.assertions(3);
 
   const result = await request(query, { variables });
-  
+
   expect(result.data.editCommunity).toBeNull();
   expect(result.errors).toBeDefined();
   expect(result.errors[0].message).toBeDefined();

@@ -47,7 +47,9 @@ it('should fetch a communities threads', async () => {
 
   expect(result.errors).toBeUndefined();
   expect(result.data.community).toBeDefined();
-  expect(result.data.community.threadConnection.edges.length).toBeGreaterThan(0);
+  expect(result.data.community.threadConnection.edges.length).toBeGreaterThan(
+    0
+  );
 });
 
 it('should fetch a list of communities', async () => {
